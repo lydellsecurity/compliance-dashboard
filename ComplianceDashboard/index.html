@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Readiness Dashboard | Lydell Security</title>
+    <meta name="description" content="Multi-framework compliance assessment tool supporting SOC2, HIPAA, PCI-DSS 4.0, and CMMC 2.0 - by Lydell Security">
+    <link rel="icon" type="image/png" href="https://static.wixstatic.com/media/61285b_156bd3d39be3491c8967f76dd5d68cc2~mv2.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        * { scrollbar-width: thin; scrollbar-color: #374151 #111827; }
+        *::-webkit-scrollbar { width: 8px; }
+        *::-webkit-scrollbar-track { background: #111827; }
+        *::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 4px; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-950">
+    <div id="root"></div>
+    <script type="text/babel">
+const { useState, useMemo, useCallback, useEffect, useRef } = React;
+
+const Icon = ({ name, className, style }) => {
+    const ref = useRef(null);
+    useEffect(() => {
+        if (ref.current && lucide.icons[name]) {
+            ref.current.innerHTML = '';
+            const icon = lucide.createElement(lucide.icons[name]);
+            if (className) icon.setAttribute('class', className);
+            if (style) Object.entries(style).forEach(([k, v]) => icon.style[k] = v);
+            ref.current.appendChild(icon);
+        }
+    }, [name, className, style]);
+    return <span ref={ref} className="inline-flex items-center justify-center" />;
+};
+
+const CONTROL_MAPPINGS = {
+    MFA: 'mfa', ACCESS_CONTROL: 'access', ENCRYPTION_TRANSIT: 'enc_transit', ENCRYPTION_REST: 'enc_rest',
+    INCIDENT_RESPONSE: 'ir', SECURITY_TRAINING: 'training', VULNERABILITY_MGMT: 'vuln', AUDIT_LOGGING: 'audit',
+    CHANGE_MGMT: 'change', VENDOR_MGMT: 'vendor', BACKUP_RECOVERY: 'backup', PHYSICAL_SECURITY: 'physical',
+    NETWORK_SEGMENTATION: 'network', RISK_ASSESSMENT: 'risk', ASSET_INVENTORY: 'asset', PASSWORD_POLICY: 'password',
+    DATA_CLASSIFICATION: 'data_class', ENDPOINT_PROTECTION: 'endpoint', MEDIA_DISPOSAL: 'media', CONFIG_MGMT: 'config'
+};
+
+const FRAMEWORK_DATA = {
+    SOC2: {
+        name: 'SOC 2', fullName: 'SOC 2 Type II', description: 'Trust Services Criteria', color: '#3B82F6', icon: 'Shield',
+        categories: [
+            { name: 'Security (CC)', description: 'Common Criteria', questions: [
+                { id: 's1', text: 'Do you have a formal information security policy documented?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 's2', text: 'Is MFA required for all system access?', mapping: CONTROL_MAPPINGS.MFA, owner: 'IT', priority: 'high' },
+                { id: 's3', text: 'Are data transmissions encrypted using TLS 1.2+?', mapping: CONTROL_MAPPINGS.ENCRYPTION_TRANSIT, owner: 'IT', priority: 'high' },
+                { id: 's4', text: 'Is sensitive data encrypted at rest (AES-256)?', mapping: CONTROL_MAPPINGS.ENCRYPTION_REST, owner: 'IT', priority: 'high' },
+                { id: 's5', text: 'Do you have a documented incident response plan?', mapping: CONTROL_MAPPINGS.INCIDENT_RESPONSE, owner: 'IT', priority: 'high' },
+                { id: 's6', text: 'Are security awareness training conducted annually?', mapping: CONTROL_MAPPINGS.SECURITY_TRAINING, owner: 'HR', priority: 'medium' },
+                { id: 's7', text: 'Do you perform vulnerability assessments and pen testing?', mapping: CONTROL_MAPPINGS.VULNERABILITY_MGMT, owner: 'IT', priority: 'high' },
+                { id: 's8', text: 'Are audit logs maintained for critical activities?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' },
+                { id: 's9', text: 'Is there a formal change management process?', mapping: CONTROL_MAPPINGS.CHANGE_MGMT, owner: 'IT', priority: 'medium' },
+                { id: 's10', text: 'Do you maintain an inventory of information assets?', mapping: CONTROL_MAPPINGS.ASSET_INVENTORY, owner: 'IT', priority: 'medium' }
+            ]},
+            { name: 'Availability (A)', description: 'System Availability', questions: [
+                { id: 'a1', text: 'Do you have documented backup and recovery procedures?', mapping: CONTROL_MAPPINGS.BACKUP_RECOVERY, owner: 'IT', priority: 'high' },
+                { id: 'a2', text: 'Are disaster recovery tests conducted annually?', mapping: null, owner: 'IT', priority: 'high' },
+                { id: 'a3', text: 'Do you have defined SLAs for system availability?', mapping: null, owner: 'Executive', priority: 'medium' },
+                { id: 'a4', text: 'Is there redundancy in critical infrastructure?', mapping: null, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Confidentiality (C)', description: 'Data Protection', questions: [
+                { id: 'c1', text: 'Is confidential information classified and labeled?', mapping: CONTROL_MAPPINGS.DATA_CLASSIFICATION, owner: 'HR', priority: 'high' },
+                { id: 'c2', text: 'Are there secure disposal controls?', mapping: CONTROL_MAPPINGS.MEDIA_DISPOSAL, owner: 'IT', priority: 'medium' },
+                { id: 'c3', text: 'Do you have NDAs with employees and contractors?', mapping: null, owner: 'HR', priority: 'high' },
+                { id: 'c4', text: 'Is access restricted based on job function?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' }
+            ]}
+        ]
+    },
+    HIPAA: {
+        name: 'HIPAA', fullName: 'Health Insurance Portability and Accountability Act', description: 'Privacy, Security, Breach Rules', color: '#10B981', icon: 'Lock',
+        categories: [
+            { name: 'Administrative Safeguards', description: '§164.308', questions: [
+                { id: 'ha1', text: 'Have you conducted a risk analysis of ePHI?', mapping: CONTROL_MAPPINGS.RISK_ASSESSMENT, owner: 'IT', priority: 'high' },
+                { id: 'ha2', text: 'Is there a designated Security Officer?', mapping: null, owner: 'Executive', priority: 'high' },
+                { id: 'ha3', text: 'Do you have workforce security procedures?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'HR', priority: 'high' },
+                { id: 'ha4', text: 'Are workforce members trained on HIPAA?', mapping: CONTROL_MAPPINGS.SECURITY_TRAINING, owner: 'HR', priority: 'high' },
+                { id: 'ha5', text: 'Do you have security incident procedures?', mapping: CONTROL_MAPPINGS.INCIDENT_RESPONSE, owner: 'IT', priority: 'high' },
+                { id: 'ha6', text: 'Is there a contingency plan with backup/DR?', mapping: CONTROL_MAPPINGS.BACKUP_RECOVERY, owner: 'IT', priority: 'high' },
+                { id: 'ha7', text: 'Do you have BAAs with all PHI vendors?', mapping: CONTROL_MAPPINGS.VENDOR_MGMT, owner: 'Executive', priority: 'high' }
+            ]},
+            { name: 'Technical Safeguards', description: '§164.312', questions: [
+                { id: 'ht1', text: 'Is unique user identification implemented?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 'ht2', text: 'Is ePHI encrypted during transmission?', mapping: CONTROL_MAPPINGS.ENCRYPTION_TRANSIT, owner: 'IT', priority: 'high' },
+                { id: 'ht3', text: 'Are audit controls recording ePHI access?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' },
+                { id: 'ht4', text: 'Is MFA used for remote access to ePHI?', mapping: CONTROL_MAPPINGS.MFA, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Physical Safeguards', description: '§164.310', questions: [
+                { id: 'hp1', text: 'Are there facility access controls for ePHI systems?', mapping: CONTROL_MAPPINGS.PHYSICAL_SECURITY, owner: 'IT', priority: 'high' },
+                { id: 'hp2', text: 'Do you have device disposal procedures?', mapping: CONTROL_MAPPINGS.MEDIA_DISPOSAL, owner: 'IT', priority: 'high' },
+                { id: 'hp3', text: 'Is hardware/media movement tracked?', mapping: CONTROL_MAPPINGS.ASSET_INVENTORY, owner: 'IT', priority: 'medium' }
+            ]}
+        ]
+    },
+    'PCI-DSS': {
+        name: 'PCI-DSS 4.0', fullName: 'Payment Card Industry DSS v4.0', description: 'Cardholder Data Environment', color: '#F59E0B', icon: 'Database',
+        categories: [
+            { name: 'Network Security', description: 'Requirements 1-2', questions: [
+                { id: 'pn1', text: 'Are firewall rules reviewed every 6 months?', mapping: null, owner: 'IT', priority: 'high' },
+                { id: 'pn2', text: 'Is the CDE properly segmented?', mapping: CONTROL_MAPPINGS.NETWORK_SEGMENTATION, owner: 'IT', priority: 'high' },
+                { id: 'pn3', text: 'Are vendor defaults changed before deployment?', mapping: CONTROL_MAPPINGS.CONFIG_MGMT, owner: 'IT', priority: 'high' },
+                { id: 'pn4', text: 'Is there a network diagram of CDE connections?', mapping: CONTROL_MAPPINGS.ASSET_INVENTORY, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Data Protection', description: 'Requirements 3-4', questions: [
+                { id: 'pd1', text: 'Is stored cardholder data encrypted/tokenized?', mapping: CONTROL_MAPPINGS.ENCRYPTION_REST, owner: 'IT', priority: 'high' },
+                { id: 'pd2', text: 'Is cardholder data encrypted in transmission?', mapping: CONTROL_MAPPINGS.ENCRYPTION_TRANSIT, owner: 'IT', priority: 'high' },
+                { id: 'pd3', text: 'Is PAN masked when displayed?', mapping: null, owner: 'IT', priority: 'high' },
+                { id: 'pd4', text: 'Is CVV/PIN never stored after authorization?', mapping: null, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Access Control', description: 'Requirements 7-9', questions: [
+                { id: 'pa1', text: 'Is access restricted on need-to-know basis?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 'pa2', text: 'Are unique IDs assigned to each person?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 'pa3', text: 'Is MFA implemented for remote/admin access?', mapping: CONTROL_MAPPINGS.MFA, owner: 'IT', priority: 'high' },
+                { id: 'pa4', text: 'Are strong passwords enforced (12+ chars)?', mapping: CONTROL_MAPPINGS.PASSWORD_POLICY, owner: 'IT', priority: 'high' },
+                { id: 'pa5', text: 'Is physical access to CDE restricted?', mapping: CONTROL_MAPPINGS.PHYSICAL_SECURITY, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Monitoring', description: 'Requirements 10-11', questions: [
+                { id: 'pm1', text: 'Is all access to cardholder data logged?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' },
+                { id: 'pm2', text: 'Are audit logs reviewed daily?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' },
+                { id: 'pm3', text: 'Are quarterly vulnerability scans performed?', mapping: CONTROL_MAPPINGS.VULNERABILITY_MGMT, owner: 'IT', priority: 'high' },
+                { id: 'pm4', text: 'Is annual penetration testing conducted?', mapping: CONTROL_MAPPINGS.VULNERABILITY_MGMT, owner: 'IT', priority: 'high' }
+            ]}
+        ]
+    },
+    CMMC: {
+        name: 'CMMC 2.0', fullName: 'Cybersecurity Maturity Model Certification', description: 'NIST SP 800-171', color: '#8B5CF6', icon: 'Building2',
+        categories: [
+            { name: 'Access Control (AC)', description: '3.1.x Controls', questions: [
+                { id: 'ca1', text: 'Are system access authorizations enforced?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 'ca2', text: 'Is CUI access limited to authorized users?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 'ca3', text: 'Is least privilege employed?', mapping: CONTROL_MAPPINGS.ACCESS_CONTROL, owner: 'IT', priority: 'high' },
+                { id: 'ca4', text: 'Is MFA required for privileged accounts?', mapping: CONTROL_MAPPINGS.MFA, owner: 'IT', priority: 'high' },
+                { id: 'ca5', text: 'Are remote sessions controlled/monitored?', mapping: null, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Audit & Accountability (AU)', description: '3.3.x Controls', questions: [
+                { id: 'cu1', text: 'Are system audit logs created and retained?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' },
+                { id: 'cu2', text: 'Are user actions uniquely traceable?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' },
+                { id: 'cu3', text: 'Are logs reviewed for indicators of compromise?', mapping: CONTROL_MAPPINGS.AUDIT_LOGGING, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Configuration Management (CM)', description: '3.4.x Controls', questions: [
+                { id: 'cc1', text: 'Are baseline configurations maintained?', mapping: CONTROL_MAPPINGS.CONFIG_MGMT, owner: 'IT', priority: 'high' },
+                { id: 'cc2', text: 'Is change management tracked?', mapping: CONTROL_MAPPINGS.CHANGE_MGMT, owner: 'IT', priority: 'high' },
+                { id: 'cc3', text: 'Are changes analyzed for security impact?', mapping: CONTROL_MAPPINGS.CHANGE_MGMT, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'Incident Response (IR)', description: '3.6.x Controls', questions: [
+                { id: 'ci1', text: 'Is there an operational IR capability?', mapping: CONTROL_MAPPINGS.INCIDENT_RESPONSE, owner: 'IT', priority: 'high' },
+                { id: 'ci2', text: 'Are incidents tracked and documented?', mapping: CONTROL_MAPPINGS.INCIDENT_RESPONSE, owner: 'IT', priority: 'high' },
+                { id: 'ci3', text: 'Is IR capability tested?', mapping: null, owner: 'IT', priority: 'high' }
+            ]},
+            { name: 'System Protection (SC)', description: '3.13.x Controls', questions: [
+                { id: 'cs1', text: 'Are communications monitored at boundaries?', mapping: CONTROL_MAPPINGS.NETWORK_SEGMENTATION, owner: 'IT', priority: 'high' },
+                { id: 'cs2', text: 'Is CUI encrypted during transmission?', mapping: CONTROL_MAPPINGS.ENCRYPTION_TRANSIT, owner: 'IT', priority: 'high' },
+                { id: 'cs3', text: 'Is portable storage encryption used for CUI?', mapping: CONTROL_MAPPINGS.ENCRYPTION_REST, owner: 'IT', priority: 'high' }
+            ]}
+        ]
+    }
+};
+
+const POLICY_TEMPLATES = {
+    common: [
+        { name: 'Information Security Policy', priority: 'Required' },
+        { name: 'Access Control Policy', priority: 'Required' },
+        { name: 'Incident Response Plan', priority: 'Required' },
+        { name: 'Risk Assessment Procedure', priority: 'Required' },
+        { name: 'Vulnerability Management Policy', priority: 'Required' },
+        { name: 'Security Awareness Training Program', priority: 'Required' },
+        { name: 'Change Management Policy', priority: 'Required' },
+        { name: 'Data Classification Policy', priority: 'Required' },
+        { name: 'Encryption Policy', priority: 'Required' }
+    ],
+    SOC2: [{ name: 'Trust Services Criteria Mapping', priority: 'Required' }, { name: 'System Description Document', priority: 'Required' }, { name: 'Business Continuity Plan', priority: 'Required' }],
+    HIPAA: [{ name: 'Notice of Privacy Practices', priority: 'Required' }, { name: 'BAA Template', priority: 'Required' }, { name: 'Breach Notification Procedures', priority: 'Required' }, { name: 'PHI Handling Procedures', priority: 'Required' }],
+    'PCI-DSS': [{ name: 'Cardholder Data Flow Diagram', priority: 'Required' }, { name: 'Network Segmentation Documentation', priority: 'Required' }, { name: 'Key Management Procedures', priority: 'Required' }, { name: 'PCI Scope Documentation', priority: 'Required' }],
+    CMMC: [{ name: 'System Security Plan (SSP)', priority: 'Required' }, { name: 'POA&M', priority: 'Required' }, { name: 'CUI Handling Procedures', priority: 'Required' }, { name: 'NIST 800-171 Control Matrix', priority: 'Required' }]
+};
+
+const RadarChart = ({ data, frameworks }) => {
+    const cx = 150, cy = 150, maxR = 110;
+    const getPoint = (angle, r) => ({ x: cx + r * Math.cos((angle - 90) * Math.PI / 180), y: cy + r * Math.sin((angle - 90) * Math.PI / 180) });
+    const step = 360 / frameworks.length;
+    const grid = [1,2,3,4,5].map(l => {
+        const pts = frameworks.map((_, i) => getPoint(i * step, (maxR / 5) * l)).map(p => `${p.x},${p.y}`).join(' ');
+        return <polygon key={l} points={pts} fill="none" stroke="#374151" strokeWidth="1" opacity="0.4" />;
+    });
+    const axes = frameworks.map((_, i) => {
+        const p = getPoint(i * step, maxR);
+        return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#374151" strokeWidth="1" opacity="0.4" />;
+    });
+    const dataPts = frameworks.map((fw, i) => getPoint(i * step, (data[fw] || 0) / 100 * maxR));
+    const labels = frameworks.map((fw, i) => {
+        const p = getPoint(i * step, maxR + 22);
+        return <g key={fw}><text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill={FRAMEWORK_DATA[fw].color} fontSize="11" fontWeight="600">{FRAMEWORK_DATA[fw].name}</text><text x={p.x} y={p.y + 12} textAnchor="middle" fill="#9CA3AF" fontSize="9">{Math.round(data[fw] || 0)}%</text></g>;
+    });
+    return (
+        <svg viewBox="0 0 300 300" className="w-full h-full">
+            {grid}{axes}
+            <polygon points={dataPts.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(59,130,246,0.2)" stroke="#3B82F6" strokeWidth="2" />
+            {dataPts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="5" fill={FRAMEWORK_DATA[frameworks[i]].color} stroke="#fff" strokeWidth="2" />)}
+            {labels}
+        </svg>
+    );
+};
+
+const ProgressRing = ({ progress, color, size = 70 }) => {
+    const sw = 6, r = (size - sw) / 2, c = r * 2 * Math.PI, o = c - (progress / 100) * c;
+    return (
+        <svg width={size} height={size} className="transform -rotate-90">
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#374151" strokeWidth={sw} />
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={c} strokeDashoffset={o} strokeLinecap="round" className="transition-all duration-500" />
+        </svg>
+    );
+};
+
+const QuestionCard = ({ question, answer, onAnswer, syncedFrom }) => (
+    <div className={`bg-gray-800/50 border rounded-lg p-4 transition-all ${answer === true ? 'border-green-500/50 bg-green-900/10' : answer === false ? 'border-red-500/50 bg-red-900/10' : 'border-gray-700 hover:border-gray-600'}`}>
+        <div className="flex items-start gap-3">
+            <div className="flex-1">
+                <p className="text-gray-200 text-sm leading-relaxed">{question.text}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${question.priority === 'high' ? 'bg-red-900/50 text-red-300' : 'bg-yellow-900/50 text-yellow-300'}`}>
+                        {question.priority === 'high' && <Icon name="AlertTriangle" className="w-3 h-3" />}{question.priority}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                        <Icon name={question.owner === 'IT' ? 'Monitor' : question.owner === 'HR' ? 'Users' : 'Briefcase'} className="w-3 h-3" />{question.owner}
+                    </span>
+                    {question.mapping && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-blue-900/50 text-blue-300"><Icon name="RefreshCw" className="w-3 h-3" />Cross-mapped</span>}
+                    {syncedFrom && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-purple-900/50 text-purple-300"><Icon name="Layers" className="w-3 h-3" />From {syncedFrom}</span>}
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <button onClick={() => onAnswer(true)} className={`p-2 rounded-lg transition-all ${answer === true ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-green-600/20 hover:text-green-400'}`}><Icon name="CheckCircle2" className="w-5 h-5" /></button>
+                <button onClick={() => onAnswer(false)} className={`p-2 rounded-lg transition-all ${answer === false ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-red-600/20 hover:text-red-400'}`}><Icon name="XCircle" className="w-5 h-5" /></button>
+            </div>
+        </div>
+    </div>
+);
+
+const CategoryAccordion = ({ category, answers, onAnswer, getSyncSource, expanded, onToggle }) => {
+    const answered = category.questions.filter(q => answers[q.id] !== undefined).length;
+    const yes = category.questions.filter(q => answers[q.id] === true).length;
+    const progress = category.questions.length > 0 ? (answered / category.questions.length) * 100 : 0;
+    const compliance = answered > 0 ? (yes / answered) * 100 : 0;
+    return (
+        <div className="border border-gray-700 rounded-lg overflow-hidden">
+            <button onClick={onToggle} className="w-full flex items-center justify-between p-4 bg-gray-800/50 hover:bg-gray-800 transition-colors">
+                <div className="flex items-center gap-3">
+                    <Icon name={expanded ? 'ChevronDown' : 'ChevronRight'} className="w-5 h-5 text-gray-400" />
+                    <div className="text-left"><h3 className="font-semibold text-gray-200">{category.name}</h3><p className="text-xs text-gray-500">{category.description}</p></div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right">
+                        <p className="text-sm text-gray-400">{answered}/{category.questions.length}</p>
+                        <div className="flex items-center gap-2">
+                            <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all" style={{ width: `${progress}%` }} /></div>
+                            <span className={`text-xs font-medium ${compliance >= 80 ? 'text-green-400' : compliance >= 50 ? 'text-yellow-400' : compliance > 0 ? 'text-red-400' : 'text-gray-500'}`}>{answered > 0 ? `${Math.round(compliance)}%` : '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            </button>
+            {expanded && <div className="p-4 space-y-3 bg-gray-900/30">{category.questions.map(q => <QuestionCard key={q.id} question={q} answer={answers[q.id]} onAnswer={(v) => onAnswer(q.id, v, q.mapping)} syncedFrom={getSyncSource(q.id, q.mapping)} />)}</div>}
+        </div>
+    );
+};
+
+const ActionItems = ({ answers, selectedFramework }) => {
+    const fw = FRAMEWORK_DATA[selectedFramework];
+    const items = useMemo(() => {
+        const r = { IT: [], HR: [], Executive: [] };
+        fw.categories.forEach(c => c.questions.forEach(q => { if (answers[q.id] === false) r[q.owner].push({ ...q, category: c.name }); }));
+        Object.keys(r).forEach(o => r[o].sort((a, b) => (a.priority === 'high' ? 0 : 1) - (b.priority === 'high' ? 0 : 1)));
+        return r;
+    }, [answers, fw]);
+    const cfg = { IT: { icon: 'Monitor', color: '#60A5FA', label: 'IT Team' }, HR: { icon: 'Users', color: '#34D399', label: 'HR / Admin' }, Executive: { icon: 'Briefcase', color: '#A78BFA', label: 'Executive Leadership' } };
+    return (
+        <div className="space-y-4">
+            {Object.entries(cfg).map(([owner, c]) => (
+                <div key={owner} className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+                    <div className="flex items-center gap-3 p-4 border-b border-gray-700" style={{ backgroundColor: `${c.color}15` }}>
+                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${c.color}25` }}><Icon name={c.icon} className="w-5 h-5" style={{ color: c.color }} /></div>
+                        <div><h3 className="font-semibold text-gray-200">{c.label}</h3><p className="text-xs text-gray-500">{items[owner].length} items</p></div>
+                    </div>
+                    <div className="p-4">{items[owner].length === 0 ? <p className="text-gray-500 text-sm text-center py-4">No outstanding items</p> : <ul className="space-y-2">{items[owner].map((item, i) => <li key={i} className="flex items-start gap-3 p-3 bg-gray-900/50 rounded-lg"><span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${item.priority === 'high' ? 'bg-red-500' : 'bg-yellow-500'}`} /><div className="flex-1"><p className="text-sm text-gray-300">{item.text}</p><p className="text-xs text-gray-500 mt-1">{item.category}</p></div></li>)}</ul>}</div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const PolicyTemplates = ({ selectedFramework }) => {
+    const [exp, setExp] = useState({ common: true, specific: true });
+    const common = POLICY_TEMPLATES.common;
+    const specific = POLICY_TEMPLATES[selectedFramework] || [];
+    return (
+        <div className="space-y-4">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+                <button onClick={() => setExp(p => ({ ...p, common: !p.common }))} className="w-full flex items-center justify-between p-4 hover:bg-gray-800 transition-colors">
+                    <div className="flex items-center gap-3"><Icon name={exp.common ? 'ChevronDown' : 'ChevronRight'} className="w-5 h-5 text-gray-400" /><Icon name="FileText" className="w-5 h-5" style={{ color: '#60A5FA' }} /><div className="text-left"><h3 className="font-semibold text-gray-200">Common Templates</h3><p className="text-xs text-gray-500">Required across frameworks</p></div></div>
+                    <span className="px-2 py-1 rounded bg-blue-900/50 text-blue-300 text-xs font-medium">{common.length}</span>
+                </button>
+                {exp.common && <div className="p-4 border-t border-gray-700"><div className="grid gap-2">{common.map((p, i) => <div key={i} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg"><div className="flex items-center gap-3"><Icon name="FileText" className="w-4 h-4 text-gray-500" /><span className="text-sm text-gray-300">{p.name}</span></div><div className="flex items-center gap-2"><span className="px-2 py-0.5 rounded text-xs bg-red-900/50 text-red-300">{p.priority}</span><button className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-gray-200"><Icon name="Download" className="w-4 h-4" /></button></div></div>)}</div></div>}
+            </div>
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+                <button onClick={() => setExp(p => ({ ...p, specific: !p.specific }))} className="w-full flex items-center justify-between p-4 hover:bg-gray-800 transition-colors">
+                    <div className="flex items-center gap-3"><Icon name={exp.specific ? 'ChevronDown' : 'ChevronRight'} className="w-5 h-5 text-gray-400" /><Icon name="ClipboardList" className="w-5 h-5" style={{ color: '#A78BFA' }} /><div className="text-left"><h3 className="font-semibold text-gray-200">{FRAMEWORK_DATA[selectedFramework].name} Specific</h3><p className="text-xs text-gray-500">Framework-specific docs</p></div></div>
+                    <span className="px-2 py-1 rounded bg-purple-900/50 text-purple-300 text-xs font-medium">{specific.length}</span>
+                </button>
+                {exp.specific && <div className="p-4 border-t border-gray-700"><div className="grid gap-2">{specific.map((p, i) => <div key={i} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg"><div className="flex items-center gap-3"><Icon name="FileText" className="w-4 h-4 text-gray-500" /><span className="text-sm text-gray-300">{p.name}</span></div><div className="flex items-center gap-2"><span className="px-2 py-0.5 rounded text-xs bg-red-900/50 text-red-300">{p.priority}</span><button className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-gray-200"><Icon name="Download" className="w-4 h-4" /></button></div></div>)}</div></div>}
+            </div>
+        </div>
+    );
+};
+
+function App() {
+    const [selectedFw, setSelectedFw] = useState('SOC2');
+    const [answers, setAnswers] = useState({});
+    const [mappings, setMappings] = useState({});
+    const [expanded, setExpanded] = useState({});
+    const [tab, setTab] = useState('assessment');
+    const frameworks = ['SOC2', 'HIPAA', 'PCI-DSS', 'CMMC'];
+
+    useEffect(() => { const a = localStorage.getItem('lsc_answers'), m = localStorage.getItem('lsc_mappings'); if (a) setAnswers(JSON.parse(a)); if (m) setMappings(JSON.parse(m)); }, []);
+    useEffect(() => { localStorage.setItem('lsc_answers', JSON.stringify(answers)); localStorage.setItem('lsc_mappings', JSON.stringify(mappings)); }, [answers, mappings]);
+
+    const handleAnswer = useCallback((qid, val, mapId) => {
+        setAnswers(p => ({ ...p, [qid]: val }));
+        if (mapId) setMappings(p => ({ ...p, [mapId]: { value: val, source: selectedFw, qid } }));
+    }, [selectedFw]);
+
+    const getSyncSource = useCallback((qid, mapId) => {
+        if (!mapId || !mappings[mapId] || mappings[mapId].qid === qid) return null;
+        return FRAMEWORK_DATA[mappings[mapId].source]?.name;
+    }, [mappings]);
+
+    const scores = useMemo(() => {
+        const s = {};
+        frameworks.forEach(fw => {
+            let total = 0, answered = 0, yes = 0;
+            FRAMEWORK_DATA[fw].categories.forEach(c => c.questions.forEach(q => {
+                total++;
+                if (answers[q.id] !== undefined) { answered++; if (answers[q.id]) yes++; }
+                else if (q.mapping && mappings[q.mapping]) { answered++; if (mappings[q.mapping].value) yes++; }
+            }));
+            s[fw] = { total, answered, yes, readiness: answered > 0 ? (yes / answered) * 100 : 0, completion: total > 0 ? (answered / total) * 100 : 0 };
+        });
+        return s;
+    }, [answers, mappings]);
+
+    const getEffective = useCallback(() => {
+        const e = { ...answers };
+        FRAMEWORK_DATA[selectedFw].categories.forEach(c => c.questions.forEach(q => {
+            if (q.mapping && mappings[q.mapping] && e[q.id] === undefined) e[q.id] = mappings[q.mapping].value;
+        }));
+        return e;
+    }, [answers, mappings, selectedFw]);
+
+    const effective = getEffective();
+    const current = FRAMEWORK_DATA[selectedFw];
+    const score = scores[selectedFw];
+
+    return (
+        <div className="min-h-screen bg-gray-950 text-gray-100">
+            <header className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 py-3">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                            <a href="https://www.lydellsecurity.com" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"><Icon name="Home" className="w-4 h-4" /><span className="text-sm hidden sm:inline">Back</span></a>
+                            <div className="w-px h-6 bg-gray-700" />
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600"><Icon name="Shield" className="w-5 h-5 text-white" /></div>
+                                <div><h1 className="text-base sm:text-lg font-bold text-white">Compliance Dashboard</h1><p className="text-xs text-gray-500 hidden sm:block">Lydell Security</p></div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => { if (confirm('Reset all data?')) { setAnswers({}); setMappings({}); localStorage.removeItem('lsc_answers'); localStorage.removeItem('lsc_mappings'); }}} className="px-3 py-1.5 text-xs text-gray-400 hover:text-red-400 bg-gray-800 hover:bg-gray-700 rounded-lg">Reset</button>
+                            <a href="https://www.lydellsecurity.com/contact" className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg"><span>Get Help</span><Icon name="ExternalLink" className="w-3 h-3" /></a>
+                        </div>
+                    </div>
+                </div>
+                <div className="max-w-7xl mx-auto px-4 py-2 border-t border-gray-800 overflow-x-auto">
+                    <div className="flex items-center gap-2">
+                        {frameworks.map(fw => (
+                            <button key={fw} onClick={() => setSelectedFw(fw)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap text-sm ${selectedFw === fw ? 'bg-gray-800 border-2' : 'bg-gray-900/50 border border-gray-700 hover:bg-gray-800/50'}`} style={{ borderColor: selectedFw === fw ? FRAMEWORK_DATA[fw].color : undefined }}>
+                                <Icon name={FRAMEWORK_DATA[fw].icon} className="w-4 h-4" style={{ color: FRAMEWORK_DATA[fw].color }} />
+                                <span className="font-medium">{FRAMEWORK_DATA[fw].name}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${scores[fw].readiness >= 80 ? 'bg-green-900/50 text-green-400' : scores[fw].readiness >= 50 ? 'bg-yellow-900/50 text-yellow-400' : scores[fw].readiness > 0 ? 'bg-red-900/50 text-red-400' : 'bg-gray-800 text-gray-500'}`}>{scores[fw].answered > 0 ? `${Math.round(scores[fw].readiness)}%` : '-'}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </header>
+            <main className="max-w-7xl mx-auto px-4 py-6">
+                <div className="grid grid-cols-12 gap-4 mb-6">
+                    <div className="col-span-12 lg:col-span-3 bg-gray-900/50 border border-gray-800 rounded-xl p-5">
+                        <h2 className="font-semibold text-gray-300 mb-4">Current Assessment</h2>
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <ProgressRing progress={score.readiness} color={current.color} />
+                                <div className="absolute inset-0 flex items-center justify-center"><span className="text-lg font-bold" style={{ color: current.color }}>{Math.round(score.readiness)}%</span></div>
+                            </div>
+                            <div>
+                                <p className="text-xl font-bold text-white">{current.name}</p>
+                                <p className="text-sm text-gray-500">{score.answered}/{score.total} questions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-span-12 lg:col-span-5 bg-gray-900/50 border border-gray-800 rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-2"><h2 className="font-semibold text-gray-300">Cross-Framework View</h2><Icon name="TrendingUp" className="w-5 h-5 text-gray-500" /></div>
+                        <div className="h-56"><RadarChart data={Object.fromEntries(frameworks.map(fw => [fw, scores[fw].readiness]))} frameworks={frameworks} /></div>
+                    </div>
+                    <div className="col-span-12 lg:col-span-4 space-y-2">
+                        {frameworks.map(fw => (
+                            <div key={fw} onClick={() => setSelectedFw(fw)} className={`bg-gray-900/50 border rounded-lg p-3 cursor-pointer transition-all ${selectedFw === fw ? 'border-gray-600' : 'border-gray-800 hover:border-gray-700'}`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2"><div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: FRAMEWORK_DATA[fw].color }} /><div><p className="font-medium text-gray-200 text-sm">{FRAMEWORK_DATA[fw].name}</p><p className="text-xs text-gray-500">{scores[fw].answered}/{scores[fw].total}</p></div></div>
+                                    <div className="text-right"><p className="text-base font-bold" style={{ color: FRAMEWORK_DATA[fw].color }}>{scores[fw].answered > 0 ? `${Math.round(scores[fw].readiness)}%` : '-'}</p></div>
+                                </div>
+                                <div className="mt-2 w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${scores[fw].completion}%`, backgroundColor: FRAMEWORK_DATA[fw].color }} /></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                {Object.keys(mappings).length > 0 && <div className="mb-6 flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-800/50 rounded-xl"><Icon name="Info" className="w-5 h-5" style={{ color: '#60A5FA' }} /><p className="text-sm text-blue-300"><span className="font-semibold">Cross-Mapping:</span> {Object.keys(mappings).length} controls synced across frameworks</p></div>}
+                <div className="flex gap-2 mb-6 border-b border-gray-800 pb-3 overflow-x-auto">
+                    {[{ id: 'assessment', label: 'Assessment', icon: 'ClipboardList' }, { id: 'actions', label: 'Actions', icon: 'AlertTriangle' }, { id: 'templates', label: 'Templates', icon: 'FileText' }].map(t => (
+                        <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${tab === t.id ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'}`}><Icon name={t.icon} className="w-4 h-4" />{t.label}</button>
+                    ))}
+                </div>
+                {tab === 'assessment' && (
+                    <div className="space-y-4 fade-in">
+                        <div className="flex items-center justify-between mb-4">
+                            <div><h2 className="text-lg font-semibold text-white">{current.fullName}</h2><p className="text-sm text-gray-500">{current.description}</p></div>
+                            <button onClick={() => { const all = current.categories.every(c => expanded[c.name]); const n = {}; current.categories.forEach(c => n[c.name] = !all); setExpanded(p => ({ ...p, ...n })); }} className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-200 bg-gray-800 hover:bg-gray-700 rounded-lg">{current.categories.every(c => expanded[c.name]) ? 'Collapse' : 'Expand'}</button>
+                        </div>
+                        {current.categories.map(c => <CategoryAccordion key={c.name} category={c} answers={effective} onAnswer={handleAnswer} getSyncSource={getSyncSource} expanded={expanded[c.name] ?? false} onToggle={() => setExpanded(p => ({ ...p, [c.name]: !p[c.name] }))} />)}
+                    </div>
+                )}
+                {tab === 'actions' && <div className="fade-in"><div className="mb-4"><h2 className="text-lg font-semibold text-white">Role-Based Actions</h2><p className="text-sm text-gray-500">Remediation for {current.name}</p></div><ActionItems answers={effective} selectedFramework={selectedFw} /></div>}
+                {tab === 'templates' && <div className="fade-in"><div className="mb-4"><h2 className="text-lg font-semibold text-white">Policy Templates</h2><p className="text-sm text-gray-500">Required docs for {current.name}</p></div><PolicyTemplates selectedFramework={selectedFw} /></div>}
+            </main>
+            <section className="max-w-7xl mx-auto px-4 py-10">
+                <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-800/50 rounded-2xl p-6 text-center">
+                    <h2 className="text-xl font-bold text-white mb-2">Need Expert Compliance Help?</h2>
+                    <p className="text-gray-300 mb-4 max-w-xl mx-auto text-sm">Lydell Security provides SOC 2, HIPAA, PCI-DSS, and CMMC compliance consulting.</p>
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                        <a href="https://www.lydellsecurity.com/contact" className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm">Schedule Consultation<Icon name="ExternalLink" className="w-4 h-4" /></a>
+                        <a href="tel:+1-770-243-9064" className="inline-flex items-center gap-2 px-5 py-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg text-sm">770-243-9064</a>
+                    </div>
+                </div>
+            </section>
+            <footer className="border-t border-gray-800 py-4">
+                <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
+                    <span>© 2026 Lydell Security LLC • <a href="https://www.lydellsecurity.com" className="hover:text-gray-300">lydellsecurity.com</a></span>
+                    <span>SOC 2 • HIPAA • PCI-DSS 4.0 • CMMC 2.0</span>
+                </div>
+            </footer>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
