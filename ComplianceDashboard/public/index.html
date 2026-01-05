@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Readiness Platform | Lydell Security</title>
+    <meta name="description" content="Multi-framework compliance assessment - SOC2, HIPAA, PCI-DSS 4.0.1, CMMC 2.0 Level 2. Validated against 2025/2026 requirements.">
+    <link rel="icon" href="https://static.wixstatic.com/media/61285b_156bd3d39be3491c8967f76dd5d68cc2~mv2.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body{font-family:'DM Sans',sans-serif}
+        *{scrollbar-width:thin;scrollbar-color:#334155 #0f172a}
+        .fade-in{animation:fadeIn .4s ease-out}
+        .slide-up{animation:slideUp .5s ease-out}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .gradient-text{background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 50%,#ec4899 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .glass{background:rgba(15,23,42,.85);backdrop-filter:blur(12px);border:1px solid rgba(51,65,85,.5)}
+        .btn-primary{background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);transition:all .3s}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(59,130,246,.4)}
+        
+        /* Print Report Metadata - Hidden on screen */
+        .print-only{display:none !important}
+        .print-header{display:none !important}
+        .print-footer{display:none !important}
+        .page-break-before{break-before:auto}
+        .page-break-after{break-after:auto}
+        
+        /* Print-Optimized Styles */
+        @media print {
+            /* Force white background and black text for readability */
+            *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+            body{background:#fff !important;color:#1e293b !important;font-size:11pt !important;line-height:1.4 !important}
+            
+            /* Hide interactive UI elements */
+            .no-print,
+            header,
+            .glass,
+            button:not(.print-keep),
+            .btn-primary,
+            [class*="hover:"],
+            .overflow-x-auto,
+            nav,
+            .sticky,
+            .fixed,
+            .modal,
+            [role="dialog"],
+            .fade-in,
+            .slide-up{display:none !important}
+            
+            /* Show print-only elements */
+            .print-only{display:block !important}
+            .print-header{display:flex !important;justify-content:space-between;align-items:center;padding:20px 0;border-bottom:3px solid #3b82f6;margin-bottom:30px}
+            .print-footer{display:block !important;position:fixed;bottom:0;left:0;right:0;padding:10px 40px;border-top:1px solid #e2e8f0;font-size:9pt;color:#64748b;text-align:center}
+            
+            /* Page break controls */
+            .page-break-before{break-before:page !important;page-break-before:always !important}
+            .page-break-after{break-after:page !important;page-break-after:always !important}
+            .avoid-break{break-inside:avoid !important;page-break-inside:avoid !important}
+            
+            /* Executive Summary styling */
+            .exec-summary{background:#f8fafc !important;border:2px solid #3b82f6 !important;border-radius:12px !important;padding:24px !important;margin-bottom:30px !important}
+            
+            /* Score cards */
+            .score-card{background:#fff !important;border:1px solid #e2e8f0 !important;border-radius:8px !important;padding:16px !important;text-align:center !important}
+            .score-card .score-value{font-size:28pt !important;font-weight:700 !important}
+            .score-card.compliant .score-value{color:#22c55e !important}
+            .score-card.warning .score-value{color:#f59e0b !important}
+            .score-card.critical .score-value{color:#ef4444 !important}
+            
+            /* Charts - ensure they print properly */
+            svg{max-width:100% !important;height:auto !important}
+            .radar-chart{width:300px !important;height:300px !important;margin:0 auto !important}
+            
+            /* Remediation roadmap table */
+            .remediation-table{width:100% !important;border-collapse:collapse !important;margin-top:20px !important}
+            .remediation-table th{background:#3b82f6 !important;color:#fff !important;padding:12px !important;text-align:left !important;font-weight:600 !important}
+            .remediation-table td{padding:10px 12px !important;border-bottom:1px solid #e2e8f0 !important}
+            .remediation-table tr:nth-child(even){background:#f8fafc !important}
+            
+            /* Priority badges */
+            .priority-high{background:#fef2f2 !important;color:#dc2626 !important;padding:2px 8px !important;border-radius:4px !important;font-size:9pt !important}
+            .priority-medium{background:#fffbeb !important;color:#d97706 !important;padding:2px 8px !important;border-radius:4px !important;font-size:9pt !important}
+            
+            /* Framework section headers */
+            .framework-header{background:#1e293b !important;color:#fff !important;padding:12px 20px !important;border-radius:8px 8px 0 0 !important;margin-top:30px !important}
+            
+            /* Control reference tags */
+            .control-ref{background:#eff6ff !important;color:#1d4ed8 !important;padding:2px 6px !important;border-radius:4px !important;font-size:8pt !important;font-family:monospace !important}
+            
+            /* Layout adjustments */
+            .max-w-7xl{max-width:100% !important;padding:0 40px !important}
+            .grid{display:block !important}
+            .lg\\:grid-cols-3>*{width:100% !important;margin-bottom:20px !important}
+            
+            /* Page margins */
+            @page{margin:0.75in 0.5in;size:letter portrait}
+            @page:first{margin-top:0.5in}
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useCallback,useEffect,useRef}=React;
+
+const CONFIG={
+    companyName:'Lydell Security',
+    contactUrl:'https://www.lydellsecurity.com/contact',
+    phone:'770-243-9064',
+    version:'2.0 - Validated Jan 2026',
+    pricing:{
+        free:{id:'free',name:'Free',price:0,features:['1 Framework','Basic Assessment','5 Questions per Category']},
+        pro:{id:'pro',name:'Professional',price:49,features:['All 4 Frameworks','Unlimited Questions','PDF Reports','Cross-Mapping','Action Plans']},
+        team:{id:'team',name:'Team',price:199,features:['Everything in Pro','10 Team Members','Progress Tracking','Audit Trail','Priority Support']},
+        enterprise:{id:'enterprise',name:'Enterprise',price:499,features:['Unlimited Users','White-Label','Custom Frameworks','API Access','Dedicated Support']}
+    }
+};
+
+const Icon=({name,className='',style={}})=>{
+    const ref=useRef(null);
+    useEffect(()=>{
+        if(ref.current&&lucide.icons[name]){
+            ref.current.innerHTML='';
+            const icon=lucide.createElement(lucide.icons[name]);
+            if(className)icon.setAttribute('class',className);
+            Object.entries(style).forEach(([k,v])=>icon.style[k]=v);
+            ref.current.appendChild(icon);
+        }
+    },[name,className]);
+    return <span ref={ref} className="inline-flex items-center justify-center"/>;
+};
+
+const CM={MFA:'mfa',ACCESS:'access',ENC_TRANSIT:'enc_t',ENC_REST:'enc_r',IR:'ir',TRAINING:'train',VULN:'vuln',AUDIT:'audit',CHANGE:'change',VENDOR:'vendor',BACKUP:'backup',PHYSICAL:'phys',NETWORK:'net',RISK:'risk',ASSET:'asset',PASSWORD:'pass',DATA_CLASS:'data',ENDPOINT:'endpoint',LOGGING:'log',CONTINGENCY:'conting',MEDIA:'media',PERSONNEL:'personnel',CONFIG:'config'};
+
+// VALIDATED FRAMEWORKS - Updated January 2026
+const FRAMEWORKS={
+    SOC2:{
+        name:'SOC 2',fullName:'SOC 2 Type II',desc:'AICPA 2017 TSC + 2022 PoF Updates',color:'#3B82F6',icon:'Shield',tier:'free',
+        categories:[
+            {name:'Control Environment (CC1)',desc:'Integrity & Ethics',questions:[
+                {id:'s1',text:'Does the organization demonstrate commitment to integrity and ethical values?',map:null,owner:'Executive',priority:'high',ref:'CC1.1'},
+                {id:'s2',text:'Does the board exercise oversight of internal control development?',map:null,owner:'Executive',priority:'high',ref:'CC1.2'},
+                {id:'s3',text:'Has management established structures with clear authority and responsibility?',map:null,owner:'Executive',priority:'high',ref:'CC1.3'},
+                {id:'s4',text:'Does the organization attract, develop, and retain competent individuals?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'CC1.4'},
+                {id:'s5',text:'Are individuals held accountable for internal control responsibilities?',map:null,owner:'Executive',priority:'high',ref:'CC1.5'}
+            ]},
+            {name:'Communication & Information (CC2)',desc:'Policies & Procedures',questions:[
+                {id:'s6',text:'Does the organization obtain relevant quality information to support internal control?',map:null,owner:'IT',priority:'high',ref:'CC2.1'},
+                {id:'s7',text:'Is information communicated internally to support internal control?',map:null,owner:'Executive',priority:'high',ref:'CC2.2'},
+                {id:'s8',text:'Is there external communication regarding internal control matters?',map:null,owner:'Executive',priority:'medium',ref:'CC2.3'}
+            ]},
+            {name:'Risk Assessment (CC3)',desc:'Risk Analysis',questions:[
+                {id:'s9',text:'Are objectives specified with sufficient clarity to identify risks?',map:CM.RISK,owner:'IT',priority:'high',ref:'CC3.1'},
+                {id:'s10',text:'Are risks to achievement of objectives identified and analyzed?',map:CM.RISK,owner:'IT',priority:'high',ref:'CC3.2'},
+                {id:'s11',text:'Is potential for fraud considered in assessing risks?',map:CM.RISK,owner:'IT',priority:'high',ref:'CC3.3'},
+                {id:'s12',text:'Are changes that could impact internal control identified and assessed?',map:CM.RISK,owner:'IT',priority:'high',ref:'CC3.4'}
+            ]},
+            {name:'Monitoring Activities (CC4)',desc:'Control Monitoring',questions:[
+                {id:'s13',text:'Are ongoing/separate evaluations of controls performed?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'CC4.1'},
+                {id:'s14',text:'Are internal control deficiencies evaluated and communicated timely?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'CC4.2'}
+            ]},
+            {name:'Control Activities (CC5)',desc:'Policies in Action',questions:[
+                {id:'s15',text:'Are control activities selected that mitigate risks?',map:null,owner:'IT',priority:'high',ref:'CC5.1'},
+                {id:'s16',text:'Are general controls over technology selected and developed?',map:null,owner:'IT',priority:'high',ref:'CC5.2'},
+                {id:'s17',text:'Are controls deployed through documented policies and procedures?',map:null,owner:'IT',priority:'high',ref:'CC5.3'}
+            ]},
+            {name:'Logical & Physical Access (CC6)',desc:'Access Controls',questions:[
+                {id:'s18',text:'Is logical access security implemented to protect assets?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'CC6.1'},
+                {id:'s19',text:'Is new user access registration and authorization implemented?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'CC6.2'},
+                {id:'s20',text:'Is access removal for terminated users performed timely?',map:CM.ACCESS,owner:'HR',priority:'high',ref:'CC6.3'},
+                {id:'s21',text:'Is MFA implemented for system access including remote connections?',map:CM.MFA,owner:'IT',priority:'high',ref:'CC6.1'},
+                {id:'s22',text:'Are physical access restrictions implemented for facilities?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'CC6.4'},
+                {id:'s23',text:'Are logical access controls protecting against external threats?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'CC6.5'},
+                {id:'s24',text:'Is data classified with access restrictions enforced?',map:CM.DATA_CLASS,owner:'IT',priority:'high',ref:'CC6.6'},
+                {id:'s25',text:'Is data-in-transit encrypted using TLS 1.2 or higher?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'CC6.7'},
+                {id:'s26',text:'Is sensitive data encrypted at rest using AES-256?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'CC6.7'},
+                {id:'s27',text:'Are system changes controlled through formal change management?',map:CM.CHANGE,owner:'IT',priority:'high',ref:'CC6.8'}
+            ]},
+            {name:'System Operations (CC7)',desc:'Security Operations',questions:[
+                {id:'s28',text:'Are security events detected and monitored?',map:CM.LOGGING,owner:'IT',priority:'high',ref:'CC7.1'},
+                {id:'s29',text:'Are anomalies monitored and analyzed for incidents?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'CC7.2'},
+                {id:'s30',text:'Is there a process to evaluate and respond to security incidents?',map:CM.IR,owner:'IT',priority:'high',ref:'CC7.3'},
+                {id:'s31',text:'Is there a documented and tested incident response plan?',map:CM.IR,owner:'IT',priority:'high',ref:'CC7.4'},
+                {id:'s32',text:'Is there a recovery plan to restore availability after incidents?',map:CM.BACKUP,owner:'IT',priority:'high',ref:'CC7.5'}
+            ]},
+            {name:'Change Management (CC8)',desc:'System Changes',questions:[
+                {id:'s33',text:'Is there a formal process for authorizing, testing, and implementing changes?',map:CM.CHANGE,owner:'IT',priority:'high',ref:'CC8.1'}
+            ]},
+            {name:'Risk Mitigation (CC9)',desc:'Vendor & Business Risk',questions:[
+                {id:'s34',text:'Are risk mitigation activities identified and developed?',map:CM.RISK,owner:'IT',priority:'high',ref:'CC9.1'},
+                {id:'s35',text:'Are vendor and business partner risks assessed and managed?',map:CM.VENDOR,owner:'Executive',priority:'high',ref:'CC9.2'}
+            ]},
+            {name:'Availability (A1)',desc:'System Uptime',questions:[
+                {id:'a1',text:'Are system availability commitments defined and maintained?',map:null,owner:'IT',priority:'high',ref:'A1.1'},
+                {id:'a2',text:'Are backup and recovery procedures documented and tested?',map:CM.BACKUP,owner:'IT',priority:'high',ref:'A1.2'},
+                {id:'a3',text:'Is disaster recovery tested at least annually?',map:CM.CONTINGENCY,owner:'IT',priority:'high',ref:'A1.2'},
+                {id:'a4',text:'Is redundancy implemented for critical infrastructure?',map:null,owner:'IT',priority:'high',ref:'A1.3'}
+            ]},
+            {name:'Confidentiality (C1)',desc:'Data Protection',questions:[
+                {id:'c1',text:'Is confidential information classified and labeled appropriately?',map:CM.DATA_CLASS,owner:'HR',priority:'high',ref:'C1.1'},
+                {id:'c2',text:'Are secure disposal controls in place for sensitive media?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'C1.2'},
+                {id:'c3',text:'Are NDAs in place with employees and contractors?',map:null,owner:'HR',priority:'high',ref:'C1.1'},
+                {id:'c4',text:'Is access restricted based on least privilege?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'C1.1'}
+            ]},
+            {name:'Processing Integrity (PI1)',desc:'Data Accuracy',questions:[
+                {id:'pi1',text:'Are data inputs validated for completeness and accuracy?',map:null,owner:'IT',priority:'high',ref:'PI1.1'},
+                {id:'pi2',text:'Are system processing outputs verified for accuracy?',map:null,owner:'IT',priority:'medium',ref:'PI1.2'},
+                {id:'pi3',text:'Are data processing errors identified and corrected timely?',map:null,owner:'IT',priority:'high',ref:'PI1.3'}
+            ]},
+            {name:'Security Testing',desc:'Vulnerability Management',questions:[
+                {id:'v1',text:'Are vulnerability assessments performed at least quarterly?',map:CM.VULN,owner:'IT',priority:'high',ref:'CC7.1'},
+                {id:'v2',text:'Is annual penetration testing conducted?',map:CM.VULN,owner:'IT',priority:'high',ref:'CC7.1'},
+                {id:'v3',text:'Is a complete asset inventory maintained?',map:CM.ASSET,owner:'IT',priority:'high',ref:'CC6.1'},
+                {id:'v4',text:'Is security awareness training conducted annually?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'CC1.4'}
+            ]}
+        ]
+    },
+    HIPAA:{
+        name:'HIPAA',fullName:'HIPAA Security Rule',desc:'45 CFR §164.308-316 + 2025 NPRM',color:'#10B981',icon:'Heart',tier:'pro',
+        categories:[
+            {name:'Administrative Safeguards',desc:'§164.308',questions:[
+                {id:'ha1',text:'Has a comprehensive risk analysis of ePHI been conducted?',map:CM.RISK,owner:'IT',priority:'high',ref:'§164.308(a)(1)(ii)(A)'},
+                {id:'ha2',text:'Is risk management implemented to reduce risks appropriately?',map:CM.RISK,owner:'IT',priority:'high',ref:'§164.308(a)(1)(ii)(B)'},
+                {id:'ha3',text:'Are sanction policies for security violations in place?',map:null,owner:'HR',priority:'high',ref:'§164.308(a)(1)(ii)(C)'},
+                {id:'ha4',text:'Are information system activity reviews conducted regularly?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'§164.308(a)(1)(ii)(D)'},
+                {id:'ha5',text:'Is there a designated HIPAA Security Officer?',map:null,owner:'Executive',priority:'high',ref:'§164.308(a)(2)'},
+                {id:'ha6',text:'Are workforce security procedures including termination in place?',map:CM.ACCESS,owner:'HR',priority:'high',ref:'§164.308(a)(3)'},
+                {id:'ha7',text:'Is workforce access to ePHI based on role and job function?',map:CM.ACCESS,owner:'HR',priority:'high',ref:'§164.308(a)(3)(ii)(A)'},
+                {id:'ha8',text:'Are access rights terminated when employment ends?',map:CM.ACCESS,owner:'HR',priority:'high',ref:'§164.308(a)(3)(ii)(C)'},
+                {id:'ha9',text:'Are policies for authorizing access to ePHI in place?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'§164.308(a)(4)'},
+                {id:'ha10',text:'Are all workforce members trained on HIPAA security?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'§164.308(a)(5)(i)'},
+                {id:'ha11',text:'Are malicious software protection procedures documented?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'§164.308(a)(5)(ii)(B)'},
+                {id:'ha12',text:'Are login monitoring procedures enforced?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'§164.308(a)(5)(ii)(C)'},
+                {id:'ha13',text:'Are password management procedures in place?',map:CM.PASSWORD,owner:'IT',priority:'high',ref:'§164.308(a)(5)(ii)(D)'},
+                {id:'ha14',text:'Are security incident procedures documented?',map:CM.IR,owner:'IT',priority:'high',ref:'§164.308(a)(6)'},
+                {id:'ha15',text:'Is there a data backup plan with regular testing?',map:CM.BACKUP,owner:'IT',priority:'high',ref:'§164.308(a)(7)(ii)(A)'},
+                {id:'ha16',text:'Is there a disaster recovery plan (72-hour restore per 2025 NPRM)?',map:CM.CONTINGENCY,owner:'IT',priority:'high',ref:'§164.308(a)(7)(ii)(B)'},
+                {id:'ha17',text:'Is there an emergency mode operation plan?',map:CM.CONTINGENCY,owner:'IT',priority:'high',ref:'§164.308(a)(7)(ii)(C)'},
+                {id:'ha18',text:'Are contingency plans tested at least annually?',map:CM.CONTINGENCY,owner:'IT',priority:'high',ref:'§164.308(a)(7)(ii)(D)'},
+                {id:'ha19',text:'Are periodic security evaluations conducted?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'§164.308(a)(8)'},
+                {id:'ha20',text:'Are BAAs in place with all business associates?',map:CM.VENDOR,owner:'Executive',priority:'high',ref:'§164.308(b)(1)'}
+            ]},
+            {name:'Physical Safeguards',desc:'§164.310',questions:[
+                {id:'hp1',text:'Are facility access controls limiting physical access to ePHI?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'§164.310(a)(1)'},
+                {id:'hp2',text:'Are contingency operations procedures for facility access in place?',map:CM.CONTINGENCY,owner:'IT',priority:'high',ref:'§164.310(a)(2)(i)'},
+                {id:'hp3',text:'Is there a facility security plan?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'§164.310(a)(2)(ii)'},
+                {id:'hp4',text:'Are access validation procedures documented?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'§164.310(a)(2)(iii)'},
+                {id:'hp5',text:'Are workstation use policies in place?',map:null,owner:'IT',priority:'high',ref:'§164.310(b)'},
+                {id:'hp6',text:'Are workstations accessing ePHI physically secured?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'§164.310(c)'},
+                {id:'hp7',text:'Are device and media disposal procedures followed?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'§164.310(d)(2)(i)'},
+                {id:'hp8',text:'Are media re-use procedures requiring sanitization in place?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'§164.310(d)(2)(ii)'},
+                {id:'hp9',text:'Is hardware containing ePHI tracked with inventory?',map:CM.ASSET,owner:'IT',priority:'high',ref:'§164.310(d)(2)(iii)'}
+            ]},
+            {name:'Technical Safeguards',desc:'§164.312',questions:[
+                {id:'ht1',text:'Is unique user identification implemented for ePHI access?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'§164.312(a)(2)(i)'},
+                {id:'ht2',text:'Are emergency access procedures documented?',map:CM.CONTINGENCY,owner:'IT',priority:'high',ref:'§164.312(a)(2)(ii)'},
+                {id:'ht3',text:'Is automatic logoff configured on ePHI systems?',map:null,owner:'IT',priority:'high',ref:'§164.312(a)(2)(iii)'},
+                {id:'ht4',text:'Is encryption for ePHI at rest implemented (2025 NPRM: MANDATORY)?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'§164.312(a)(2)(iv)'},
+                {id:'ht5',text:'Are audit controls recording ePHI access?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'§164.312(b)'},
+                {id:'ht6',text:'Are ePHI integrity mechanisms in place?',map:null,owner:'IT',priority:'high',ref:'§164.312(c)(1)'},
+                {id:'ht7',text:'Is MFA for ePHI systems implemented (2025 NPRM: MANDATORY)?',map:CM.MFA,owner:'IT',priority:'high',ref:'§164.312(d)'},
+                {id:'ht8',text:'Are integrity controls for ePHI transmission implemented?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'§164.312(e)(2)(i)'},
+                {id:'ht9',text:'Is ePHI encrypted during transmission (2025 NPRM: MANDATORY)?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'§164.312(e)(2)(ii)'}
+            ]},
+            {name:'2025 NPRM Updates',desc:'Proposed Mandatory Requirements',questions:[
+                {id:'hn1',text:'Is an annual technology asset inventory maintained?',map:CM.ASSET,owner:'IT',priority:'high',ref:'2025 NPRM'},
+                {id:'hn2',text:'Is a network map documenting ePHI data flows maintained?',map:CM.ASSET,owner:'IT',priority:'high',ref:'2025 NPRM'},
+                {id:'hn3',text:'Is network segmentation implemented?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'2025 NPRM'},
+                {id:'hn4',text:'Are vulnerability scans conducted at least every 6 months?',map:CM.VULN,owner:'IT',priority:'high',ref:'2025 NPRM'},
+                {id:'hn5',text:'Is penetration testing conducted at least annually?',map:CM.VULN,owner:'IT',priority:'high',ref:'2025 NPRM'},
+                {id:'hn6',text:'Are annual compliance audits conducted?',map:CM.AUDIT,owner:'Executive',priority:'high',ref:'2025 NPRM'}
+            ]}
+        ]
+    },
+    'PCI-DSS':{
+        name:'PCI-DSS 4.0.1',fullName:'PCI-DSS v4.0.1',desc:'12 Reqs + Mar 2025 Future-Dated',color:'#F59E0B',icon:'CreditCard',tier:'pro',
+        categories:[
+            {name:'Network Security',desc:'Req 1-2',questions:[
+                {id:'pn1',text:'Are network security controls installed to protect the CDE?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'1.2'},
+                {id:'pn2',text:'Are NSC configurations reviewed every six months?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'1.2.4'},
+                {id:'pn3',text:'Is the CDE properly segmented from other networks?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'1.4'},
+                {id:'pn4',text:'Is there a current network diagram documenting CDE?',map:CM.ASSET,owner:'IT',priority:'high',ref:'1.2.3'},
+                {id:'pn5',text:'Are vendor defaults changed before production deployment?',map:CM.CONFIG,owner:'IT',priority:'high',ref:'2.2.1'},
+                {id:'pn6',text:'Are system configuration standards documented?',map:CM.CONFIG,owner:'IT',priority:'high',ref:'2.2'}
+            ]},
+            {name:'Data Protection',desc:'Req 3-4',questions:[
+                {id:'pd1',text:'Is stored cardholder data encrypted using strong cryptography?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.5.1'},
+                {id:'pd2',text:'Is disk-level encryption NOT the sole at-rest method (Mar 2025)?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.5.1.2'},
+                {id:'pd3',text:'Are cryptographic keys managed with documented procedures?',map:null,owner:'IT',priority:'high',ref:'3.6'},
+                {id:'pd4',text:'Is an inventory of keys and certificates maintained (Mar 2025)?',map:CM.ASSET,owner:'IT',priority:'high',ref:'4.2.1.1'},
+                {id:'pd5',text:'Is cardholder data encrypted in transmission?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'4.2.1'},
+                {id:'pd6',text:'Are transmission certificates valid and not expired (Mar 2025)?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'4.2.1'},
+                {id:'pd7',text:'Is PAN masked when displayed (first 6/last 4)?',map:null,owner:'IT',priority:'high',ref:'3.4'},
+                {id:'pd8',text:'Is CVV/PIN never stored after authorization?',map:null,owner:'IT',priority:'high',ref:'3.2'}
+            ]},
+            {name:'Malware Protection',desc:'Req 5',questions:[
+                {id:'pm1',text:'Is anti-malware deployed on commonly affected systems?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'5.2'},
+                {id:'pm2',text:'Are systems evaluated for malware susceptibility (Mar 2025)?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'5.2.3.1'},
+                {id:'pm3',text:'Is removable media scanned for malware (Mar 2025)?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'5.3.3'},
+                {id:'pm4',text:'Are anti-phishing mechanisms implemented (Mar 2025)?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'5.4.1'}
+            ]},
+            {name:'Secure Development',desc:'Req 6',questions:[
+                {id:'ps1',text:'Is a custom software/components inventory maintained (Mar 2025)?',map:CM.ASSET,owner:'IT',priority:'high',ref:'6.3.2'},
+                {id:'ps2',text:'Are web apps protected by automated WAF (Mar 2025)?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'6.4.2'},
+                {id:'ps3',text:'Are payment page scripts managed for integrity (Mar 2025)?',map:null,owner:'IT',priority:'high',ref:'6.4.3'},
+                {id:'ps4',text:'Are critical vulnerabilities patched within 30 days?',map:CM.VULN,owner:'IT',priority:'high',ref:'6.3.3'}
+            ]},
+            {name:'Access Control',desc:'Req 7-9',questions:[
+                {id:'pa1',text:'Is cardholder data access need-to-know based?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'7.1'},
+                {id:'pa2',text:'Are unique IDs assigned to each person?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'8.2.1'},
+                {id:'pa3',text:'Is MFA for ALL CDE access implemented (Mar 2025)?',map:CM.MFA,owner:'IT',priority:'high',ref:'8.4.2'},
+                {id:'pa4',text:'Are passwords at least 12 characters (Mar 2025)?',map:CM.PASSWORD,owner:'IT',priority:'high',ref:'8.3.6'},
+                {id:'pa5',text:'Are system account passwords changed periodically (Mar 2025)?',map:CM.PASSWORD,owner:'IT',priority:'high',ref:'8.6.3'},
+                {id:'pa6',text:'Are hard-coded passwords prohibited (Mar 2025)?',map:CM.PASSWORD,owner:'IT',priority:'high',ref:'8.6.2'},
+                {id:'pa7',text:'Is physical access to CDE restricted and monitored?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'9.1'}
+            ]},
+            {name:'Monitoring & Testing',desc:'Req 10-11',questions:[
+                {id:'pt1',text:'Is all cardholder data access logged?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'10.2'},
+                {id:'pt2',text:'Are audit log reviews automated (Mar 2025)?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'10.4.1.1'},
+                {id:'pt3',text:'Are internal vulnerability scans performed quarterly?',map:CM.VULN,owner:'IT',priority:'high',ref:'11.3.1'},
+                {id:'pt4',text:'Are internal scans authenticated (Mar 2025)?',map:CM.VULN,owner:'IT',priority:'high',ref:'11.3.1.2'},
+                {id:'pt5',text:'Is annual penetration testing conducted?',map:CM.VULN,owner:'IT',priority:'high',ref:'11.4'},
+                {id:'pt6',text:'Is payment page tamper detection deployed (Mar 2025)?',map:null,owner:'IT',priority:'high',ref:'11.6.1'}
+            ]},
+            {name:'Security Policies',desc:'Req 12',questions:[
+                {id:'pp1',text:'Is an information security policy maintained?',map:null,owner:'Executive',priority:'high',ref:'12.1'},
+                {id:'pp2',text:'Is PCI DSS scope documented and confirmed annually?',map:null,owner:'IT',priority:'high',ref:'12.5.2'},
+                {id:'pp3',text:'Is phishing/social engineering training provided (Mar 2025)?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'12.6.3.1'},
+                {id:'pp4',text:'Is targeted risk analysis documented (Mar 2025)?',map:CM.RISK,owner:'IT',priority:'high',ref:'12.3.1'},
+                {id:'pp5',text:'Is cipher suite inventory reviewed annually (Mar 2025)?',map:null,owner:'IT',priority:'high',ref:'12.3.3'},
+                {id:'pp6',text:'Does IR plan address PAN in unexpected locations (Mar 2025)?',map:CM.IR,owner:'IT',priority:'high',ref:'12.10.7'},
+                {id:'pp7',text:'Are TPSPs monitored for PCI DSS compliance?',map:CM.VENDOR,owner:'Executive',priority:'high',ref:'12.8'}
+            ]}
+        ]
+    },
+    CMMC:{
+        name:'CMMC 2.0',fullName:'CMMC Level 2',desc:'NIST 800-171 Rev 2 (110 Controls)',color:'#8B5CF6',icon:'Building2',tier:'pro',
+        categories:[
+            {name:'Access Control',desc:'3.1.x (22 Reqs)',questions:[
+                {id:'ca1',text:'Are system access authorizations based on valid requirements?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.1'},
+                {id:'ca2',text:'Is transaction access limited to authorized types?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.2'},
+                {id:'ca3',text:'Is CUI flow controlled per approved authorizations?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.3'},
+                {id:'ca4',text:'Are duties separated to reduce malevolent activity risk?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.4'},
+                {id:'ca5',text:'Is least privilege employed for all access?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.5'},
+                {id:'ca6',text:'Are non-privileged accounts required for non-security functions?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.6'},
+                {id:'ca7',text:'Are non-privileged users prevented from executing privileged functions?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.7'},
+                {id:'ca8',text:'Are unsuccessful logon attempts limited?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.8'},
+                {id:'ca9',text:'Is session lock with pattern-hiding used after inactivity?',map:null,owner:'IT',priority:'high',ref:'3.1.10'},
+                {id:'ca10',text:'Is remote access monitored and controlled?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.1.12'},
+                {id:'ca11',text:'Are remote access sessions encrypted?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'3.1.13'},
+                {id:'ca12',text:'Is remote access routed through managed access points?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.1.14'},
+                {id:'ca13',text:'Is wireless access authorized, authenticated, and encrypted?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.1.16'},
+                {id:'ca14',text:'Is mobile device access controlled?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'3.1.18'},
+                {id:'ca15',text:'Is CUI on mobile devices encrypted?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.1.19'},
+                {id:'ca16',text:'Are external system connections verified and controlled?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.1.20'},
+                {id:'ca17',text:'Is portable storage use on external systems limited?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'3.1.21'}
+            ]},
+            {name:'Awareness & Training',desc:'3.2.x (3 Reqs)',questions:[
+                {id:'ct1',text:'Are personnel made aware of security risks?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'3.2.1'},
+                {id:'ct2',text:'Are users trained on insider threat recognition?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'3.2.2'},
+                {id:'ct3',text:'Is role-based security training provided?',map:CM.TRAINING,owner:'HR',priority:'high',ref:'3.2.3'}
+            ]},
+            {name:'Audit & Accountability',desc:'3.3.x (9 Reqs)',questions:[
+                {id:'cu1',text:'Are audit logs created and retained?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.1'},
+                {id:'cu2',text:'Are user actions uniquely traceable?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.2'},
+                {id:'cu3',text:'Are audit records reviewed for inappropriate activity?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.3'},
+                {id:'cu4',text:'Is alerting for audit logging failure provided?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.5'},
+                {id:'cu5',text:'Are audit records correlated for investigation?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.6'},
+                {id:'cu6',text:'Is audit information protected from unauthorized access?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.7'},
+                {id:'cu7',text:'Are audit functions limited to privileged users?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.3.8'}
+            ]},
+            {name:'Configuration Management',desc:'3.4.x (9 Reqs)',questions:[
+                {id:'cc1',text:'Are baseline configurations established and maintained?',map:CM.CONFIG,owner:'IT',priority:'high',ref:'3.4.1'},
+                {id:'cc2',text:'Are security configuration settings established and enforced?',map:CM.CONFIG,owner:'IT',priority:'high',ref:'3.4.2'},
+                {id:'cc3',text:'Are system changes tracked, reviewed, approved?',map:CM.CHANGE,owner:'IT',priority:'high',ref:'3.4.3'},
+                {id:'cc4',text:'Are changes analyzed for security impact?',map:CM.CHANGE,owner:'IT',priority:'high',ref:'3.4.4'},
+                {id:'cc5',text:'Is least functionality employed (minimal configuration)?',map:CM.CONFIG,owner:'IT',priority:'high',ref:'3.4.6'},
+                {id:'cc6',text:'Are nonessential programs/ports/protocols restricted?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.4.7'},
+                {id:'cc7',text:'Is user-installed software controlled?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'3.4.9'}
+            ]},
+            {name:'Identification & Auth',desc:'3.5.x (11 Reqs)',questions:[
+                {id:'ci1',text:'Are users/processes/devices identified and authenticated?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.5.1'},
+                {id:'ci2',text:'Is MFA for network access to privileged accounts implemented?',map:CM.MFA,owner:'IT',priority:'high',ref:'3.5.3'},
+                {id:'ci3',text:'Are replay-resistant authentication mechanisms employed?',map:CM.MFA,owner:'IT',priority:'high',ref:'3.5.4'},
+                {id:'ci4',text:'Are identifiers disabled after inactivity period?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.5.6'},
+                {id:'ci5',text:'Is minimum password complexity enforced?',map:CM.PASSWORD,owner:'IT',priority:'high',ref:'3.5.7'},
+                {id:'ci6',text:'Is password reuse prohibited for defined generations?',map:CM.PASSWORD,owner:'IT',priority:'high',ref:'3.5.8'},
+                {id:'ci7',text:'Are authenticators stored/transmitted cryptographically protected?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.5.10'}
+            ]},
+            {name:'Incident Response',desc:'3.6.x (3 Reqs)',questions:[
+                {id:'cr1',text:'Is there an operational incident-handling capability?',map:CM.IR,owner:'IT',priority:'high',ref:'3.6.1'},
+                {id:'cr2',text:'Are incidents tracked, documented, reported?',map:CM.IR,owner:'IT',priority:'high',ref:'3.6.2'},
+                {id:'cr3',text:'Is IR capability tested at least annually?',map:CM.IR,owner:'IT',priority:'high',ref:'3.6.3'}
+            ]},
+            {name:'Maintenance',desc:'3.7.x (6 Reqs)',questions:[
+                {id:'cm1',text:'Is maintenance performed per documented procedures?',map:null,owner:'IT',priority:'high',ref:'3.7.1'},
+                {id:'cm2',text:'Is equipment sanitized of CUI before off-site maintenance?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'3.7.3'},
+                {id:'cm3',text:'Is nonlocal maintenance authorized, monitored, controlled?',map:null,owner:'IT',priority:'high',ref:'3.7.5'},
+                {id:'cm4',text:'Is MFA required for nonlocal maintenance?',map:CM.MFA,owner:'IT',priority:'high',ref:'3.7.6'}
+            ]},
+            {name:'Media Protection',desc:'3.8.x (9 Reqs)',questions:[
+                {id:'cmp1',text:'Is CUI on system media protected?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'3.8.1'},
+                {id:'cmp2',text:'Is access to CUI on media limited to authorized users?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.8.2'},
+                {id:'cmp3',text:'Is media sanitized before disposal or reuse?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'3.8.3'},
+                {id:'cmp4',text:'Are CUI markings applied to media?',map:CM.DATA_CLASS,owner:'IT',priority:'high',ref:'3.8.4'},
+                {id:'cmp5',text:'Is CUI on portable storage encrypted?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.8.6'},
+                {id:'cmp6',text:'Is removable media use controlled?',map:CM.MEDIA,owner:'IT',priority:'high',ref:'3.8.7'}
+            ]},
+            {name:'Personnel Security',desc:'3.9.x (2 Reqs)',questions:[
+                {id:'cps1',text:'Are individuals screened prior to CUI system access?',map:CM.PERSONNEL,owner:'HR',priority:'high',ref:'3.9.1'},
+                {id:'cps2',text:'Is CUI protected during/after personnel actions?',map:CM.ACCESS,owner:'HR',priority:'high',ref:'3.9.2'}
+            ]},
+            {name:'Physical Protection',desc:'3.10.x (6 Reqs)',questions:[
+                {id:'cpp1',text:'Is physical access to systems limited to authorized individuals?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'3.10.1'},
+                {id:'cpp2',text:'Is physical access to facilities protected and monitored?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'3.10.2'},
+                {id:'cpp3',text:'Are visitors escorted and monitored?',map:CM.PHYSICAL,owner:'IT',priority:'high',ref:'3.10.3'},
+                {id:'cpp4',text:'Are physical access audit logs maintained?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.10.4'}
+            ]},
+            {name:'Risk Assessment',desc:'3.11.x (3 Reqs)',questions:[
+                {id:'cra1',text:'Are risk assessments conducted periodically?',map:CM.RISK,owner:'IT',priority:'high',ref:'3.11.1'},
+                {id:'cra2',text:'Are systems scanned for vulnerabilities periodically?',map:CM.VULN,owner:'IT',priority:'high',ref:'3.11.2'},
+                {id:'cra3',text:'Are vulnerabilities remediated per risk assessments?',map:CM.VULN,owner:'IT',priority:'high',ref:'3.11.3'}
+            ]},
+            {name:'Security Assessment',desc:'3.12.x (4 Reqs)',questions:[
+                {id:'csa1',text:'Are security controls assessed for effectiveness?',map:null,owner:'IT',priority:'high',ref:'3.12.1'},
+                {id:'csa2',text:'Is a System Security Plan (SSP) developed and maintained?',map:null,owner:'IT',priority:'high',ref:'3.12.2'},
+                {id:'csa3',text:'Is a POA&M developed and maintained?',map:null,owner:'IT',priority:'high',ref:'3.12.3'},
+                {id:'csa4',text:'Are security controls monitored on an ongoing basis?',map:null,owner:'IT',priority:'high',ref:'3.12.4'}
+            ]},
+            {name:'System & Comms Protection',desc:'3.13.x (16 Reqs)',questions:[
+                {id:'cs1',text:'Are communications at boundaries monitored and controlled?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.13.1'},
+                {id:'cs2',text:'Is user functionality separated from system management?',map:CM.ACCESS,owner:'IT',priority:'high',ref:'3.13.3'},
+                {id:'cs3',text:'Are public systems separated from internal (subnetworks)?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.13.5'},
+                {id:'cs4',text:'Is network traffic denied by default, allowed by exception?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.13.6'},
+                {id:'cs5',text:'Is split tunneling prevented on remote devices?',map:CM.NETWORK,owner:'IT',priority:'high',ref:'3.13.7'},
+                {id:'cs6',text:'Are cryptographic mechanisms preventing unauthorized CUI disclosure?',map:CM.ENC_TRANSIT,owner:'IT',priority:'high',ref:'3.13.8'},
+                {id:'cs7',text:'Is FIPS-validated cryptography employed for CUI?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.13.11'},
+                {id:'cs8',text:'Is CUI at rest protected (encrypted)?',map:CM.ENC_REST,owner:'IT',priority:'high',ref:'3.13.16'}
+            ]},
+            {name:'System & Info Integrity',desc:'3.14.x (7 Reqs)',questions:[
+                {id:'csi1',text:'Are system flaws identified and corrected timely?',map:CM.VULN,owner:'IT',priority:'high',ref:'3.14.1'},
+                {id:'csi2',text:'Is malicious code protection deployed at designated locations?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'3.14.2'},
+                {id:'csi3',text:'Are malware protection mechanisms updated?',map:CM.ENDPOINT,owner:'IT',priority:'high',ref:'3.14.3'},
+                {id:'csi4',text:'Are periodic and real-time scans performed?',map:CM.VULN,owner:'IT',priority:'high',ref:'3.14.4'},
+                {id:'csi5',text:'Are systems monitored for unauthorized use?',map:CM.AUDIT,owner:'IT',priority:'high',ref:'3.14.6'}
+            ]}
+        ]
+    }
+};
+
+const generatePDF=(scores,answers,userInfo)=>{const{jsPDF}=window.jspdf;const doc=new jsPDF();const w=doc.internal.pageSize.getWidth();let y=20;doc.setFillColor(59,130,246);doc.rect(0,0,w,40,'F');doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont('helvetica','bold');doc.text('Compliance Readiness Report',20,25);doc.setFontSize(11);doc.text(`${CONFIG.companyName} | ${new Date().toLocaleDateString()}`,20,35);y=55;if(userInfo){doc.setTextColor(30,41,59);doc.setFontSize(12);doc.text(`Prepared for: ${userInfo.name}`,20,y);doc.text(`Company: ${userInfo.company}`,20,y+8);doc.text(`Email: ${userInfo.email}`,20,y+16);y+=35;}doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text('Executive Summary',20,y);y+=15;const fws=Object.keys(scores);const bw=(w-50)/4;fws.forEach((fw,i)=>{const x=20+i*(bw+5);const s=scores[fw];const color=s.readiness>=80?[34,197,94]:s.readiness>=50?[234,179,8]:[239,68,68];doc.setFillColor(241,245,249);doc.roundedRect(x,y,bw,30,3,3,'F');doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(FRAMEWORKS[fw].name,x+5,y+10);doc.setTextColor(...color);doc.setFontSize(18);doc.text(`${Math.round(s.readiness)}%`,x+5,y+25);});y+=45;fws.forEach(fw=>{if(y>240){doc.addPage();y=20;}const framework=FRAMEWORKS[fw];const score=scores[fw];doc.setFillColor(59,130,246);doc.rect(20,y,w-40,10,'F');doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.text(framework.fullName,25,y+7);y+=18;doc.setTextColor(100,116,139);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(`Score: ${Math.round(score.readiness)}% | ${score.answered}/${score.total} answered`,25,y);y+=12;framework.categories.forEach(cat=>{const failed=cat.questions.filter(q=>answers[q.id]===false);if(failed.length>0){if(y>260){doc.addPage();y=20;}doc.setTextColor(239,68,68);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(`${cat.name} - ${failed.length} gaps:`,25,y);y+=6;doc.setTextColor(71,85,105);doc.setFont('helvetica','normal');failed.slice(0,3).forEach(q=>{if(y>270){doc.addPage();y=20;}doc.text(`• ${q.text.substring(0,70)}...`,30,y);y+=5;});y+=5;}});y+=10;});doc.setTextColor(148,163,184);doc.setFontSize(9);doc.text(`${CONFIG.companyName} | ${CONFIG.phone} | ${CONFIG.contactUrl}`,20,285);return doc;};
+
+// Printable Report Component
+const PrintableReport=({scores,answers,user,companyName})=>{
+    const fws=['SOC2','HIPAA','PCI-DSS','CMMC'];
+    const today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    
+    // Get all gaps across frameworks
+    const getAllGaps=()=>{
+        const gaps=[];
+        fws.forEach(fw=>{
+            FRAMEWORKS[fw].categories.forEach(cat=>{
+                cat.questions.forEach(q=>{
+                    if(answers[q.id]===false){
+                        gaps.push({framework:FRAMEWORKS[fw].name,category:cat.name,question:q.text,priority:q.priority,owner:q.owner,ref:q.ref});
+                    }
+                });
+            });
+        });
+        return gaps.sort((a,b)=>(a.priority==='high'?0:1)-(b.priority==='high'?0:1));
+    };
+    
+    const gaps=getAllGaps();
+    const totalControls=fws.reduce((sum,fw)=>sum+FRAMEWORKS[fw].categories.reduce((s,c)=>s+c.questions.length,0),0);
+    const totalAnswered=Object.values(scores).reduce((sum,s)=>sum+s.answered,0);
+    const totalCompliant=Object.values(scores).reduce((sum,s)=>sum+s.yes,0);
+    const overallReadiness=totalAnswered>0?Math.round(totalCompliant/totalAnswered*100):0;
+    
+    return(
+        <div className="print-only" id="printable-report">
+            {/* Print Header */}
+            <div className="print-header">
+                <div>
+                    <h1 style={{fontSize:'24pt',fontWeight:'700',color:'#1e293b',margin:0}}>Compliance Readiness Report</h1>
+                    <p style={{fontSize:'11pt',color:'#64748b',margin:'4px 0 0 0'}}>{CONFIG.companyName}</p>
+                </div>
+                <div style={{textAlign:'right'}}>
+                    <p style={{fontSize:'10pt',color:'#64748b',margin:0}}>Report Generated On</p>
+                    <p style={{fontSize:'12pt',fontWeight:'600',color:'#1e293b',margin:'2px 0 0 0'}}>{today}</p>
+                </div>
+            </div>
+            
+            {/* Company Info */}
+            <div style={{marginBottom:'30px',padding:'16px',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+                <p style={{margin:0,fontSize:'11pt'}}><strong>Prepared For:</strong> {companyName || user?.company || '[Company Name]'}</p>
+                {user&&<p style={{margin:'4px 0 0 0',fontSize:'10pt',color:'#64748b'}}>Contact: {user.name} ({user.email})</p>}
+            </div>
+            
+            {/* Executive Summary Section */}
+            <div className="exec-summary avoid-break">
+                <h2 style={{fontSize:'16pt',fontWeight:'700',color:'#1e293b',margin:'0 0 20px 0',borderBottom:'2px solid #3b82f6',paddingBottom:'8px'}}>Executive Summary</h2>
+                
+                {/* Overall Score */}
+                <div style={{textAlign:'center',marginBottom:'24px'}}>
+                    <div className={`score-card ${overallReadiness>=80?'compliant':overallReadiness>=50?'warning':'critical'}`} style={{display:'inline-block',padding:'20px 40px'}}>
+                        <p style={{margin:0,fontSize:'10pt',color:'#64748b',textTransform:'uppercase',letterSpacing:'1px'}}>Overall Readiness</p>
+                        <p className="score-value" style={{margin:'8px 0'}}>{overallReadiness}%</p>
+                        <p style={{margin:0,fontSize:'10pt',color:'#64748b'}}>{totalCompliant} of {totalAnswered} controls compliant</p>
+                    </div>
+                </div>
+                
+                {/* Framework Scores Grid */}
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'16px',marginBottom:'24px'}}>
+                    {fws.map(fw=>{
+                        const s=scores[fw];
+                        const fr=FRAMEWORKS[fw];
+                        const scoreClass=s.readiness>=80?'compliant':s.readiness>=50?'warning':'critical';
+                        return(
+                            <div key={fw} className={`score-card ${scoreClass}`}>
+                                <p style={{margin:0,fontSize:'9pt',fontWeight:'600',color:'#1e293b'}}>{fr.name}</p>
+                                <p className="score-value" style={{fontSize:'20pt',margin:'8px 0'}}>{Math.round(s.readiness)}%</p>
+                                <p style={{margin:0,fontSize:'8pt',color:'#64748b'}}>{s.yes}/{s.answered} compliant</p>
+                            </div>
+                        );
+                    })}
+                </div>
+                
+                {/* Key Findings */}
+                <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'16px'}}>
+                    <h3 style={{margin:'0 0 12px 0',fontSize:'12pt',fontWeight:'600',color:'#1e293b'}}>Key Findings</h3>
+                    <ul style={{margin:0,paddingLeft:'20px',fontSize:'10pt',lineHeight:'1.6'}}>
+                        <li><strong>{totalAnswered}</strong> of {totalControls} controls assessed ({Math.round(totalAnswered/totalControls*100)}% coverage)</li>
+                        <li><strong>{gaps.length}</strong> compliance gaps identified requiring remediation</li>
+                        <li><strong>{gaps.filter(g=>g.priority==='high').length}</strong> high-priority items requiring immediate attention</li>
+                        <li>Strongest framework: <strong>{fws.reduce((best,fw)=>scores[fw].readiness>scores[best].readiness?fw:best,fws[0])}</strong> ({Math.round(Math.max(...fws.map(fw=>scores[fw].readiness)))}%)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            {/* Page Break before Remediation Roadmap */}
+            <div className="page-break-before">
+                <h2 style={{fontSize:'16pt',fontWeight:'700',color:'#1e293b',margin:'0 0 20px 0',borderBottom:'2px solid #3b82f6',paddingBottom:'8px'}}>Detailed Remediation Roadmap</h2>
+                
+                {gaps.length===0?(
+                    <div style={{textAlign:'center',padding:'40px',background:'#f0fdf4',borderRadius:'8px',border:'1px solid #86efac'}}>
+                        <p style={{fontSize:'14pt',color:'#16a34a',fontWeight:'600',margin:0}}>✓ No compliance gaps identified</p>
+                        <p style={{fontSize:'10pt',color:'#64748b',margin:'8px 0 0 0'}}>All assessed controls are compliant</p>
+                    </div>
+                ):(
+                    <table className="remediation-table">
+                        <thead>
+                            <tr>
+                                <th style={{width:'12%'}}>Framework</th>
+                                <th style={{width:'15%'}}>Category</th>
+                                <th style={{width:'40%'}}>Control Gap</th>
+                                <th style={{width:'10%'}}>Priority</th>
+                                <th style={{width:'10%'}}>Owner</th>
+                                <th style={{width:'13%'}}>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {gaps.slice(0,50).map((gap,i)=>(
+                                <tr key={i} className="avoid-break">
+                                    <td style={{fontWeight:'500'}}>{gap.framework}</td>
+                                    <td>{gap.category}</td>
+                                    <td style={{fontSize:'9pt'}}>{gap.question}</td>
+                                    <td><span className={gap.priority==='high'?'priority-high':'priority-medium'}>{gap.priority}</span></td>
+                                    <td>{gap.owner}</td>
+                                    <td><span className="control-ref">{gap.ref||'—'}</span></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+                
+                {gaps.length>50&&(
+                    <p style={{fontSize:'9pt',color:'#64748b',marginTop:'16px',fontStyle:'italic'}}>
+                        Showing first 50 of {gaps.length} gaps. Full remediation list available in digital report.
+                    </p>
+                )}
+            </div>
+            
+            {/* Framework Details - Each on new page */}
+            {fws.map(fw=>{
+                const fr=FRAMEWORKS[fw];
+                const s=scores[fw];
+                const fwGaps=gaps.filter(g=>g.framework===fr.name);
+                
+                return(
+                    <div key={fw} className="page-break-before">
+                        <div className="framework-header">
+                            <h2 style={{margin:0,fontSize:'14pt'}}>{fr.fullName}</h2>
+                            <p style={{margin:'4px 0 0 0',fontSize:'10pt',opacity:0.8}}>{fr.desc}</p>
+                        </div>
+                        
+                        <div style={{padding:'20px',border:'1px solid #e2e8f0',borderTop:'none',borderRadius:'0 0 8px 8px',background:'#fff'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',marginBottom:'20px'}}>
+                                <div>
+                                    <p style={{margin:0,fontSize:'10pt',color:'#64748b'}}>Readiness Score</p>
+                                    <p style={{margin:'4px 0 0 0',fontSize:'24pt',fontWeight:'700',color:s.readiness>=80?'#22c55e':s.readiness>=50?'#f59e0b':'#ef4444'}}>{Math.round(s.readiness)}%</p>
+                                </div>
+                                <div style={{textAlign:'right'}}>
+                                    <p style={{margin:0,fontSize:'10pt',color:'#64748b'}}>Controls Status</p>
+                                    <p style={{margin:'4px 0 0 0',fontSize:'11pt'}}><span style={{color:'#22c55e',fontWeight:'600'}}>{s.yes} Compliant</span> / <span style={{color:'#ef4444',fontWeight:'600'}}>{s.answered-s.yes} Gaps</span> / <span style={{color:'#64748b'}}>{s.total-s.answered} Not Assessed</span></p>
+                                </div>
+                            </div>
+                            
+                            {fwGaps.length>0&&(
+                                <div>
+                                    <h4 style={{margin:'0 0 12px 0',fontSize:'11pt',fontWeight:'600',color:'#1e293b'}}>Remediation Items ({fwGaps.length})</h4>
+                                    <ul style={{margin:0,paddingLeft:'20px',fontSize:'9pt',lineHeight:'1.8'}}>
+                                        {fwGaps.slice(0,10).map((g,i)=>(
+                                            <li key={i} className="avoid-break">
+                                                <strong>[{g.ref||g.category}]</strong> {g.question} 
+                                                <span className={g.priority==='high'?'priority-high':'priority-medium'} style={{marginLeft:'8px'}}>{g.priority}</span>
+                                            </li>
+                                        ))}
+                                        {fwGaps.length>10&&<li style={{color:'#64748b',fontStyle:'italic'}}>...and {fwGaps.length-10} more items</li>}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+            
+            {/* Print Footer */}
+            <div className="print-footer">
+                <p style={{margin:0}}>{CONFIG.companyName} | {CONFIG.phone} | {CONFIG.contactUrl} | Confidential - Page <span className="pageNumber"></span></p>
+            </div>
+        </div>
+    );
+};
+
+// Download PDF Report Button Component
+const DownloadReportButton=({onClick,className=''})=>(
+    <button 
+        onClick={onClick} 
+        className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-emerald-500/25 transition-all ${className}`}
+    >
+        <Icon name="FileText" className="w-4 h-4"/>
+        <span>Download PDF Report</span>
+    </button>
+);
+
+const EmailGate=({onSubmit,trigger})=>{const[form,setForm]=useState({name:'',email:'',company:'',phone:''});const[loading,setLoading]=useState(false);const[errors,setErrors]=useState({});const validate=()=>{const e={};if(!form.name.trim())e.name='Required';if(!form.email.trim())e.email='Required';else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))e.email='Invalid';if(!form.company.trim())e.company='Required';return e;};const submit=async(e)=>{e.preventDefault();const errs=validate();if(Object.keys(errs).length){setErrors(errs);return;}setLoading(true);await new Promise(r=>setTimeout(r,800));const leads=JSON.parse(localStorage.getItem('lsc_leads')||'[]');leads.push({...form,trigger,timestamp:new Date().toISOString()});localStorage.setItem('lsc_leads',JSON.stringify(leads));setLoading(false);onSubmit(form);};return(<div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in"><div className="glass rounded-2xl p-8 max-w-md w-full slide-up"><div className="text-center mb-6"><div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4"><Icon name={trigger==='pdf'?'FileText':'Unlock'} className="w-8 h-8 text-white"/></div><h2 className="text-2xl font-bold text-white mb-2">{trigger==='pdf'?'Download Your Report':'Unlock Full Results'}</h2><p className="text-slate-400">Enter your details to continue</p></div><form onSubmit={submit} className="space-y-4"><input type="text" placeholder="Full Name *" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} className={`w-full px-4 py-3 bg-slate-900 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name?'border-red-500':'border-slate-700'}`}/><input type="email" placeholder="Work Email *" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} className={`w-full px-4 py-3 bg-slate-900 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email?'border-red-500':'border-slate-700'}`}/><input type="text" placeholder="Company *" value={form.company} onChange={e=>setForm(p=>({...p,company:e.target.value}))} className={`w-full px-4 py-3 bg-slate-900 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.company?'border-red-500':'border-slate-700'}`}/><input type="tel" placeholder="Phone (optional)" value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"/><button type="submit" disabled={loading} className="w-full btn-primary py-3 rounded-lg text-white font-semibold flex items-center justify-center gap-2">{loading?<><Icon name="Loader2" className="w-5 h-5 animate-spin"/>Processing...</>:<><Icon name="ArrowRight" className="w-5 h-5"/>Continue</>}</button></form><p className="text-xs text-slate-500 text-center mt-4">We'll send you compliance tips. Unsubscribe anytime.</p></div></div>);};
+
+const PricingModal=({onClose,onSelect,current})=>{const tiers=Object.values(CONFIG.pricing);return(<div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in overflow-y-auto"><div className="glass rounded-2xl p-8 max-w-5xl w-full my-8 slide-up relative"><button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white"><Icon name="X" className="w-6 h-6"/></button><div className="text-center mb-8"><h2 className="text-3xl font-bold text-white mb-2">Choose Your Plan</h2><p className="text-slate-400">Unlock the full power of compliance automation</p></div><div className="grid md:grid-cols-4 gap-4">{tiers.map((t)=>(<div key={t.id} className={`rounded-xl p-6 transition-all relative ${t.id==='pro'?'bg-gradient-to-b from-blue-600/20 to-purple-600/20 border-2 border-blue-500 scale-105':'bg-slate-900/50 border border-slate-700'}`}>{t.id==='pro'&&<div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">POPULAR</div>}<h3 className="text-xl font-bold text-white mb-2">{t.name}</h3><div className="mb-4"><span className="text-4xl font-bold text-white">${t.price}</span>{t.price>0&&<span className="text-slate-400">/mo</span>}</div><ul className="space-y-2 mb-6">{t.features.map((f,j)=><li key={j} className="flex items-start gap-2 text-sm text-slate-300"><Icon name="Check" className="w-4 h-4 text-green-400 mt-0.5"/>{f}</li>)}</ul><button onClick={()=>onSelect(t)} className={`w-full py-2.5 rounded-lg font-semibold ${current===t.id?'bg-green-600 text-white':t.id==='pro'?'btn-primary text-white':'bg-slate-700 text-white hover:bg-slate-600'}`}>{current===t.id?'Current':t.price===0?'Start Free':'Upgrade'}</button></div>))}</div><p className="text-center text-slate-400 text-sm mt-6">Need custom solution? <a href={CONFIG.contactUrl} className="text-blue-400 hover:underline">Contact us</a></p></div></div>);};
+
+const CheckoutModal=({tier,onSuccess,onCancel})=>{const[loading,setLoading]=useState(false);const submit=async(e)=>{e.preventDefault();setLoading(true);await new Promise(r=>setTimeout(r,1500));localStorage.setItem('lsc_sub',JSON.stringify({tier:tier.id,date:new Date().toISOString()}));setLoading(false);onSuccess(tier);};return(<div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in"><div className="glass rounded-2xl p-8 max-w-md w-full slide-up"><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white">Complete Purchase</h2><button onClick={onCancel} className="text-slate-400 hover:text-white"><Icon name="X" className="w-6 h-6"/></button></div><div className="bg-slate-900 rounded-lg p-4 mb-6 flex justify-between items-center"><div><p className="font-semibold text-white">{tier.name} Plan</p><p className="text-sm text-slate-400">Monthly</p></div><p className="text-2xl font-bold text-white">${tier.price}/mo</p></div><form onSubmit={submit} className="space-y-4"><input placeholder="Card Number" className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white"/><div className="grid grid-cols-2 gap-4"><input placeholder="MM/YY" className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white"/><input placeholder="CVC" className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white"/></div><button type="submit" disabled={loading} className="w-full btn-primary py-3 rounded-lg text-white font-semibold flex items-center justify-center gap-2">{loading?<><Icon name="Loader2" className="w-5 h-5 animate-spin"/>Processing...</>:<><Icon name="CreditCard" className="w-5 h-5"/>Pay ${tier.price}/mo</>}</button></form><p className="text-center text-slate-500 text-sm mt-4 flex items-center justify-center gap-2"><Icon name="Lock" className="w-4 h-4"/>Secured by Stripe</p></div></div>);};
+
+const AdminPanel=({onClose})=>{const leads=JSON.parse(localStorage.getItem('lsc_leads')||'[]');const exportCSV=()=>{const csv=['Name,Email,Company,Phone,Source,Date',...leads.map(l=>`${l.name},${l.email},${l.company},${l.phone||''},${l.trigger},${l.timestamp}`)].join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='leads.csv';a.click();};return(<div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in"><div className="glass rounded-2xl p-8 max-w-4xl w-full max-h-[80vh] overflow-auto slide-up"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-white">Lead Dashboard</h2><div className="flex gap-3"><button onClick={exportCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium flex items-center gap-2"><Icon name="Download" className="w-4 h-4"/>Export</button><button onClick={onClose} className="text-slate-400 hover:text-white"><Icon name="X" className="w-6 h-6"/></button></div></div><div className="grid grid-cols-3 gap-4 mb-6"><div className="bg-slate-900 rounded-xl p-4"><p className="text-slate-400 text-sm">Total Leads</p><p className="text-3xl font-bold text-white">{leads.length}</p></div><div className="bg-slate-900 rounded-xl p-4"><p className="text-slate-400 text-sm">This Week</p><p className="text-3xl font-bold text-white">{leads.filter(l=>new Date(l.timestamp)>Date.now()-7*24*60*60*1000).length}</p></div><div className="bg-slate-900 rounded-xl p-4"><p className="text-slate-400 text-sm">PDF Downloads</p><p className="text-3xl font-bold text-white">{leads.filter(l=>l.trigger==='pdf').length}</p></div></div>{leads.length===0?<p className="text-center text-slate-400 py-8">No leads yet</p>:(<table className="w-full"><thead><tr className="border-b border-slate-700"><th className="text-left py-2 px-3 text-slate-400">Name</th><th className="text-left py-2 px-3 text-slate-400">Email</th><th className="text-left py-2 px-3 text-slate-400">Company</th><th className="text-left py-2 px-3 text-slate-400">Source</th></tr></thead><tbody>{leads.slice().reverse().map((l,i)=><tr key={i} className="border-b border-slate-800"><td className="py-2 px-3 text-white">{l.name}</td><td className="py-2 px-3 text-slate-300">{l.email}</td><td className="py-2 px-3 text-slate-300">{l.company}</td><td className="py-2 px-3"><span className="px-2 py-1 rounded text-xs bg-blue-500/20 text-blue-300">{l.trigger}</span></td></tr>)}</tbody></table>)}</div></div>);};
+
+const RadarChart=({data,frameworks})=>{const cx=150,cy=150,maxR=100;const pt=(a,r)=>({x:cx+r*Math.cos((a-90)*Math.PI/180),y:cy+r*Math.sin((a-90)*Math.PI/180)});const step=360/frameworks.length;const grid=[1,2,3,4,5].map(l=><polygon key={l} points={frameworks.map((_,i)=>pt(i*step,maxR/5*l)).map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke="#334155" strokeWidth="1"/>);const axes=frameworks.map((_,i)=>{const p=pt(i*step,maxR);return<line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#334155"/>});const pts=frameworks.map((f,i)=>pt(i*step,(data[f]||0)/100*maxR));const labels=frameworks.map((f,i)=>{const p=pt(i*step,maxR+20);return<g key={f}><text x={p.x} y={p.y} textAnchor="middle" fill={FRAMEWORKS[f].color} fontSize="10" fontWeight="600">{FRAMEWORKS[f].name}</text><text x={p.x} y={p.y+12} textAnchor="middle" fill="#94a3b8" fontSize="9">{Math.round(data[f]||0)}%</text></g>});return(<svg viewBox="0 0 300 300" className="w-full h-full"><defs><linearGradient id="rf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6" stopOpacity=".3"/><stop offset="100%" stopColor="#8b5cf6" stopOpacity=".3"/></linearGradient></defs>{grid}{axes}<polygon points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill="url(#rf)" stroke="#3b82f6" strokeWidth="2"/>{pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="5" fill={FRAMEWORKS[frameworks[i]].color} stroke="#fff" strokeWidth="2"/>)}{labels}</svg>);};
+
+const ProgressRing=({progress,color,size=70})=>{const sw=7,r=(size-sw)/2,c=r*2*Math.PI,o=c-(progress/100)*c;return(<svg width={size} height={size} className="transform -rotate-90"><circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#1e293b" strokeWidth={sw}/><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={c} strokeDashoffset={o} strokeLinecap="round" className="transition-all duration-500"/></svg>);};
+
+const QuestionCard=({q,answer,onAnswer,locked,synced})=>(<div className={`bg-slate-900/50 border rounded-xl p-5 transition-all ${locked?'opacity-50':answer===true?'border-green-500/50 bg-green-900/10':answer===false?'border-red-500/50 bg-red-900/10':'border-slate-700 hover:border-slate-600'}`}><div className="flex items-start gap-4"><div className="flex-1"><p className="text-slate-200">{q.text}</p><div className="flex flex-wrap gap-2 mt-3"><span className={`px-2 py-1 rounded-full text-xs ${q.priority==='high'?'bg-red-500/20 text-red-300':'bg-amber-500/20 text-amber-300'}`}>{q.priority}</span><span className="px-2 py-1 rounded-full text-xs bg-slate-700 text-slate-300">{q.owner}</span>{q.ref&&<span className="px-2 py-1 rounded-full text-xs bg-purple-500/20 text-purple-300">{q.ref}</span>}{q.map&&<span className="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-300">Cross-mapped</span>}{synced&&<span className="px-2 py-1 rounded-full text-xs bg-cyan-500/20 text-cyan-300">From {synced}</span>}</div></div><div className="flex gap-2"><button onClick={()=>!locked&&onAnswer(true)} disabled={locked} className={`p-3 rounded-xl ${answer===true?'bg-green-500 text-white':'bg-slate-800 text-slate-400 hover:bg-green-500/20'}`}><Icon name="Check" className="w-5 h-5"/></button><button onClick={()=>!locked&&onAnswer(false)} disabled={locked} className={`p-3 rounded-xl ${answer===false?'bg-red-500 text-white':'bg-slate-800 text-slate-400 hover:bg-red-500/20'}`}><Icon name="X" className="w-5 h-5"/></button></div></div></div>);
+
+const CategoryAccordion=({cat,answers,onAnswer,getSynced,expanded,toggle,locked})=>{const ans=cat.questions.filter(q=>answers[q.id]!==undefined).length;const yes=cat.questions.filter(q=>answers[q.id]===true).length;const pct=ans>0?Math.round(yes/ans*100):0;return(<div className="glass border border-slate-700/50 rounded-xl overflow-hidden"><button onClick={toggle} className="w-full flex items-center justify-between p-5 hover:bg-slate-800/30"><div className="flex items-center gap-3"><Icon name={expanded?'ChevronDown':'ChevronRight'} className="w-5 h-5 text-slate-400"/><div className="text-left"><h3 className="font-semibold text-white">{cat.name}</h3><p className="text-sm text-slate-500">{cat.desc} • {cat.questions.length} controls</p></div></div><div className="flex items-center gap-4"><span className="text-sm text-slate-400">{ans}/{cat.questions.length}</span><span className={`font-bold ${pct>=80?'text-green-400':pct>=50?'text-amber-400':pct>0?'text-red-400':'text-slate-600'}`}>{ans>0?`${pct}%`:'—'}</span></div></button>{expanded&&<div className="p-5 pt-0 space-y-3">{cat.questions.map(q=><QuestionCard key={q.id} q={q} answer={answers[q.id]} onAnswer={v=>onAnswer(q.id,v,q.map)} locked={locked} synced={getSynced(q.id,q.map)}/>)}</div>}</div>);};
+
+const ActionItems=({answers,fw})=>{const items={IT:[],HR:[],Executive:[]};FRAMEWORKS[fw].categories.forEach(c=>c.questions.forEach(q=>{if(answers[q.id]===false)items[q.owner].push({...q,cat:c.name})}));Object.keys(items).forEach(o=>items[o].sort((a,b)=>(a.priority==='high'?0:1)-(b.priority==='high'?0:1)));const cfg={IT:{icon:'Monitor',color:'from-blue-500 to-cyan-500'},HR:{icon:'Users',color:'from-green-500 to-emerald-500'},Executive:{icon:'Briefcase',color:'from-purple-500 to-pink-500'}};return(<div className="space-y-6">{Object.entries(cfg).map(([owner,c])=>(<div key={owner} className="glass border border-slate-700/50 rounded-xl overflow-hidden"><div className={`flex items-center gap-4 p-5 bg-gradient-to-r ${c.color} bg-opacity-10`}><div className={`p-3 rounded-xl bg-gradient-to-br ${c.color}`}><Icon name={c.icon} className="w-6 h-6 text-white"/></div><div><h3 className="font-bold text-white">{owner==='IT'?'IT Team':owner==='HR'?'HR/Admin':'Executive'}</h3><p className="text-sm text-slate-400">{items[owner].length} items</p></div></div><div className="p-5">{items[owner].length===0?<p className="text-center text-green-400 py-4"><Icon name="CheckCircle" className="w-8 h-8 mx-auto mb-2"/>All good!</p>:<ul className="space-y-2">{items[owner].map((it,i)=><li key={i} className="flex items-start gap-3 p-3 bg-slate-900/50 rounded-lg"><span className={`mt-1 w-2 h-2 rounded-full ${it.priority==='high'?'bg-red-500':'bg-amber-500'}`}/><div><p className="text-slate-200">{it.text}</p><p className="text-xs text-slate-500">{it.cat} • {it.ref||''}</p></div></li>)}</ul>}</div></div>))}</div>);};
+
+function App(){const[fw,setFw]=useState('SOC2');const[answers,setAnswers]=useState({});const[maps,setMaps]=useState({});const[expanded,setExpanded]=useState({});const[tab,setTab]=useState('assessment');const[user,setUser]=useState(null);const[tier,setTier]=useState('free');const[showGate,setShowGate]=useState(false);const[gateTrigger,setGateTrigger]=useState('');const[showPricing,setShowPricing]=useState(false);const[showCheckout,setShowCheckout]=useState(null);const[showAdmin,setShowAdmin]=useState(false);const[companyName,setCompanyName]=useState('');const fws=['SOC2','HIPAA','PCI-DSS','CMMC'];useEffect(()=>{const a=localStorage.getItem('lsc_a'),m=localStorage.getItem('lsc_m'),u=localStorage.getItem('lsc_u'),s=localStorage.getItem('lsc_sub'),c=localStorage.getItem('lsc_company');if(a)setAnswers(JSON.parse(a));if(m)setMaps(JSON.parse(m));if(u)setUser(JSON.parse(u));if(s)setTier(JSON.parse(s).tier);if(c)setCompanyName(c);},[]);useEffect(()=>{localStorage.setItem('lsc_a',JSON.stringify(answers))},[answers]);useEffect(()=>{localStorage.setItem('lsc_m',JSON.stringify(maps))},[maps]);useEffect(()=>{localStorage.setItem('lsc_company',companyName)},[companyName]);const scores=useMemo(()=>{const s={};fws.forEach(f=>{let tot=0,ans=0,yes=0;FRAMEWORKS[f].categories.forEach(c=>c.questions.forEach(q=>{tot++;if(answers[q.id]!==undefined){ans++;if(answers[q.id])yes++}else if(q.map&&maps[q.map]){ans++;if(maps[q.map].v)yes++}}));s[f]={total:tot,answered:ans,yes,readiness:ans>0?yes/ans*100:0,completion:tot>0?ans/tot*100:0};});return s;},[answers,maps]);const totalAns=Object.values(scores).reduce((s,x)=>s+x.answered,0);const shouldGate=totalAns>=5&&!user;const handleAnswer=useCallback((qid,v,mapId)=>{if(shouldGate){setGateTrigger('results');setShowGate(true);return;}setAnswers(p=>({...p,[qid]:v}));if(mapId)setMaps(p=>({...p,[mapId]:{v,src:fw,qid}}));},[fw,shouldGate]);const getSynced=useCallback((qid,mapId)=>{if(!mapId||!maps[mapId]||maps[mapId].qid===qid)return null;return FRAMEWORKS[maps[mapId].src]?.name;},[maps]);const getEffective=useCallback(()=>{const e={...answers};FRAMEWORKS[fw].categories.forEach(c=>c.questions.forEach(q=>{if(q.map&&maps[q.map]&&e[q.id]===undefined)e[q.id]=maps[q.map].v;}));return e;},[answers,maps,fw]);
+
+// Print Report Handler - triggers browser print dialog
+const handlePrintReport=()=>{
+    if(!user&&totalAns<5){
+        setGateTrigger('pdf');
+        setShowGate(true);
+        return;
+    }
+    // Small delay to ensure PrintableReport is rendered
+    setTimeout(()=>{window.print();},100);
+};
+
+const handlePDF=()=>{if(!user){setGateTrigger('pdf');setShowGate(true);return;}generatePDF(scores,answers,user).save(`Compliance-Report-${user.company}.pdf`);};const handleEmailSubmit=(data)=>{setUser(data);localStorage.setItem('lsc_u',JSON.stringify(data));if(data.company)setCompanyName(data.company);setShowGate(false);if(gateTrigger==='pdf')generatePDF(scores,answers,data).save(`Compliance-Report-${data.company}.pdf`);};const handleTierSelect=(t)=>{setShowPricing(false);if(t.price>0)setShowCheckout(t);};const handlePaySuccess=(t)=>{setTier(t.id);setShowCheckout(null);};const eff=getEffective();const cur=FRAMEWORKS[fw];const score=scores[fw];const locked=cur.tier==='pro'&&tier==='free';
+
+return(<div className="min-h-screen">
+{/* Printable Report - Hidden on screen, shown only when printing */}
+<PrintableReport scores={scores} answers={answers} user={user} companyName={companyName}/>
+
+<header className="sticky top-0 z-40 glass border-b border-slate-700/50 no-print"><div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"><Icon name="ShieldCheck" className="w-6 h-6 text-white"/></div><div><h1 className="font-bold text-white">{CONFIG.companyName}</h1><p className="text-xs text-slate-400">{CONFIG.version}</p></div></div><div className="flex items-center gap-3"><button onClick={()=>setShowPricing(true)} className="px-4 py-2 text-slate-300 hover:text-white flex items-center gap-2"><Icon name="Zap" className="w-4 h-4"/>{tier==='free'?'Upgrade':'Plan'}</button><DownloadReportButton onClick={handlePrintReport}/><button onClick={handlePDF} className="btn-primary px-4 py-2 rounded-lg text-white flex items-center gap-2" title="Download jsPDF Report"><Icon name="Download" className="w-4 h-4"/>PDF</button><button onClick={()=>setShowAdmin(true)} className="p-2 text-slate-400 hover:text-white"><Icon name="Settings" className="w-5 h-5"/></button></div></div></header>
+
+<div className="max-w-7xl mx-auto px-4 py-6"><div className="flex gap-3 overflow-x-auto pb-2">{fws.map(f=>{const fr=FRAMEWORKS[f];const sc=scores[f];const isLocked=fr.tier==='pro'&&tier==='free';return(<button key={f} onClick={()=>setFw(f)} className={`flex-shrink-0 flex items-center gap-4 px-5 py-4 rounded-xl border transition-all ${fw===f?'border-blue-500 bg-blue-500/10':'border-slate-700 bg-slate-900/50 hover:border-slate-600'}`}><div className="relative"><ProgressRing progress={sc.readiness} color={fr.color}/><div className="absolute inset-0 flex items-center justify-center"><span className="text-sm font-bold" style={{color:fr.color}}>{Math.round(sc.readiness)}%</span></div></div><div className="text-left"><div className="flex items-center gap-2"><span className="font-semibold text-white">{fr.name}</span>{isLocked&&<Icon name="Lock" className="w-4 h-4 text-amber-400"/>}</div><p className="text-xs text-slate-400">{sc.answered}/{sc.total}</p></div></button>)})}</div></div>
+
+<main className="max-w-7xl mx-auto px-4 pb-12"><div className="grid lg:grid-cols-3 gap-8"><div className="lg:col-span-2 space-y-6"><div className="flex gap-2 border-b border-slate-700 pb-2">{[{id:'assessment',icon:'ClipboardList',label:'Assessment'},{id:'actions',icon:'ListTodo',label:'Action Items'},{id:'mapping',icon:'Network',label:'Mapping'}].map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} className={`px-4 py-2 rounded-t-lg flex items-center gap-2 ${tab===t.id?'bg-slate-800 text-white':'text-slate-400 hover:text-white'}`}><Icon name={t.icon} className="w-4 h-4"/>{t.label}</button>))}</div>
+
+{locked&&(<div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/50 rounded-xl p-6 flex items-center gap-4"><div className="p-3 rounded-xl bg-amber-500/20"><Icon name="Lock" className="w-8 h-8 text-amber-400"/></div><div className="flex-1"><h3 className="font-bold text-white">{cur.name} requires Pro</h3><p className="text-slate-300">Upgrade to unlock</p></div><button onClick={()=>setShowPricing(true)} className="btn-primary px-6 py-3 rounded-lg text-white font-semibold">Upgrade</button></div>)}
+
+{tab==='assessment'&&(<div className="space-y-4"><div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold text-white">{cur.fullName}</h2><p className="text-slate-400">{cur.desc}</p></div><div className="text-right"><p className="text-3xl font-bold" style={{color:cur.color}}>{Math.round(score.readiness)}%</p><p className="text-sm text-slate-400">Readiness</p></div></div>{cur.categories.map((cat,i)=>(<CategoryAccordion key={i} cat={cat} answers={eff} onAnswer={handleAnswer} getSynced={getSynced} expanded={expanded[`${fw}-${i}`]} toggle={()=>setExpanded(p=>({...p,[`${fw}-${i}`]:!p[`${fw}-${i}`]}))} locked={locked}/>))}</div>)}
+
+{tab==='actions'&&<ActionItems answers={eff} fw={fw}/>}
+
+{tab==='mapping'&&(<div className="glass border border-slate-700/50 rounded-xl p-6"><h3 className="text-xl font-bold text-white mb-4">Cross-Framework Control Mapping</h3><p className="text-slate-400 mb-6">Controls sync across frameworks automatically.</p><div className="space-y-3">{Object.entries(CM).map(([key,id])=>{const m=maps[id];return(<div key={key} className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg"><div className="flex items-center gap-3"><div className={`w-3 h-3 rounded-full ${m?m.v?'bg-green-500':'bg-red-500':'bg-slate-600'}`}/><span className="text-slate-200">{key.replace(/_/g,' ')}</span></div><div className="text-sm text-slate-400">{m?<span>From <span className="text-blue-400">{FRAMEWORKS[m.src]?.name}</span></span>:'Not set'}</div></div>)})}</div></div>)}</div>
+
+<div className="space-y-6"><div className="glass border border-slate-700/50 rounded-xl p-6"><h3 className="font-semibold text-white mb-4">Overall Compliance</h3><div className="h-72"><RadarChart data={Object.fromEntries(fws.map(f=>[f,scores[f].readiness]))} frameworks={fws}/></div></div>
+
+<div className="glass border border-slate-700/50 rounded-xl p-6"><h3 className="font-semibold text-white mb-4">Stats: {cur.name}</h3><div className="space-y-4"><div className="flex justify-between"><span className="text-slate-400">Categories</span><span className="text-white">{cur.categories.length}</span></div><div className="flex justify-between"><span className="text-slate-400">Controls</span><span className="text-white">{score.total}</span></div><div className="flex justify-between"><span className="text-slate-400">Answered</span><span className="text-green-400">{score.answered}</span></div><div className="flex justify-between"><span className="text-slate-400">Compliant</span><span className="text-green-400">{score.yes}</span></div><div className="flex justify-between"><span className="text-slate-400">Gaps</span><span className="text-red-400">{score.answered-score.yes}</span></div><div className="pt-4 border-t border-slate-700"><div className="flex justify-between"><span className="text-slate-400">Readiness</span><span className="text-xl font-bold" style={{color:cur.color}}>{Math.round(score.readiness)}%</span></div><div className="mt-2 h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{width:`${score.readiness}%`,background:cur.color}}/></div></div></div></div>
+
+<div className="glass border border-slate-700/50 rounded-xl p-6 bg-gradient-to-br from-blue-600/10 to-purple-600/10"><h3 className="font-semibold text-white mb-2">Need Help?</h3><p className="text-slate-400 text-sm mb-4">Expert guidance for compliance success.</p><a href={CONFIG.contactUrl} target="_blank" rel="noopener" className="btn-primary w-full py-3 rounded-lg text-white font-semibold flex items-center justify-center gap-2"><Icon name="Calendar" className="w-4 h-4"/>Schedule Call</a><p className="text-center text-slate-500 text-xs mt-3">{CONFIG.phone}</p></div></div></div></main>
+
+{showGate&&<EmailGate onSubmit={handleEmailSubmit} trigger={gateTrigger}/>}
+{showPricing&&<PricingModal onClose={()=>setShowPricing(false)} onSelect={handleTierSelect} current={tier}/>}
+{showCheckout&&<CheckoutModal tier={showCheckout} onSuccess={handlePaySuccess} onCancel={()=>setShowCheckout(null)}/>}
+{showAdmin&&<AdminPanel onClose={()=>setShowAdmin(false)}/>}
+</div>);}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
