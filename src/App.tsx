@@ -1,1452 +1,241 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MASTER_CONTROLS,
-  COMPLIANCE_DOMAINS,
-  FRAMEWORKS,
-  getControlsByDomain,
-  calculateFrameworkProgress,
-  getDomainProgress,
-  type MasterControl,
-  type ComplianceDomain,
-  type FrameworkId,
-  type UserResponse,
-  type CustomControl,
-  type FrameworkMapping,
+  MASTER_CONTROLS, COMPLIANCE_DOMAINS, FRAMEWORKS, getControlsByDomain, calculateFrameworkProgress, getDomainProgress,
+  type MasterControl, type ComplianceDomain, type FrameworkId, type UserResponse, type CustomControl, type FrameworkMapping,
 } from './constants/controls';
 
-// ============================================================================
-// ICONS (Inline SVG components)
-// ============================================================================
+type ViewMode = 'dashboard' | 'assessment' | 'evidence' | 'company';
+interface SyncNotification { id: string; controlId: string; controlTitle: string; framework: FrameworkMapping; timestamp: number; }
 
 const Icons = {
-  Home: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  ),
-  Clipboard: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-    </svg>
-  ),
-  Folder: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-    </svg>
-  ),
-  Cog: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  Search: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  ),
-  Check: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  ),
-  X: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  ),
-  ChevronRight: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  ),
-  ChevronDown: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  ),
-  Plus: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  ),
-  Link: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-    </svg>
-  ),
-  Info: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  Upload: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-    </svg>
-  ),
-  Sparkle: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-  ),
-  Moon: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-    </svg>
-  ),
-  Sun: () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
+  Home: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>,
+  ClipboardCheck: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  FolderOpen: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" /></svg>,
+  Building: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>,
+  Search: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
+  Check: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>,
+  X: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>,
+  ChevronRight: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>,
+  Plus: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>,
+  Info: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>,
+  AlertTriangle: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
+  Moon: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>,
+  Sun: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>,
+  Zap: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>,
+  Activity: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>,
+  Shield: ({ className = "w-5 h-5" }: { className?: string }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>,
 };
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type ViewMode = 'dashboard' | 'assessment' | 'evidence' | 'company';
-
-interface MappingNotification {
-  id: string;
-  controlTitle: string;
-  framework: FrameworkMapping;
-  timestamp: number;
+function useLocalStorage<T>(key: string, init: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [val, setVal] = useState<T>(() => { try { const i = localStorage.getItem(key); return i ? JSON.parse(i) : init; } catch { return init; } });
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }, [key, val]);
+  return [val, setVal];
 }
 
-// ============================================================================
-// UTILITY HOOKS
-// ============================================================================
-
-function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(storedValue));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
-  }, [key, storedValue]);
-
-  return [storedValue, setStoredValue];
-}
-
-// ============================================================================
-// GLASSMORPHISM CARD COMPONENT
-// ============================================================================
-
-const GlassCard: React.FC<{
-  children: React.ReactNode;
-  className?: string;
-  gradient?: string;
-}> = ({ children, className = '', gradient }) => (
-  <div
-    className={`relative overflow-hidden rounded-2xl border border-white/20 backdrop-blur-xl ${className}`}
-    style={{
-      background: gradient || 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2)',
-    }}
-  >
-    {children}
-  </div>
-);
-
-// ============================================================================
-// PROGRESS GAUGE COMPONENT
-// ============================================================================
-
-const ProgressGauge: React.FC<{
-  value: number;
-  size?: number;
-  strokeWidth?: number;
-  color: string;
-  label: string;
-  icon: string;
-  sublabel?: string;
-}> = ({ value, size = 120, strokeWidth = 8, color, label, icon, sublabel }) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (value / 100) * circumference;
-
+const CircularGauge: React.FC<{ value: number; maxValue: number; size?: number; color: string; label: string; icon: string }> = ({ value, maxValue, size = 140, color, label, icon }) => {
+  const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
+  const r = (size - 10) / 2, c = r * 2 * Math.PI, off = c - (pct / 100) * c;
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg className="-rotate-90" width={size} height={size}>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.1)"
-            strokeWidth={strokeWidth}
-          />
-          <motion.circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
-            style={{ filter: `drop-shadow(0 0 8px ${color}40)` }}
-          />
+        <div className="absolute inset-0 rounded-full blur-xl opacity-30" style={{ backgroundColor: color }} />
+        <svg className="relative z-10 -rotate-90" width={size} height={size}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="currentColor" strokeWidth={10} className="text-white/10" />
+          <motion.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={10} strokeLinecap="round" strokeDasharray={c} initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: off }} transition={{ duration: 1.5 }} style={{ filter: `drop-shadow(0 0 12px ${color}80)` }} />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl mb-1">{icon}</span>
-          <span className="text-xl font-bold text-white">{value}%</span>
-        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20"><span className="text-2xl mb-1">{icon}</span><span className="text-2xl font-bold text-white">{pct}%</span></div>
       </div>
-      <div className="mt-3 text-center">
-        <div className="font-semibold text-white">{label}</div>
-        {sublabel && <div className="text-xs text-white/60">{sublabel}</div>}
-      </div>
+      <div className="mt-3 text-center"><div className="font-semibold text-white">{label}</div><div className="text-sm text-white/60">{value}/{maxValue}</div></div>
     </div>
   );
 };
 
-// ============================================================================
-// MAPPING SIDEBAR COMPONENT
-// ============================================================================
-
-const MappingSidebar: React.FC<{
-  notifications: MappingNotification[];
-  isOpen: boolean;
-  onClose: () => void;
-}> = ({ notifications, isOpen, onClose }) => {
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ x: 320, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 320, opacity: 0 }}
-          className="fixed right-0 top-0 h-full w-80 bg-slate-900/95 backdrop-blur-xl border-l border-white/10 z-50 shadow-2xl"
-        >
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Icons.Link />
-              <h3 className="font-semibold text-white">Mapping Feed</h3>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-            >
-              <Icons.X />
-            </button>
-          </div>
-          
-          <div className="p-4 space-y-3 overflow-y-auto h-[calc(100%-64px)]">
-            {notifications.length === 0 ? (
-              <div className="text-center py-12 text-white/40">
-                <Icons.Sparkle />
-                <p className="mt-2 text-sm">Requirements will appear here as you complete controls</p>
-              </div>
-            ) : (
-              notifications.map((notif, index) => (
-                <motion.div
-                  key={notif.id}
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30"
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-0.5">
-                      <Icons.Check />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-emerald-300 font-medium">Requirement Met</p>
-                      <p className="text-sm text-white font-semibold truncate">
-                        {notif.framework.frameworkId} {notif.framework.clauseId}
-                      </p>
-                      <p className="text-xs text-white/60 truncate">{notif.framework.clauseTitle}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
-
-// ============================================================================
-// SEARCH BAR COMPONENT
-// ============================================================================
-
-const SearchBar: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}> = ({ value, onChange, placeholder = 'Search controls...' }) => (
-  <div className="relative">
-    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-      <Icons.Search />
-    </div>
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all"
-    />
-    {value && (
-      <button
-        onClick={() => onChange('')}
-        className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/40 hover:text-white"
-      >
-        <Icons.X />
-      </button>
-    )}
-  </div>
+const GlassCard: React.FC<{ children: React.ReactNode; className?: string; hover?: boolean; onClick?: () => void }> = ({ children, className = '', hover = false, onClick }) => (
+  <motion.div whileHover={hover ? { scale: 1.02, y: -4 } : undefined} whileTap={hover ? { scale: 0.98 } : undefined} onClick={onClick}
+    className={`relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] ${hover ? 'cursor-pointer' : ''} ${className}`}>
+    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+    <div className="relative z-10">{children}</div>
+  </motion.div>
 );
 
-// ============================================================================
-// CONTROL CARD WITH EFFORT/IMPACT
-// ============================================================================
+const EffortBadge: React.FC<{ riskLevel: MasterControl['riskLevel'] }> = ({ riskLevel }) => {
+  const cfg = { critical: ['High','Critical','text-red-400 bg-red-500/20'], high: ['Medium','High','text-amber-400 bg-amber-500/20'], medium: ['Low','Medium','text-emerald-400 bg-emerald-500/20'], low: ['Low','Low','text-slate-400 bg-slate-500/20'] };
+  const [e,i,c] = cfg[riskLevel];
+  return <div className="flex gap-2"><span className={`px-2 py-0.5 text-xs font-medium rounded-full ${c}`}>{e} Effort</span><span className={`px-2 py-0.5 text-xs font-medium rounded-full ${c}`}>{i} Impact</span></div>;
+};
 
-const ControlCard: React.FC<{
-  control: MasterControl;
-  response: UserResponse | undefined;
-  onAnswer: (controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => void;
-  onMappingTrigger: (control: MasterControl) => void;
-}> = ({ control, response, onAnswer, onMappingTrigger }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showGap, setShowGap] = useState(false);
-
-  // Generate effort/impact based on riskLevel if not present
-  const effort = (control as any).effort || (control.riskLevel === 'critical' ? 'high' : control.riskLevel === 'high' ? 'medium' : 'low');
-  const impact = (control as any).impact || (control.riskLevel === 'critical' || control.riskLevel === 'high' ? 'high' : 'medium');
-  const whyItMatters = (control as any).whyItMatters || control.guidance;
-
-  const handleAnswer = (answer: 'yes' | 'no' | 'partial' | 'na') => {
-    onAnswer(control.id, answer);
-    if (answer === 'yes') {
-      onMappingTrigger(control);
-      setShowGap(false);
-    } else if (answer === 'no') {
-      setShowGap(true);
-    } else {
-      setShowGap(false);
-    }
-  };
-
-  const effortColors = {
-    low: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    high: 'bg-red-500/20 text-red-400 border-red-500/30',
-  };
-
-  const impactColors = {
-    low: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-    medium: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    high: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-  };
-
+const GlobalSearch: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
+  const [focused, setFocused] = useState(false);
+  const results = useMemo(() => !value.trim() ? [] : MASTER_CONTROLS.filter(c => c.id.toLowerCase().includes(value.toLowerCase()) || c.title.toLowerCase().includes(value.toLowerCase())).slice(0, 6), [value]);
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden"
-    >
-      {/* Main Content */}
-      <div className="p-5">
-        {/* Header */}
+    <div className="relative">
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border ${focused ? 'border-blue-500/50 bg-white/10' : 'border-white/10'}`}>
+        <Icons.Search className="w-5 h-5 text-white/40" />
+        <input type="text" value={value} onChange={e => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 200)} placeholder="Search controls..." className="flex-1 bg-transparent text-white placeholder-white/40 outline-none" />
+        {value && <button onClick={() => onChange('')} className="text-white/40 hover:text-white"><Icons.X className="w-4 h-4" /></button>}
+      </div>
+      <AnimatePresence>
+        {focused && results.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 right-0 mt-2 p-2 rounded-xl bg-slate-800/95 backdrop-blur-xl border border-white/10 shadow-2xl z-50">
+            {results.map(c => <button key={c.id} onClick={() => onChange('')} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 text-left"><span className="px-2 py-1 text-xs font-mono bg-white/10 rounded text-white/80">{c.id}</span><span className="flex-1 text-sm text-white truncate">{c.title}</span></button>)}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const ControlCard: React.FC<{ control: MasterControl; response: UserResponse | undefined; onAnswer: (id: string, a: 'yes'|'no'|'partial'|'na') => void; onSync: (c: MasterControl) => void }> = ({ control, response, onAnswer, onSync }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [showGap, setShowGap] = useState(false);
+  const handle = (a: 'yes'|'no'|'partial'|'na') => { onAnswer(control.id, a); if (a === 'yes') { onSync(control); setShowGap(false); } else if (a === 'no') setShowGap(true); else setShowGap(false); };
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+      <div className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/80 rounded">
-                {control.id}
-              </span>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded border ${effortColors[effort as keyof typeof effortColors]}`}>
-                {effort.charAt(0).toUpperCase() + effort.slice(1)} Effort
-              </span>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded border ${impactColors[impact as keyof typeof impactColors]}`}>
-                {impact.charAt(0).toUpperCase() + impact.slice(1)} Impact
-              </span>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {control.title}
-            </h3>
+            <div className="flex items-center gap-3 mb-2"><span className="px-2.5 py-1 text-xs font-mono font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/80 rounded-lg">{control.id}</span><EffortBadge riskLevel={control.riskLevel} /></div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{control.title}</h3>
           </div>
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-          >
-            <Icons.Info />
-          </button>
+          <button onClick={() => setExpanded(!expanded)} className={`p-2 rounded-xl transition-all ${expanded ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50'}`}><Icons.Info className="w-5 h-5" /></button>
         </div>
-
-        {/* Question */}
-        <p className="text-slate-600 dark:text-white/70 mb-5">
-          {control.question}
-        </p>
-
-        {/* Answer Buttons */}
-        <div className="flex gap-2">
-          {(['yes', 'no', 'partial', 'na'] as const).map((answer) => {
-            const isSelected = response?.answer === answer;
-            const baseStyle = "flex-1 py-2.5 px-4 rounded-xl font-medium transition-all border-2";
-            const styles = {
-              yes: isSelected 
-                ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' 
-                : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10',
-              no: isSelected 
-                ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' 
-                : 'border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10',
-              partial: isSelected 
-                ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' 
-                : 'border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10',
-              na: isSelected 
-                ? 'bg-slate-500 text-white border-slate-500 shadow-lg shadow-slate-500/25' 
-                : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-500/10',
-            };
-
-            return (
-              <motion.button
-                key={answer}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleAnswer(answer)}
-                className={`${baseStyle} ${styles[answer]}`}
-              >
-                {answer === 'yes' ? 'Yes' : answer === 'no' ? 'No' : answer === 'partial' ? 'Partial' : 'N/A'}
-              </motion.button>
-            );
+        <p className="text-slate-600 dark:text-white/70 mb-6">{control.question}</p>
+        <div className="flex gap-2 mb-4">
+          {(['yes','no','partial','na'] as const).map(a => {
+            const sel = response?.answer === a;
+            const st = { yes: sel ? 'bg-emerald-500 text-white border-emerald-500' : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400', no: sel ? 'bg-red-500 text-white border-red-500' : 'border-red-500/30 text-red-600 dark:text-red-400', partial: sel ? 'bg-amber-500 text-white border-amber-500' : 'border-amber-500/30 text-amber-600 dark:text-amber-400', na: sel ? 'bg-slate-500 text-white border-slate-500' : 'border-slate-400/30 text-slate-600 dark:text-slate-400' };
+            return <motion.button key={a} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => handle(a)} className={`flex-1 py-3 px-4 rounded-xl font-medium border-2 transition-all ${st[a]}`}>{a === 'yes' ? 'Yes' : a === 'no' ? 'No' : a === 'partial' ? 'Partial' : 'N/A'}</motion.button>;
           })}
         </div>
-
-        {/* Framework Tags */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
-          <div className="flex flex-wrap gap-1.5">
-            {control.frameworkMappings.map((mapping) => {
-              const framework = FRAMEWORKS.find(f => f.id === mapping.frameworkId);
-              return (
-                <span
-                  key={`${mapping.frameworkId}-${mapping.clauseId}`}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70"
-                >
-                  <span 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: framework?.color }}
-                  />
-                  {mapping.frameworkId} {mapping.clauseId}
-                </span>
-              );
-            })}
-          </div>
+        <div className="flex flex-wrap gap-1.5">
+          {control.frameworkMappings.map(m => { const fw = FRAMEWORKS.find(f => f.id === m.frameworkId); return <span key={`${m.frameworkId}-${m.clauseId}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: `${fw?.color}15`, color: fw?.color, border: `1px solid ${fw?.color}30` }}><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />{m.frameworkId} {m.clauseId}</span>; })}
         </div>
       </div>
-
-      {/* Expandable "Why This Matters" */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
-          >
-            <div className="p-5 space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                  <span className="text-blue-500">💡</span> Why This Matters
-                </h4>
-                <p className="text-sm text-slate-600 dark:text-white/70">{whyItMatters}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                  <span className="text-emerald-500">✓</span> Evidence Examples
-                </h4>
-                <ul className="space-y-1">
-                  {control.evidenceExamples.map((example, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-white/70">
-                      <span className="text-slate-400 mt-1">•</span>
-                      {example}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Gap Remediation Note */}
-      <AnimatePresence>
-        {showGap && response?.answer === 'no' && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10"
-          >
-            <div className="p-4 flex items-start gap-3">
-              <span className="text-amber-500 text-xl">⚠️</span>
-              <div className="flex-1">
-                <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-1">
-                  Remediation Required
-                </h4>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  {control.remediationTip}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowGap(false)}
-                className="text-amber-400 hover:text-amber-600"
-              >
-                <Icons.X />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnimatePresence>{expanded && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-slate-200 dark:border-white/10"><div className="p-6 bg-slate-50 dark:bg-white/5 space-y-4"><div><h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white mb-2"><Icons.Info className="w-4 h-4 text-blue-500" />Why This Matters</h4><p className="text-sm text-slate-600 dark:text-white/70">{control.guidance}</p></div><div><h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white mb-2"><Icons.FolderOpen className="w-4 h-4 text-emerald-500" />Evidence Examples</h4><ul className="space-y-1">{control.evidenceExamples.map((e,i) => <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-white/70"><Icons.Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />{e}</li>)}</ul></div></div></motion.div>}</AnimatePresence>
+      <AnimatePresence>{showGap && response?.answer === 'no' && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-red-200 dark:border-red-500/30"><div className="p-4 bg-red-50 dark:bg-red-500/10 flex items-start gap-3"><Icons.AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" /><div className="flex-1"><span className="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded mb-1 inline-block">GAP DETECTED</span><p className="text-sm text-red-700 dark:text-red-300">{control.remediationTip}</p></div><button onClick={() => setShowGap(false)} className="text-red-400"><Icons.X className="w-4 h-4" /></button></div></motion.div>}</AnimatePresence>
     </motion.div>
   );
 };
 
-// ============================================================================
-// DASHBOARD VIEW
-// ============================================================================
+const MappingSidebar: React.FC<{ notifications: SyncNotification[]; isOpen: boolean; onClose: () => void }> = ({ notifications, isOpen, onClose }) => (
+  <AnimatePresence>
+    {isOpen && (<><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" />
+      <motion.div initial={{ x: 320 }} animate={{ x: 0 }} exit={{ x: 320 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed right-0 top-0 h-full w-80 bg-slate-900/95 backdrop-blur-xl border-l border-white/10 z-50 shadow-2xl">
+        <div className="p-4 border-b border-white/10 flex items-center justify-between"><div className="flex items-center gap-2"><Icons.Zap className="w-5 h-5 text-emerald-400" /><h3 className="font-semibold text-white">Framework Sync</h3></div><button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/60"><Icons.X className="w-5 h-5" /></button></div>
+        <div className="p-4 overflow-y-auto h-[calc(100%-64px)]">
+          {notifications.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-center"><Icons.Shield className="w-12 h-12 text-white/20 mb-4" /><p className="text-white/40 text-sm">Answer Yes to see sync</p></div> : (
+            <div className="space-y-3">{notifications.slice(0, 20).map((n, i) => { const fw = FRAMEWORKS.find(f => f.id === n.framework.frameworkId); return <motion.div key={n.id} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="relative overflow-hidden"><motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ duration: 1 }} className="absolute inset-0 bg-emerald-500/30 rounded-xl" /><div className="relative p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30"><div className="flex items-start gap-3"><div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center"><Icons.Check className="w-4 h-4 text-emerald-400" /></div><div className="flex-1 min-w-0"><p className="text-xs text-emerald-300 font-medium mb-1">Requirement Satisfied</p><p className="text-sm font-bold text-white">{n.framework.frameworkId} {n.framework.clauseId}</p><p className="text-xs text-white/50 truncate mt-0.5">{n.framework.clauseTitle}</p></div><span className="w-3 h-3 rounded-full" style={{ backgroundColor: fw?.color, boxShadow: `0 0 8px ${fw?.color}` }} /></div></div></motion.div>; })}</div>
+          )}
+        </div>
+      </motion.div></>)}
+  </AnimatePresence>
+);
 
-const DashboardView: React.FC<{
-  responses: Map<string, UserResponse>;
-  onNavigate: (view: ViewMode) => void;
-}> = ({ responses, onNavigate }) => {
-  const frameworkProgress = FRAMEWORKS.map(f => ({
-    framework: f,
-    ...calculateFrameworkProgress(f.id, responses),
-  }));
-
-  const totalControls = MASTER_CONTROLS.length;
-  const answeredCount = Array.from(responses.values()).filter(r => r.answer !== null && r.answer !== undefined).length;
-  const completedCount = Array.from(responses.values()).filter(r => r.answer === 'yes' || r.answer === 'na').length;
-  const gapsCount = Array.from(responses.values()).filter(r => r.answer === 'no').length;
-
+const DashboardView: React.FC<{ responses: Map<string, UserResponse>; notifications?: SyncNotification[]; onNavigate: (v: ViewMode) => void }> = ({ responses, onNavigate }) => {
+  const fp = FRAMEWORKS.map(fw => ({ ...fw, ...calculateFrameworkProgress(fw.id, responses) }));
+  const total = MASTER_CONTROLS.length, answered = Array.from(responses.values()).filter(r => r.answer != null).length, passed = Array.from(responses.values()).filter(r => r.answer === 'yes' || r.answer === 'na').length, gaps = Array.from(responses.values()).filter(r => r.answer === 'no').length;
   return (
-    <div className="space-y-8">
-      {/* Hero Section */}
+    <div className="space-y-6">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-        
-        <div className="relative z-10">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Compliance Coverage Dashboard</h1>
-            <p className="text-white/60">Track your progress across {totalControls} controls and 4 frameworks</p>
-          </div>
-
-          {/* Framework Gauges */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
-            {frameworkProgress.map((fp) => (
-              <GlassCard key={fp.framework.id} className="p-6">
-                <ProgressGauge
-                  value={fp.percentage}
-                  color={fp.framework.color}
-                  label={fp.framework.name}
-                  icon={fp.framework.icon}
-                  sublabel={`${fp.completed}/${fp.total} met`}
-                />
-              </GlassCard>
-            ))}
-          </div>
-
-          {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-4">
-            <GlassCard className="p-4 text-center">
-              <div className="text-3xl font-bold text-white">{answeredCount}</div>
-              <div className="text-sm text-white/60">Assessed</div>
-            </GlassCard>
-            <GlassCard className="p-4 text-center">
-              <div className="text-3xl font-bold text-emerald-400">{completedCount}</div>
-              <div className="text-sm text-white/60">Compliant</div>
-            </GlassCard>
-            <GlassCard className="p-4 text-center">
-              <div className="text-3xl font-bold text-red-400">{gapsCount}</div>
-              <div className="text-sm text-white/60">Gaps</div>
-            </GlassCard>
-            <GlassCard className="p-4 text-center">
-              <div className="text-3xl font-bold text-white">{totalControls - answeredCount}</div>
-              <div className="text-sm text-white/60">Remaining</div>
-            </GlassCard>
-          </div>
-        </div>
+        <div className="absolute inset-0 opacity-30"><div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.3),transparent_50%)]" /><div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(139,92,246,0.3),transparent_50%)]" /></div>
+        <div className="relative z-10"><div className="text-center mb-10"><h1 className="text-4xl font-bold text-white mb-3">Compliance Command Center</h1><p className="text-white/60 text-lg">{total} controls mapped across 4 frameworks</p></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">{fp.map((f, i) => <motion.div key={f.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}><GlassCard className="p-6"><CircularGauge value={f.completed} maxValue={f.total} color={f.color} label={f.name} icon={f.icon} /></GlassCard></motion.div>)}</div></div>
       </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-6">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onNavigate('assessment')}
-          className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl text-left text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-shadow"
-        >
-          <Icons.Clipboard />
-          <h3 className="text-lg font-semibold mt-3">Continue Assessment</h3>
-          <p className="text-blue-100 text-sm mt-1">{totalControls - answeredCount} controls remaining</p>
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onNavigate('evidence')}
-          className="p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl text-left text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-shadow"
-        >
-          <Icons.Folder />
-          <h3 className="text-lg font-semibold mt-3">Evidence Locker</h3>
-          <p className="text-emerald-100 text-sm mt-1">{completedCount} controls ready for evidence</p>
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onNavigate('company')}
-          className="p-6 bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl text-left text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow"
-        >
-          <Icons.Cog />
-          <h3 className="text-lg font-semibold mt-3">Company Controls</h3>
-          <p className="text-violet-100 text-sm mt-1">Add custom controls</p>
-        </motion.button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <GlassCard className="p-6"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center"><Icons.ClipboardCheck className="w-7 h-7 text-blue-400" /></div><div><div className="text-3xl font-bold text-slate-900 dark:text-white">{answered}</div><div className="text-slate-500 dark:text-white/60">Assessed</div></div></div></GlassCard>
+        <GlassCard className="p-6"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center"><Icons.Shield className="w-7 h-7 text-emerald-400" /></div><div><div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{passed}</div><div className="text-slate-500 dark:text-white/60">Compliant</div></div></div></GlassCard>
+        <GlassCard className="p-6"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center"><Icons.AlertTriangle className="w-7 h-7 text-red-400" /></div><div><div className="text-3xl font-bold text-red-600 dark:text-red-400">{gaps}</div><div className="text-slate-500 dark:text-white/60">Gaps</div></div></div></GlassCard>
       </div>
-
-      {/* Domain Progress */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Progress by Domain</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {COMPLIANCE_DOMAINS.map((domain) => {
-            const progress = getDomainProgress(domain.id, responses);
-            return (
-              <div
-                key={domain.id}
-                className="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                onClick={() => onNavigate('assessment')}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">{domain.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 dark:text-white truncate">{domain.title}</div>
-                    <div className="text-xs text-slate-500">{progress.completed}/{progress.total}</div>
-                  </div>
-                </div>
-                <div className="h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress.percentage}%` }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: domain.color }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <GlassCard className="p-6" hover onClick={() => onNavigate('assessment')}><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center"><Icons.ClipboardCheck className="w-6 h-6 text-white" /></div><div className="flex-1"><h3 className="font-semibold text-slate-900 dark:text-white">Continue Assessment</h3><p className="text-sm text-slate-500 dark:text-white/60">{total - answered} remaining</p></div><Icons.ChevronRight className="w-5 h-5 text-slate-400" /></div></GlassCard>
+        <GlassCard className="p-6" hover onClick={() => onNavigate('evidence')}><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center"><Icons.FolderOpen className="w-6 h-6 text-white" /></div><div className="flex-1"><h3 className="font-semibold text-slate-900 dark:text-white">Evidence Locker</h3><p className="text-sm text-slate-500 dark:text-white/60">{passed} ready</p></div><Icons.ChevronRight className="w-5 h-5 text-slate-400" /></div></GlassCard>
+        <GlassCard className="p-6" hover onClick={() => onNavigate('company')}><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center"><Icons.Building className="w-6 h-6 text-white" /></div><div className="flex-1"><h3 className="font-semibold text-slate-900 dark:text-white">Company Controls</h3><p className="text-sm text-slate-500 dark:text-white/60">Custom controls</p></div><Icons.ChevronRight className="w-5 h-5 text-slate-400" /></div></GlassCard>
       </div>
+      <GlassCard className="p-6"><h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Domain Progress</h2><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{COMPLIANCE_DOMAINS.map(d => { const p = getDomainProgress(d.id, responses); const done = p.percentage === 100 && p.total > 0; return <motion.div key={d.id} whileHover={{ scale: 1.02 }} className={`p-4 rounded-xl cursor-pointer ${done ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-slate-100 dark:bg-white/5'}`} onClick={() => onNavigate('assessment')}><div className="flex items-center gap-3 mb-3"><span className="text-2xl">{d.icon}</span>{done && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"><Icons.Check className="w-3 h-3 text-white" /></motion.div>}</div><h4 className="font-medium text-slate-900 dark:text-white text-sm mb-1">{d.title}</h4><div className="flex items-center gap-2"><div className="flex-1 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${p.percentage}%` }} className="h-full rounded-full" style={{ backgroundColor: d.color }} /></div><span className="text-xs text-slate-500 dark:text-white/50">{p.completed}/{p.total}</span></div></motion.div>; })}</div></GlassCard>
     </div>
   );
 };
 
-// ============================================================================
-// ASSESSMENT VIEW
-// ============================================================================
-
-const AssessmentView: React.FC<{
-  responses: Map<string, UserResponse>;
-  onAnswer: (controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => void;
-  onMappingTrigger: (control: MasterControl) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-}> = ({ responses, onAnswer, onMappingTrigger, searchQuery, onSearchChange }) => {
-  const [currentDomainIndex, setCurrentDomainIndex] = useState(0);
-  const currentDomain = COMPLIANCE_DOMAINS[currentDomainIndex];
-
-  const filteredControls = useMemo(() => {
-    let controls = getControlsByDomain(currentDomain.id);
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      controls = MASTER_CONTROLS.filter(c =>
-        c.title.toLowerCase().includes(query) ||
-        c.description.toLowerCase().includes(query) ||
-        c.id.toLowerCase().includes(query) ||
-        c.keywords.some(k => k.toLowerCase().includes(query))
-      );
-    }
-    return controls;
-  }, [currentDomain.id, searchQuery]);
-
-  const domainProgress = getDomainProgress(currentDomain.id, responses);
-
+const AssessmentView: React.FC<{ responses: Map<string, UserResponse>; onAnswer: (id: string, a: 'yes'|'no'|'partial'|'na') => void; onSync: (c: MasterControl) => void; searchQuery: string; onSearchChange: (v: string) => void }> = ({ responses, onAnswer, onSync, searchQuery, onSearchChange }) => {
+  const [domainIdx, setDomainIdx] = useState(0);
+  const domain = COMPLIANCE_DOMAINS[domainIdx];
+  const controls = useMemo(() => searchQuery.trim() ? MASTER_CONTROLS.filter(c => c.id.toLowerCase().includes(searchQuery.toLowerCase()) || c.title.toLowerCase().includes(searchQuery.toLowerCase())) : getControlsByDomain(domain.id), [domain.id, searchQuery]);
   return (
     <div className="flex gap-6">
-      {/* Domain Sidebar */}
-      <div className="w-72 flex-shrink-0">
-        <div className="sticky top-24 space-y-2">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 px-3">
-            Compliance Domains
-          </h3>
-          {COMPLIANCE_DOMAINS.map((domain, index) => {
-            const progress = getDomainProgress(domain.id, responses);
-            const isActive = index === currentDomainIndex;
-            const isCompleted = progress.percentage === 100 && progress.total > 0;
-
-            return (
-              <button
-                key={domain.id}
-                onClick={() => {
-                  setCurrentDomainIndex(index);
-                  onSearchChange('');
-                }}
-                className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
-                  isActive
-                    ? 'bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700'
-                    : 'hover:bg-white/50 dark:hover:bg-slate-800/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{domain.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className={`font-medium truncate ${
-                      isActive ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'
-                    }`}>
-                      {domain.title}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {progress.completed}/{progress.total}
-                    </div>
-                  </div>
-                  {isCompleted && (
-                    <span className="text-emerald-500">
-                      <Icons.Check />
-                    </span>
-                  )}
-                </div>
-                {isActive && (
-                  <div className="mt-2 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress.percentage}%` }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: domain.color }}
-                    />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0 space-y-6">
-        {/* Search Bar */}
-        <SearchBar
-          value={searchQuery}
-          onChange={onSearchChange}
-          placeholder="Search all controls..."
-        />
-
-        {/* Domain Header */}
-        {!searchQuery && (
-          <div className="flex items-center gap-4 p-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <span className="text-4xl">{currentDomain.icon}</span>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{currentDomain.title}</h2>
-              <p className="text-slate-500 dark:text-slate-400">{currentDomain.description}</p>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold" style={{ color: currentDomain.color }}>
-                {domainProgress.percentage}%
-              </div>
-              <div className="text-sm text-slate-500">{domainProgress.completed}/{domainProgress.total} complete</div>
-            </div>
-          </div>
-        )}
-
-        {/* Search Results Header */}
-        {searchQuery && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-            <p className="text-blue-700 dark:text-blue-300">
-              Found <strong>{filteredControls.length}</strong> controls matching "{searchQuery}"
-            </p>
-          </div>
-        )}
-
-        {/* Controls List */}
-        <div className="space-y-4">
-          {filteredControls.map((control) => (
-            <ControlCard
-              key={control.id}
-              control={control}
-              response={responses.get(control.id)}
-              onAnswer={onAnswer}
-              onMappingTrigger={onMappingTrigger}
-            />
-          ))}
-        </div>
-
-        {filteredControls.length === 0 && (
-          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-            <Icons.Search />
-            <p className="mt-2">No controls found</p>
-          </div>
-        )}
-      </div>
+      <div className="w-72 flex-shrink-0 hidden lg:block"><div className="sticky top-24"><GlassCard className="p-4"><h3 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase mb-4 px-2">Domains</h3><div className="space-y-1">{COMPLIANCE_DOMAINS.map((d, i) => { const p = getDomainProgress(d.id, responses); const active = i === domainIdx && !searchQuery; const done = p.percentage === 100 && p.total > 0; return <button key={d.id} onClick={() => { setDomainIdx(i); onSearchChange(''); }} className={`w-full text-left px-3 py-3 rounded-xl ${active ? 'bg-blue-500/20 border border-blue-500/30' : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}><div className="flex items-center gap-3"><span className="text-xl">{d.icon}</span><div className="flex-1 min-w-0"><div className={`font-medium text-sm truncate ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-white/80'}`}>{d.title}</div><div className="flex items-center gap-2 mt-1"><div className="flex-1 h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${p.percentage}%`, backgroundColor: done ? '#10B981' : d.color }} /></div><span className="text-xs text-slate-500 dark:text-white/50">{p.completed}/{p.total}</span></div></div>{done && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0"><Icons.Check className="w-3.5 h-3.5 text-white" /></motion.div>}</div></button>; })}</div></GlassCard></div></div>
+      <div className="flex-1 min-w-0 space-y-6"><GlobalSearch value={searchQuery} onChange={onSearchChange} />{!searchQuery && <motion.div key={domain.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}><GlassCard className="p-6"><div className="flex items-center gap-4"><div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: `${domain.color}20` }}>{domain.icon}</div><div className="flex-1"><h2 className="text-2xl font-bold text-slate-900 dark:text-white">{domain.title}</h2><p className="text-slate-500 dark:text-white/60">{domain.description}</p></div><div className="text-right"><div className="text-3xl font-bold" style={{ color: domain.color }}>{getDomainProgress(domain.id, responses).percentage}%</div><div className="text-sm text-slate-500 dark:text-white/50">Complete</div></div></div></GlassCard></motion.div>}{searchQuery && <div className="p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-500/30"><p className="text-blue-700 dark:text-blue-300">Found <strong>{controls.length}</strong> controls</p></div>}<div className="space-y-4">{controls.map((c, i) => <motion.div key={c.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}><ControlCard control={c} response={responses.get(c.id)} onAnswer={onAnswer} onSync={onSync} /></motion.div>)}</div>{controls.length === 0 && <div className="text-center py-16"><Icons.Search className="w-12 h-12 text-slate-300 dark:text-white/20 mx-auto mb-4" /><p className="text-slate-500 dark:text-white/50">No controls found</p></div>}</div>
     </div>
   );
 };
 
-// ============================================================================
-// EVIDENCE LOCKER VIEW
-// ============================================================================
-
-const EvidenceLockerView: React.FC<{
-  responses: Map<string, UserResponse>;
-  onUpdateEvidence: (controlId: string, notes: string) => void;
-}> = ({ responses, onUpdateEvidence }) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editNotes, setEditNotes] = useState('');
-
-  const completedControls = MASTER_CONTROLS.filter(c => {
-    const response = responses.get(c.id);
-    return response?.answer === 'yes';
-  });
-
-  const handleSave = (controlId: string) => {
-    onUpdateEvidence(controlId, editNotes);
-    setEditingId(null);
-    setEditNotes('');
-  };
-
+const EvidenceLockerView: React.FC<{ responses: Map<string, UserResponse>; onUpdateNotes: (id: string, n: string) => void }> = ({ responses, onUpdateNotes }) => {
+  const [editId, setEditId] = useState<string | null>(null);
+  const [notes, setNotes] = useState('');
+  const passed = MASTER_CONTROLS.filter(c => responses.get(c.id)?.answer === 'yes');
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Evidence Locker</h2>
-          <p className="text-slate-500 dark:text-slate-400">Attach notes and evidence to your completed controls</p>
-        </div>
-        <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl font-medium">
-          {completedControls.length} controls ready
-        </div>
-      </div>
-
-      {/* Evidence Cards */}
-      {completedControls.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <Icons.Folder />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mt-4">No Evidence Yet</h3>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">
-            Complete some controls with "Yes" to start collecting evidence
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {completedControls.map((control) => {
-            const response = responses.get(control.id);
-            const isEditing = editingId === control.id;
-
-            return (
-              <div
-                key={control.id}
-                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                    <Icons.Check />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono text-slate-500">{control.id}</span>
-                      <span className="text-emerald-500 text-xs font-medium">COMPLIANT</span>
-                    </div>
-                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{control.title}</h3>
-                    
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <textarea
-                          value={editNotes}
-                          onChange={(e) => setEditNotes(e.target.value)}
-                          placeholder="Add notes about your evidence (e.g., location of screenshots, policy documents, etc.)"
-                          rows={3}
-                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => handleSave(control.id)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            Save Notes
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="px-4 py-2 text-slate-500 hover:text-slate-700 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <div className="flex-1" />
-                          <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                            <Icons.Upload />
-                            Upload File
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        {response?.evidenceNotes ? (
-                          <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg mb-3">
-                            <p className="text-sm text-slate-600 dark:text-slate-300">{response.evidenceNotes}</p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-slate-400 mb-3">No evidence notes added yet</p>
-                        )}
-                        <button
-                          onClick={() => {
-                            setEditingId(control.id);
-                            setEditNotes(response?.evidenceNotes || '');
-                          }}
-                          className="text-sm text-blue-500 hover:text-blue-600 font-medium"
-                        >
-                          {response?.evidenceNotes ? 'Edit Notes' : '+ Add Evidence Notes'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold text-slate-900 dark:text-white">Evidence Locker</h2><p className="text-slate-500 dark:text-white/60">Attach notes for auditors</p></div><div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-xl font-medium">{passed.length} passed</div></div>
+      {passed.length === 0 ? <GlassCard className="p-12 text-center"><Icons.FolderOpen className="w-16 h-16 text-slate-300 dark:text-white/20 mx-auto mb-4" /><h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Evidence Yet</h3><p className="text-slate-500 dark:text-white/60">Complete controls with Yes to collect evidence</p></GlassCard> : (
+        <GlassCard className="overflow-hidden"><div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-slate-200 dark:border-white/10"><th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Control</th><th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Status</th><th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Notes</th><th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Actions</th></tr></thead><tbody className="divide-y divide-slate-200 dark:divide-white/10">{passed.map(c => { const r = responses.get(c.id); const editing = editId === c.id; return <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-white/5"><td className="px-6 py-4"><div className="flex items-center gap-3"><span className="px-2 py-1 text-xs font-mono bg-slate-100 dark:bg-white/10 rounded">{c.id}</span><span className="text-sm text-slate-900 dark:text-white font-medium">{c.title}</span></div></td><td className="px-6 py-4"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-full"><Icons.Check className="w-3.5 h-3.5" />Compliant</span></td><td className="px-6 py-4">{editing ? <div className="flex gap-2"><input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes..." className="flex-1 px-3 py-2 text-sm bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-lg text-slate-900 dark:text-white" autoFocus /><button onClick={() => { onUpdateNotes(c.id, notes); setEditId(null); }} className="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg">Save</button><button onClick={() => setEditId(null)} className="px-3 py-2 text-slate-500 text-sm">Cancel</button></div> : <span className="text-sm text-slate-600 dark:text-white/70">{r?.notes || <span className="text-slate-400 dark:text-white/30">No notes</span>}</span>}</td><td className="px-6 py-4">{!editing && <button onClick={() => { setEditId(c.id); setNotes(r?.notes || ''); }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg"><Icons.Plus className="w-4 h-4" /></button>}</td></tr>; })}</tbody></table></div></GlassCard>
       )}
     </div>
   );
 };
 
-// ============================================================================
-// COMPANY CONTROLS VIEW
-// ============================================================================
-
-const CompanyControlsView: React.FC<{
-  customControls: CustomControl[];
-  onAddControl: (control: CustomControl) => void;
-  onDeleteControl: (id: string) => void;
-}> = ({ customControls, onAddControl, onDeleteControl }) => {
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    question: '',
-    category: 'access_control' as ComplianceDomain,
-    mappings: [] as FrameworkMapping[],
-  });
-  const [mappingFramework, setMappingFramework] = useState<FrameworkId>('SOC2');
-  const [mappingClause, setMappingClause] = useState('');
-
-  const handleAddMapping = () => {
-    if (mappingClause.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        mappings: [...prev.mappings, {
-          frameworkId: mappingFramework,
-          clauseId: mappingClause.trim(),
-          clauseTitle: '',
-        }],
-      }));
-      setMappingClause('');
-    }
-  };
-
-  const handleRemoveMapping = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      mappings: prev.mappings.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.title && formData.description && formData.question) {
-      onAddControl({
-        id: `CUSTOM-${Date.now()}`,
-        title: formData.title,
-        description: formData.description,
-        question: formData.question,
-        category: formData.category,
-        frameworkMappings: formData.mappings,
-        effort: 'medium',
-        impact: 'medium',
-        createdAt: new Date().toISOString(),
-        createdBy: 'User',
-      });
-      setFormData({
-        title: '',
-        description: '',
-        question: '',
-        category: 'access_control',
-        mappings: [],
-      });
-      setShowForm(false);
-    }
-  };
-
+const CompanyControlsView: React.FC<{ customControls: CustomControl[]; onAdd: (c: CustomControl) => void; onDel: (id: string) => void }> = ({ customControls, onAdd, onDel }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name: '', desc: '', cat: 'access_control' as ComplianceDomain, maps: [] as { fwId: FrameworkId; clause: string }[] });
+  const [newMap, setNewMap] = useState({ fwId: 'SOC2' as FrameworkId, clause: '' });
+  const addMap = () => { if (newMap.clause.trim()) { setForm(p => ({ ...p, maps: [...p.maps, { fwId: newMap.fwId, clause: newMap.clause.trim() }] })); setNewMap({ fwId: 'SOC2', clause: '' }); } };
+  const submit = (e: React.FormEvent) => { e.preventDefault(); if (form.name && form.desc) { onAdd({ id: `CUSTOM-${Date.now()}`, title: form.name, description: form.desc, question: `Is ${form.name} implemented?`, category: form.cat, frameworkMappings: form.maps.map(m => ({ frameworkId: m.fwId, clauseId: m.clause, clauseTitle: 'Custom' })), effort: 'medium', impact: 'medium', createdAt: new Date().toISOString(), createdBy: 'User' }); setForm({ name: '', desc: '', cat: 'access_control', maps: [] }); setShowModal(false); } };
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Company Controls</h2>
-          <p className="text-slate-500 dark:text-slate-400">Create custom controls specific to your organization</p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/25"
-        >
-          <Icons.Plus />
-          Create New Control
-        </button>
-      </div>
-
-      {/* Create Form Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => setShowForm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Create New Control</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                  Define a custom control and map it to compliance frameworks
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Control Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g., Weekly Security Standup"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe what this control does..."
-                    rows={2}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white resize-none"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as ComplianceDomain }))}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white"
-                  >
-                    {COMPLIANCE_DOMAINS.map(d => (
-                      <option key={d.id} value={d.id}>{d.icon} {d.title}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Assessment Question
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.question}
-                    onChange={(e) => setFormData(prev => ({ ...prev, question: e.target.value }))}
-                    placeholder="e.g., Does your team conduct weekly security reviews?"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white"
-                    required
-                  />
-                </div>
-
-                {/* Mapping Tool */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                    Framework Mapping Tool
-                  </label>
-                  <div className="flex gap-2 mb-3">
-                    <select
-                      value={mappingFramework}
-                      onChange={(e) => setMappingFramework(e.target.value as FrameworkId)}
-                      className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                    >
-                      {FRAMEWORKS.map(f => (
-                        <option key={f.id} value={f.id}>{f.icon} {f.name}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      value={mappingClause}
-                      onChange={(e) => setMappingClause(e.target.value)}
-                      placeholder="Clause ID (e.g., CC6.1)"
-                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddMapping}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                      Add
-                    </button>
-                  </div>
-
-                  {formData.mappings.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.mappings.map((m, i) => {
-                        const fw = FRAMEWORKS.find(f => f.id === m.frameworkId);
-                        return (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600"
-                          >
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: fw?.color }} />
-                            <span className="text-sm text-slate-700 dark:text-slate-300">
-                              {m.frameworkId} {m.clauseId}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveMapping(i)}
-                              className="text-slate-400 hover:text-red-500"
-                            >
-                              <Icons.X />
-                            </button>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="px-5 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
-                  >
-                    Create Control
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Custom Controls List */}
-      {customControls.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <Icons.Cog />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mt-4">No Custom Controls Yet</h3>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">
-            Create controls specific to your organization's needs
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {customControls.map((control) => (
-            <div
-              key={control.id}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-violet-200 dark:border-violet-900 p-5"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-xs font-mono bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded">
-                      {control.id}
-                    </span>
-                    <span className="px-2 py-0.5 text-xs bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded">
-                      Custom
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{control.title}</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{control.description}</p>
-                  
-                  {control.frameworkMappings.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {control.frameworkMappings.map((m, i) => {
-                        const fw = FRAMEWORKS.find(f => f.id === m.frameworkId);
-                        return (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded-lg"
-                          >
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: fw?.color }} />
-                            {m.frameworkId} {m.clauseId}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => onDeleteControl(control.id)}
-                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                >
-                  <Icons.X />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold text-slate-900 dark:text-white">Company Controls</h2><p className="text-slate-500 dark:text-white/60">Create custom internal controls</p></div><motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/25"><Icons.Plus className="w-5 h-5" />Add Control</motion.button></div>
+      {customControls.length === 0 ? <GlassCard className="p-12 text-center"><Icons.Building className="w-16 h-16 text-slate-300 dark:text-white/20 mx-auto mb-4" /><h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Custom Controls</h3><p className="text-slate-500 dark:text-white/60 mb-6">Add controls for your org</p></GlassCard> : (
+        <div className="grid gap-4">{customControls.map(c => <GlassCard key={c.id} className="p-5"><div className="flex items-start justify-between gap-4"><div className="flex-1"><div className="flex items-center gap-2 mb-2"><span className="px-2 py-1 text-xs font-mono bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 rounded">{c.id}</span><span className="px-2 py-0.5 text-xs bg-violet-500/20 text-violet-400 rounded">Custom</span></div><h3 className="font-semibold text-slate-900 dark:text-white mb-1">{c.title}</h3><p className="text-sm text-slate-600 dark:text-white/70 mb-3">{c.description}</p>{c.frameworkMappings.length > 0 && <div className="flex flex-wrap gap-1.5">{c.frameworkMappings.map((m, i) => { const fw = FRAMEWORKS.find(f => f.id === m.frameworkId); return <span key={i} className="inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-lg" style={{ backgroundColor: `${fw?.color}15`, color: fw?.color }}><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />{m.frameworkId} {m.clauseId}</span>; })}</div>}</div><button onClick={() => onDel(c.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"><Icons.X className="w-5 h-5" /></button></div></GlassCard>)}</div>
       )}
+      <AnimatePresence>{showModal && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)}><motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden"><div className="p-6 border-b border-slate-200 dark:border-white/10"><h2 className="text-xl font-bold text-slate-900 dark:text-white">Create Custom Control</h2><p className="text-slate-500 dark:text-white/60 text-sm mt-1">Define and map to frameworks</p></div><form onSubmit={submit} className="p-6 space-y-5"><div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-2">Control Name *</label><input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g., Weekly Security Standups" className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white" required /></div><div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-2">Description *</label><textarea value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="What does this control do..." rows={2} className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white resize-none" required /></div><div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-2">Category</label><select value={form.cat} onChange={e => setForm(p => ({ ...p, cat: e.target.value as ComplianceDomain }))} className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white">{COMPLIANCE_DOMAINS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.title}</option>)}</select></div><div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10"><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-3">Framework Mapping</label><div className="flex gap-2 mb-3"><select value={newMap.fwId} onChange={e => setNewMap(p => ({ ...p, fwId: e.target.value as FrameworkId }))} className="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white">{FRAMEWORKS.map(f => <option key={f.id} value={f.id}>{f.icon} {f.name}</option>)}</select><input type="text" value={newMap.clause} onChange={e => setNewMap(p => ({ ...p, clause: e.target.value }))} placeholder="Clause ID" className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white" /><button type="button" onClick={addMap} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div>{form.maps.length > 0 && <div className="flex flex-wrap gap-2">{form.maps.map((m, i) => { const fw = FRAMEWORKS.find(f => f.id === m.fwId); return <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-white/10"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: fw?.color }} /><span className="text-sm text-slate-700 dark:text-white/80">{m.fwId} {m.clause}</span><button type="button" onClick={() => setForm(p => ({ ...p, maps: p.maps.filter((_, idx) => idx !== i) }))} className="text-slate-400 hover:text-red-500"><Icons.X className="w-4 h-4" /></button></span>; })}</div>}</div><div className="flex justify-end gap-3 pt-4"><button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-slate-600 dark:text-white/60">Cancel</button><button type="submit" className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium">Create</button></div></form></motion.div></motion.div>}</AnimatePresence>
     </div>
   );
 };
-
-// ============================================================================
-// MAIN APP COMPONENT
-// ============================================================================
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>('dashboard');
-  const [darkMode, setDarkMode] = useLocalStorage('compliance-dark-mode', false);
-  const [responses, setResponses] = useLocalStorage<Record<string, UserResponse>>('compliance-responses-v2', {});
-  const [customControls, setCustomControls] = useLocalStorage<CustomControl[]>('compliance-custom-controls', []);
-  const [mappingNotifications, setMappingNotifications] = useState<MappingNotification[]>([]);
-  const [showMappingSidebar, setShowMappingSidebar] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [darkMode, setDarkMode] = useLocalStorage('compliance-dark-v4', true);
+  const [responses, setResponses] = useLocalStorage<Record<string, UserResponse>>('compliance-resp-v4', {});
+  const [customControls, setCustomControls] = useLocalStorage<CustomControl[]>('compliance-custom-v4', []);
+  const [syncNotifications, setSyncNotifications] = useState<SyncNotification[]>([]);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // Convert responses to Map
   const responsesMap = useMemo(() => new Map(Object.entries(responses)), [responses]);
+  useEffect(() => { darkMode ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark'); }, [darkMode]);
 
-  // Dark mode effect
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+  const handleAnswer = useCallback((id: string, a: 'yes'|'no'|'partial'|'na') => { setResponses(p => ({ ...p, [id]: { controlId: id, answer: a, notes: p[id]?.notes || '', evidenceUrls: [], evidenceNotes: '', answeredAt: new Date().toISOString() } })); }, [setResponses]);
+  const handleSync = useCallback((c: MasterControl) => { const notifs: SyncNotification[] = c.frameworkMappings.map(m => ({ id: `${c.id}-${m.frameworkId}-${Date.now()}-${Math.random()}`, controlId: c.id, controlTitle: c.title, framework: m, timestamp: Date.now() })); setSyncNotifications(p => [...notifs, ...p].slice(0, 100)); setShowSidebar(true); }, []);
+  const handleUpdateNotes = useCallback((id: string, notes: string) => { setResponses(p => ({ ...p, [id]: { ...p[id], notes } })); }, [setResponses]);
 
-  // Handle answer
-  const handleAnswer = useCallback((controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => {
-    setResponses(prev => ({
-      ...prev,
-      [controlId]: {
-        controlId,
-        answer,
-        notes: prev[controlId]?.notes || '',
-        evidenceUrls: prev[controlId]?.evidenceUrls || [],
-        evidenceNotes: prev[controlId]?.evidenceNotes || '',
-        answeredAt: new Date().toISOString(),
-      },
-    }));
-  }, [setResponses]);
-
-  // Handle mapping trigger
-  const handleMappingTrigger = useCallback((control: MasterControl) => {
-    const newNotifications: MappingNotification[] = control.frameworkMappings.map(mapping => ({
-      id: `${control.id}-${mapping.frameworkId}-${Date.now()}`,
-      controlTitle: control.title,
-      framework: mapping,
-      timestamp: Date.now(),
-    }));
-    
-    setMappingNotifications(prev => [...newNotifications, ...prev].slice(0, 50));
-    setShowMappingSidebar(true);
-  }, []);
-
-  // Handle evidence update
-  const handleUpdateEvidence = useCallback((controlId: string, notes: string) => {
-    setResponses(prev => ({
-      ...prev,
-      [controlId]: {
-        ...prev[controlId],
-        evidenceNotes: notes,
-      },
-    }));
-  }, [setResponses]);
-
-  // Handle custom control
-  const handleAddCustomControl = useCallback((control: CustomControl) => {
-    setCustomControls(prev => [...prev, control]);
-  }, [setCustomControls]);
-
-  const handleDeleteCustomControl = useCallback((id: string) => {
-    setCustomControls(prev => prev.filter(c => c.id !== id));
-  }, [setCustomControls]);
+  const navItems = [{ id: 'dashboard' as ViewMode, label: 'Dashboard', icon: Icons.Home }, { id: 'assessment' as ViewMode, label: 'Assessment', icon: Icons.ClipboardCheck }, { id: 'evidence' as ViewMode, label: 'Evidence', icon: Icons.FolderOpen }, { id: 'company' as ViewMode, label: 'Company', icon: Icons.Building }];
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/25">
-                CE
-              </div>
-              <div>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">Compliance Engine</span>
-                <span className="hidden md:inline text-xs text-slate-500 ml-2">{MASTER_CONTROLS.length} Controls</span>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
-              {[
-                { id: 'dashboard', label: 'Dashboard', icon: <Icons.Home /> },
-                { id: 'assessment', label: 'Assessment', icon: <Icons.Clipboard /> },
-                { id: 'evidence', label: 'Evidence', icon: <Icons.Folder /> },
-                { id: 'company', label: 'Company', icon: <Icons.Cog /> },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setView(tab.id as ViewMode)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    view === tab.id
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {tab.icon}
-                  <span className="hidden md:inline">{tab.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowMappingSidebar(!showMappingSidebar)}
-                className={`p-2.5 rounded-xl transition-all ${
-                  showMappingSidebar
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icons.Link />
-              </button>
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2.5 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-              >
-                {darkMode ? <Icons.Sun /> : <Icons.Moon />}
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
+      <nav className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-3"><div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-violet-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25"><Icons.Shield className="w-5 h-5 text-white" /></div><div className="hidden sm:block"><span className="text-lg font-bold text-slate-900 dark:text-white">Compliance Engine</span><span className="hidden md:inline text-xs text-slate-500 dark:text-white/50 ml-2">{MASTER_CONTROLS.length} Controls</span></div></div>
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1">{navItems.map(i => { const Icon = i.icon; return <button key={i.id} onClick={() => setView(i.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === i.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'}`}><Icon className="w-4 h-4" /><span className="hidden sm:inline">{i.label}</span></button>; })}</div>
+          <div className="flex items-center gap-2"><button onClick={() => setShowSidebar(!showSidebar)} className={`relative p-2.5 rounded-xl transition-all ${showSidebar ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}><Icons.Zap className="w-5 h-5" />{syncNotifications.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{Math.min(syncNotifications.length, 99)}</span>}</button><button onClick={() => setDarkMode(!darkMode)} className="p-2.5 rounded-xl text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all">{darkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}</button></div>
+        </div></div>
       </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <AnimatePresence mode="wait">
-          {view === 'dashboard' && (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <DashboardView responses={responsesMap} onNavigate={setView} />
-            </motion.div>
-          )}
-
-          {view === 'assessment' && (
-            <motion.div
-              key="assessment"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <AssessmentView
-                responses={responsesMap}
-                onAnswer={handleAnswer}
-                onMappingTrigger={handleMappingTrigger}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
-            </motion.div>
-          )}
-
-          {view === 'evidence' && (
-            <motion.div
-              key="evidence"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <EvidenceLockerView
-                responses={responsesMap}
-                onUpdateEvidence={handleUpdateEvidence}
-              />
-            </motion.div>
-          )}
-
-          {view === 'company' && (
-            <motion.div
-              key="company"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <CompanyControlsView
-                customControls={customControls}
-                onAddControl={handleAddCustomControl}
-                onDeleteControl={handleDeleteCustomControl}
-              />
-            </motion.div>
-          )}
+          {view === 'dashboard' && <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><DashboardView responses={responsesMap} notifications={syncNotifications} onNavigate={setView} /></motion.div>}
+          {view === 'assessment' && <motion.div key="assessment" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><AssessmentView responses={responsesMap} onAnswer={handleAnswer} onSync={handleSync} searchQuery={search} onSearchChange={setSearch} /></motion.div>}
+          {view === 'evidence' && <motion.div key="evidence" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><EvidenceLockerView responses={responsesMap} onUpdateNotes={handleUpdateNotes} /></motion.div>}
+          {view === 'company' && <motion.div key="company" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CompanyControlsView customControls={customControls} onAdd={c => setCustomControls(p => [...p, c])} onDel={id => setCustomControls(p => p.filter(c => c.id !== id))} /></motion.div>}
         </AnimatePresence>
       </main>
-
-      {/* Mapping Sidebar */}
-      <MappingSidebar
-        notifications={mappingNotifications}
-        isOpen={showMappingSidebar}
-        onClose={() => setShowMappingSidebar(false)}
-      />
+      <MappingSidebar notifications={syncNotifications} isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
     </div>
   );
 };
