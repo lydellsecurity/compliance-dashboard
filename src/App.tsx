@@ -1,25 +1,22 @@
 /**
- * Modular Compliance Engine v6.0
+ * Modular Compliance Engine 2.0
  * 
- * Major Changes:
- * - Persistent collapsible LEFT sidebar navigation
- * - Clickable framework gauges that filter assessment view
- * - Critical Gaps bento box with top 5 high-impact gaps
- * - Domain Heatmap visualization
- * - Progressive disclosure (one domain at a time)
- * - Framework Sync Live sidebar with real-time feed
- * - Enhanced control cards with audit guidance
+ * Implementation of Product Specification:
+ * - 4-Tab Navigation: Dashboard, Assessment, Evidence, Company
+ * - Bento Dashboard with glassmorphism and 4 framework gauges
+ * - Assessment wizard with 12-domain sidebar
+ * - Mapping Sidebar showing "Answer Once, Comply Everywhere" in real-time
+ * - Evidence Locker and Company Controls
+ * - lucide-react icons, framer-motion animations
  */
 
 import React, { useState, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
-  Layers,
+  ClipboardCheck,
   FolderOpen,
   Building2,
-  ChevronLeft,
-  ChevronRight,
   Search,
   Check,
   X,
@@ -32,8 +29,6 @@ import {
   Shield,
   Upload,
   FileText,
-  Download,
-  Target,
   Lock,
   Users,
   Server,
@@ -42,13 +37,8 @@ import {
   Settings,
   RefreshCw,
   CheckCircle2,
-  AlertCircle,
-  HelpCircle,
+  Target,
   Activity,
-  BarChart3,
-  Filter,
-  Sparkles,
-  Menu,
 } from 'lucide-react';
 
 import {
@@ -71,7 +61,7 @@ import {
 // TYPES
 // ============================================================================
 
-type ViewMode = 'overview' | 'workspaces' | 'evidence' | 'company';
+type TabId = 'dashboard' | 'assessment' | 'evidence' | 'company';
 
 interface SyncNotification {
   id: string;
@@ -81,113 +71,102 @@ interface SyncNotification {
   timestamp: number;
 }
 
-interface ComplianceState {
+interface AppState {
   responses: Map<string, UserResponse>;
   customControls: CustomControl[];
   syncNotifications: SyncNotification[];
   darkMode: boolean;
-  frameworkFilter: FrameworkId | null;
 }
 
-interface ComplianceContextType {
-  state: ComplianceState;
-  handleAnswer: (controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => void;
-  handleSync: (control: MasterControl) => void;
-  handleUpdateNotes: (controlId: string, notes: string) => void;
+interface AppContextType {
+  state: AppState;
+  answerControl: (controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => void;
+  triggerSync: (control: MasterControl) => void;
+  updateNotes: (controlId: string, notes: string) => void;
   addCustomControl: (control: CustomControl) => void;
   deleteCustomControl: (id: string) => void;
   toggleDarkMode: () => void;
-  setFrameworkFilter: (fw: FrameworkId | null) => void;
 }
 
 // ============================================================================
-// CONTEXT - Centralized State Management
+// CONTEXT
 // ============================================================================
 
-const ComplianceContext = createContext<ComplianceContextType | null>(null);
-
-const useCompliance = () => {
-  const context = useContext(ComplianceContext);
-  if (!context) throw new Error('useCompliance must be used within ComplianceProvider');
-  return context;
+const AppContext = createContext<AppContextType | null>(null);
+const useApp = () => {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
 };
 
 // ============================================================================
 // LOCAL STORAGE HOOK
 // ============================================================================
 
-function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [storedValue, setStoredValue] = useState<T>(() => {
+function useLocalStorage<T>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
     try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : initial;
     } catch {
-      return initialValue;
+      return initial;
     }
   });
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(key, JSON.stringify(storedValue));
-    } catch (error) {
-      console.error('LocalStorage error:', error);
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error('Storage error:', e);
     }
-  }, [key, storedValue]);
+  }, [key, value]);
 
-  return [storedValue, setStoredValue];
+  return [value, setValue];
 }
 
 // ============================================================================
-// COMPLIANCE PROVIDER
+// APP PROVIDER
 // ============================================================================
 
-const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [responsesObj, setResponsesObj] = useLocalStorage<Record<string, UserResponse>>('ce-responses-v6', {});
-  const [customControls, setCustomControls] = useLocalStorage<CustomControl[]>('ce-custom-v6', []);
-  const [darkMode, setDarkMode] = useLocalStorage('ce-dark-v6', true);
+const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [responsesObj, setResponsesObj] = useLocalStorage<Record<string, UserResponse>>('ce2-responses', {});
+  const [customControls, setCustomControls] = useLocalStorage<CustomControl[]>('ce2-custom', []);
+  const [darkMode, setDarkMode] = useLocalStorage('ce2-dark', true);
   const [syncNotifications, setSyncNotifications] = useState<SyncNotification[]>([]);
-  const [frameworkFilter, setFrameworkFilter] = useState<FrameworkId | null>(null);
 
   const responses = useMemo(() => new Map(Object.entries(responsesObj)), [responsesObj]);
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
-  const handleAnswer = useCallback((controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => {
+  const answerControl = useCallback((controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => {
     setResponsesObj(prev => ({
       ...prev,
       [controlId]: {
         controlId,
         answer,
         notes: prev[controlId]?.notes || '',
-        evidenceUrls: prev[controlId]?.evidenceUrls || [],
-        evidenceNotes: prev[controlId]?.evidenceNotes || '',
+        evidenceUrls: [],
+        evidenceNotes: '',
         answeredAt: new Date().toISOString(),
       },
     }));
   }, [setResponsesObj]);
 
-  const handleSync = useCallback((control: MasterControl) => {
-    const newNotifications: SyncNotification[] = control.frameworkMappings.map(mapping => ({
-      id: `${control.id}-${mapping.frameworkId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  const triggerSync = useCallback((control: MasterControl) => {
+    const notifications: SyncNotification[] = control.frameworkMappings.map(m => ({
+      id: `${control.id}-${m.frameworkId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       controlId: control.id,
       controlTitle: control.title,
-      framework: mapping,
+      framework: m,
       timestamp: Date.now(),
     }));
-    setSyncNotifications(prev => [...newNotifications, ...prev].slice(0, 50));
+    setSyncNotifications(prev => [...notifications, ...prev].slice(0, 50));
   }, []);
 
-  const handleUpdateNotes = useCallback((controlId: string, notes: string) => {
-    setResponsesObj(prev => ({
-      ...prev,
-      [controlId]: { ...prev[controlId], notes },
-    }));
+  const updateNotes = useCallback((controlId: string, notes: string) => {
+    setResponsesObj(prev => ({ ...prev, [controlId]: { ...prev[controlId], notes } }));
   }, [setResponsesObj]);
 
   const addCustomControl = useCallback((control: CustomControl) => {
@@ -198,107 +177,76 @@ const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCustomControls(prev => prev.filter(c => c.id !== id));
   }, [setCustomControls]);
 
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode(prev => !prev);
-  }, [setDarkMode]);
-
-  const state: ComplianceState = {
-    responses,
-    customControls,
-    syncNotifications,
-    darkMode,
-    frameworkFilter,
-  };
+  const toggleDarkMode = useCallback(() => setDarkMode(prev => !prev), [setDarkMode]);
 
   return (
-    <ComplianceContext.Provider
-      value={{
-        state,
-        handleAnswer,
-        handleSync,
-        handleUpdateNotes,
-        addCustomControl,
-        deleteCustomControl,
-        toggleDarkMode,
-        setFrameworkFilter,
-      }}
-    >
+    <AppContext.Provider value={{
+      state: { responses, customControls, syncNotifications, darkMode },
+      answerControl,
+      triggerSync,
+      updateNotes,
+      addCustomControl,
+      deleteCustomControl,
+      toggleDarkMode,
+    }}>
       {children}
-    </ComplianceContext.Provider>
+    </AppContext.Provider>
   );
 };
 
 // ============================================================================
-// UI COMPONENTS
+// UI PRIMITIVES
 // ============================================================================
 
-const GlassCard: React.FC<{
+// Glassmorphism Card
+const Glass: React.FC<{
   children: React.ReactNode;
   className?: string;
-  hover?: boolean;
   onClick?: () => void;
-  glow?: string;
-}> = ({ children, className = '', hover = false, onClick, glow }) => (
+  hover?: boolean;
+}> = ({ children, className = '', onClick, hover }) => (
   <motion.div
-    whileHover={hover ? { scale: 1.02, y: -2 } : undefined}
-    whileTap={hover ? { scale: 0.98 } : undefined}
+    whileHover={hover ? { scale: 1.01, y: -2 } : undefined}
+    whileTap={hover ? { scale: 0.99 } : undefined}
     onClick={onClick}
     className={`
-      relative overflow-hidden rounded-2xl
-      bg-white dark:bg-slate-800/60
-      border border-slate-200 dark:border-white/10
-      shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.2)]
-      ${hover ? 'cursor-pointer transition-all hover:shadow-lg dark:hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]' : ''}
+      relative rounded-2xl overflow-hidden
+      bg-white/80 dark:bg-slate-800/80
+      backdrop-blur-md
+      border border-slate-200/50 dark:border-white/10
+      shadow-lg shadow-slate-200/50 dark:shadow-black/20
+      ${hover ? 'cursor-pointer' : ''}
       ${className}
     `}
-    style={glow ? { boxShadow: `0 0 30px ${glow}30, inset 0 0 30px ${glow}10` } : undefined}
   >
     {children}
   </motion.div>
 );
 
-// Interactive Circular Gauge - Clickable
+// SVG Circular Progress Gauge
 const CircularGauge: React.FC<{
-  value: number;
-  maxValue: number;
+  percentage: number;
   size?: number;
   strokeWidth?: number;
   color: string;
   label: string;
-  icon: React.ReactNode;
-  onClick?: () => void;
-  isActive?: boolean;
-}> = ({ value, maxValue, size = 140, strokeWidth = 10, color, label, icon, onClick, isActive }) => {
-  const percentage = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
+  count: string;
+}> = ({ percentage, size = 120, strokeWidth = 8, color, label, count }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <motion.div
-      className={`flex flex-col items-center cursor-pointer group ${isActive ? 'scale-105' : ''}`}
-      onClick={onClick}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
-        {/* Active Ring */}
-        {isActive && (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1.1, opacity: 1 }}
-            className="absolute inset-0 rounded-full border-2"
-            style={{ borderColor: color }}
-          />
-        )}
-        
-        {/* Glow Effect */}
+        {/* Glow */}
         <div
-          className={`absolute inset-2 rounded-full blur-2xl transition-opacity ${isActive ? 'opacity-60' : 'opacity-30 group-hover:opacity-50'}`}
+          className="absolute inset-4 rounded-full blur-xl opacity-30"
           style={{ backgroundColor: color }}
         />
-
-        <svg className="relative z-10 -rotate-90" width={size} height={size}>
+        
+        <svg className="relative -rotate-90" width={size} height={size}>
+          {/* Track */}
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -308,6 +256,7 @@ const CircularGauge: React.FC<{
             strokeWidth={strokeWidth}
             className="text-slate-200 dark:text-white/10"
           />
+          {/* Progress */}
           <motion.circle
             cx={size / 2}
             cy={size / 2}
@@ -318,429 +267,150 @@ const CircularGauge: React.FC<{
             strokeLinecap="round"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
-            style={{ filter: `drop-shadow(0 0 8px ${color}80)` }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+            style={{ filter: `drop-shadow(0 0 6px ${color})` }}
           />
         </svg>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-          <div className="mb-0.5" style={{ color }}>{icon}</div>
-          <span className="text-2xl font-bold text-slate-900 dark:text-white">{percentage}%</span>
-        </div>
-      </div>
-
-      <div className="mt-3 text-center">
-        <div className={`font-semibold transition-colors ${isActive ? 'text-white' : 'text-slate-700 dark:text-white/80'}`} style={isActive ? { color } : undefined}>
-          {label}
-        </div>
-        <div className="text-xs text-slate-500 dark:text-white/50">{value}/{maxValue} controls</div>
-        {isActive && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-xs font-medium"
-            style={{ color }}
-          >
-            ✓ Filtering Active
-          </motion.div>
-        )}
-      </div>
-    </motion.div>
-  );
-};
-
-// Domain Heatmap Cell
-const HeatmapCell: React.FC<{
-  domain: ComplianceDomainMeta;
-  progress: { completed: number; total: number; percentage: number };
-  onClick: () => void;
-}> = ({ domain, progress, onClick }) => {
-  const getHeatColor = (pct: number) => {
-    if (pct >= 80) return { bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-600 dark:text-emerald-400' };
-    if (pct >= 60) return { bg: 'bg-lime-500/20', border: 'border-lime-500/40', text: 'text-lime-600 dark:text-lime-400' };
-    if (pct >= 40) return { bg: 'bg-amber-500/20', border: 'border-amber-500/40', text: 'text-amber-600 dark:text-amber-400' };
-    if (pct >= 20) return { bg: 'bg-orange-500/20', border: 'border-orange-500/40', text: 'text-orange-600 dark:text-orange-400' };
-    return { bg: 'bg-red-500/20', border: 'border-red-500/40', text: 'text-red-600 dark:text-red-400' };
-  };
-
-  const heat = getHeatColor(progress.percentage);
-
-  return (
-    <motion.button
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`p-4 rounded-xl border ${heat.bg} ${heat.border} transition-all text-left w-full`}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${domain.color}20` }}>
-          <span style={{ color: domain.color }}>{getDomainIcon(domain.id)}</span>
-        </div>
-        <span className={`text-lg font-bold ${heat.text}`}>{progress.percentage}%</span>
-      </div>
-      <div className="text-sm font-medium text-slate-700 dark:text-white/80 truncate">{domain.title}</div>
-      <div className="text-xs text-slate-500 dark:text-white/50">{progress.completed}/{progress.total}</div>
-    </motion.button>
-  );
-};
-
-// Critical Gap Card
-const GapCard: React.FC<{ control: MasterControl; onClick: () => void }> = ({ control, onClick }) => (
-  <motion.button
-    whileHover={{ x: 4 }}
-    onClick={onClick}
-    className="w-full p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-left group"
-  >
-    <div className="flex items-start gap-3">
-      <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
-        <AlertCircle className="w-4 h-4 text-red-500" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-mono text-red-600 dark:text-red-400">{control.id}</span>
-          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
-            control.riskLevel === 'critical' ? 'bg-red-500 text-white' :
-            control.riskLevel === 'high' ? 'bg-orange-500 text-white' :
-            'bg-amber-500 text-white'
-          }`}>
-            {control.riskLevel.toUpperCase()}
+        
+        {/* Center Text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold text-slate-900 dark:text-white">
+            {percentage}%
           </span>
         </div>
-        <p className="text-sm text-slate-700 dark:text-white/80 truncate group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
-          {control.title}
-        </p>
       </div>
-      <ChevronRight className="w-4 h-4 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      
+      <div className="mt-2 text-center">
+        <div className="font-semibold text-slate-900 dark:text-white">{label}</div>
+        <div className="text-xs text-slate-500 dark:text-white/50">{count}</div>
+      </div>
     </div>
-  </motion.button>
-);
-
-// Domain Icon Helper
-const getDomainIcon = (domainId: string): React.ReactNode => {
-  const iconClass = 'w-4 h-4';
-  const icons: Record<string, React.ReactNode> = {
-    access_control: <Lock className={iconClass} />,
-    asset_management: <Database className={iconClass} />,
-    audit_logging: <FileText className={iconClass} />,
-    business_continuity: <RefreshCw className={iconClass} />,
-    change_management: <Settings className={iconClass} />,
-    cryptography: <Shield className={iconClass} />,
-    data_privacy: <Eye className={iconClass} />,
-    hr_security: <Users className={iconClass} />,
-    incident_response: <AlertTriangle className={iconClass} />,
-    network_security: <Server className={iconClass} />,
-    physical_security: <Building2 className={iconClass} />,
-    risk_management: <Target className={iconClass} />,
-  };
-  return icons[domainId] || <Shield className={iconClass} />;
-};
-
-// Framework Icon Helper
-const getFrameworkIcon = (id: string) => {
-  const iconClass = 'w-5 h-5';
-  switch (id) {
-    case 'SOC2': return <Shield className={iconClass} />;
-    case 'ISO27001': return <Lock className={iconClass} />;
-    case 'HIPAA': return <Users className={iconClass} />;
-    case 'NIST': return <Server className={iconClass} />;
-    default: return <Shield className={iconClass} />;
-  }
-};
-
-// ============================================================================
-// CONTROL CARD WITH AUDIT GUIDANCE
-// ============================================================================
-
-const ControlCard: React.FC<{
-  control: MasterControl;
-  response: UserResponse | undefined;
-  onGlowComplete?: () => void;
-}> = ({ control, response, onGlowComplete }) => {
-  const { handleAnswer, handleSync } = useCompliance();
-  const [showHelp, setShowHelp] = useState(false);
-  const [showGlow, setShowGlow] = useState(false);
-
-  const onAnswer = (answer: 'yes' | 'no' | 'partial' | 'na') => {
-    handleAnswer(control.id, answer);
-    if (answer === 'yes') {
-      setShowGlow(true);
-      handleSync(control);
-      setTimeout(() => {
-        setShowGlow(false);
-        onGlowComplete?.();
-      }, 1000);
-    }
-  };
-
-  const answerConfig = [
-    { value: 'yes' as const, label: 'Yes', color: 'emerald' },
-    { value: 'no' as const, label: 'No', color: 'red' },
-    { value: 'partial' as const, label: 'Partial', color: 'amber' },
-    { value: 'na' as const, label: 'N/A', color: 'slate' },
-  ];
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`relative rounded-2xl border overflow-hidden transition-all duration-500 ${
-        showGlow 
-          ? 'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-400 dark:border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.3)]' 
-          : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-white/10'
-      }`}
-    >
-      {/* Glow Animation Overlay */}
-      <AnimatePresence>
-        {showGlow && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-transparent pointer-events-none"
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="px-2 py-1 text-xs font-mono font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/80 rounded-lg">
-                {control.id}
-              </span>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                control.riskLevel === 'critical' ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400' :
-                control.riskLevel === 'high' ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400' :
-                control.riskLevel === 'medium' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' :
-                'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
-              }`}>
-                {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)} Impact
-              </span>
-            </div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white leading-tight">
-              {control.title}
-            </h3>
-          </div>
-
-          {/* Audit Guidance Help Button */}
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className={`p-2 rounded-xl transition-all flex-shrink-0 ${
-              showHelp
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
-                : 'bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10'
-            }`}
-            title="Audit Guidance"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Question */}
-        <p className="text-sm text-slate-600 dark:text-white/70 mb-4">{control.question}</p>
-
-        {/* Framework Mapping Badges */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {control.frameworkMappings.map(mapping => {
-            const fw = FRAMEWORKS.find(f => f.id === mapping.frameworkId);
-            return (
-              <span
-                key={`${mapping.frameworkId}-${mapping.clauseId}`}
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md border"
-                style={{
-                  backgroundColor: `${fw?.color}10`,
-                  color: fw?.color,
-                  borderColor: `${fw?.color}30`,
-                }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />
-                {mapping.frameworkId} {mapping.clauseId}
-              </span>
-            );
-          })}
-        </div>
-
-        {/* Answer Buttons */}
-        <div className="flex gap-2">
-          {answerConfig.map(btn => {
-            const isSelected = response?.answer === btn.value;
-            const colorMap: Record<string, string> = {
-              emerald: isSelected ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' : 'border-emerald-400/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10',
-              red: isSelected ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' : 'border-red-400/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10',
-              amber: isSelected ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' : 'border-amber-400/50 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10',
-              slate: isSelected ? 'bg-slate-500 text-white border-slate-500 shadow-lg shadow-slate-500/25' : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-500/10',
-            };
-            return (
-              <motion.button
-                key={btn.value}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onAnswer(btn.value)}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all ${colorMap[btn.color]}`}
-              >
-                {btn.label}
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Audit Guidance Panel */}
-      <AnimatePresence>
-        {showHelp && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-slate-200 dark:border-white/10"
-          >
-            <div className="p-5 bg-blue-50 dark:bg-blue-500/10 space-y-4">
-              <div>
-                <h4 className="flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                  <Info className="w-4 h-4" />
-                  What Auditors Want to See
-                </h4>
-                <p className="text-sm text-blue-600 dark:text-blue-200/80">{control.guidance}</p>
-              </div>
-              <div>
-                <h4 className="flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                  <FileText className="w-4 h-4" />
-                  Evidence Examples
-                </h4>
-                <ul className="space-y-1">
-                  {control.evidenceExamples.map((example, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-blue-600 dark:text-blue-200/80">
-                      <Check className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                      {example}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Gap Remediation (when No selected) */}
-      <AnimatePresence>
-        {response?.answer === 'no' && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-red-200 dark:border-red-500/30"
-          >
-            <div className="p-4 bg-red-50 dark:bg-red-500/10 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <div>
-                <span className="inline-block px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded mb-1">GAP</span>
-                <p className="text-sm text-red-700 dark:text-red-300">{control.remediationTip}</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
   );
 };
 
+// Domain Icon Mapping
+const DomainIcon: React.FC<{ domainId: string; className?: string }> = ({ domainId, className = 'w-4 h-4' }) => {
+  const icons: Record<string, React.ReactNode> = {
+    access_control: <Lock className={className} />,
+    asset_management: <Database className={className} />,
+    audit_logging: <FileText className={className} />,
+    business_continuity: <RefreshCw className={className} />,
+    change_management: <Settings className={className} />,
+    cryptography: <Shield className={className} />,
+    data_privacy: <Eye className={className} />,
+    hr_security: <Users className={className} />,
+    incident_response: <AlertTriangle className={className} />,
+    network_security: <Server className={className} />,
+    physical_security: <Building2 className={className} />,
+    risk_management: <Target className={className} />,
+  };
+  return <>{icons[domainId] || <Shield className={className} />}</>;
+};
+
 // ============================================================================
-// FRAMEWORK SYNC LIVE SIDEBAR
+// MAPPING SIDEBAR (The Dynamic Feed)
 // ============================================================================
 
-const SyncSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { state } = useCompliance();
+const MappingSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const { state } = useApp();
   const { syncNotifications } = state;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Mobile backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/30 z-40 lg:hidden"
           />
+          
+          {/* Sidebar */}
           <motion.div
             initial={{ x: 320 }}
             animate={{ x: 0 }}
             exit={{ x: 320 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-white/10 z-50 shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-white/10 z-50 flex flex-col shadow-2xl"
           >
             {/* Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Framework Sync</h3>
-                  <p className="text-xs text-slate-500 dark:text-white/50">Live Feed</p>
+                  <div className="font-semibold text-slate-900 dark:text-white text-sm">Sync Feed</div>
+                  <div className="text-xs text-slate-500 dark:text-white/50">Real-time mapping</div>
                 </div>
               </div>
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400">
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Notifications */}
+            {/* Feed */}
             <div className="flex-1 overflow-y-auto p-4">
               {syncNotifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4">
-                    <Sparkles className="w-8 h-8 text-slate-300 dark:text-white/20" />
+                <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4">
+                    <Activity className="w-7 h-7 text-slate-400 dark:text-white/30" />
                   </div>
-                  <h4 className="font-medium text-slate-700 dark:text-white/80 mb-1">No Sync Activity</h4>
                   <p className="text-sm text-slate-500 dark:text-white/50">
-                    Answer "Yes" to controls to see requirements sync in real-time
+                    Answer "Yes" to controls to see framework requirements sync in real-time
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {syncNotifications.map((notif, i) => {
-                    const fw = FRAMEWORKS.find(f => f.id === notif.framework.frameworkId);
+                  {syncNotifications.map((n, i) => {
+                    const fw = FRAMEWORKS.find(f => f.id === n.framework.frameworkId);
                     return (
                       <motion.div
-                        key={notif.id}
-                        initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                        key={n.id}
+                        initial={{ opacity: 0, x: 40, scale: 0.95 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         transition={{ delay: i * 0.02 }}
                         className="relative"
                       >
+                        {/* Flash effect */}
                         <motion.div
-                          initial={{ opacity: 0.6 }}
+                          initial={{ opacity: 0.5 }}
                           animate={{ opacity: 0 }}
-                          transition={{ duration: 1.5 }}
-                          className="absolute inset-0 rounded-xl"
-                          style={{ backgroundColor: `${fw?.color}40` }}
+                          transition={{ duration: 1 }}
+                          className="absolute inset-0 rounded-xl bg-emerald-500/30"
                         />
-                        <div className="relative p-3 rounded-xl border" style={{ borderColor: `${fw?.color}40`, backgroundColor: `${fw?.color}08` }}>
-                          <div className="flex items-start gap-2">
-                            <motion.div
-                              initial={{ scale: 0, rotate: -180 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              transition={{ type: 'spring', damping: 10 }}
+                        
+                        <div
+                          className="relative p-3 rounded-xl border"
+                          style={{
+                            backgroundColor: `${fw?.color}08`,
+                            borderColor: `${fw?.color}30`,
+                          }}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <div
                               className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                               style={{ backgroundColor: `${fw?.color}20` }}
                             >
                               <CheckCircle2 className="w-4 h-4" style={{ color: fw?.color }} />
-                            </motion.div>
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[10px] font-medium uppercase tracking-wide" style={{ color: fw?.color }}>
+                              <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: fw?.color }}>
                                 Requirement Met
-                              </p>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                {notif.framework.frameworkId} {notif.framework.clauseId}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-white/50 truncate">
-                                {notif.framework.clauseTitle}
-                              </p>
+                              </div>
+                              <div className="text-sm font-bold text-slate-900 dark:text-white">
+                                {n.framework.frameworkId} {n.framework.clauseId}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-white/50 truncate">
+                                {n.framework.clauseTitle}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -750,21 +420,6 @@ const SyncSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
                 </div>
               )}
             </div>
-
-            {/* Footer Stats */}
-            <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex-shrink-0">
-              <div className="grid grid-cols-2 gap-3">
-                {FRAMEWORKS.slice(0, 4).map(fw => {
-                  const count = syncNotifications.filter(n => n.framework.frameworkId === fw.id).length;
-                  return (
-                    <div key={fw.id} className="text-center">
-                      <div className="text-lg font-bold" style={{ color: fw.color }}>{count}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-white/50">{fw.id}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </motion.div>
         </>
       )}
@@ -773,402 +428,435 @@ const SyncSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
 };
 
 // ============================================================================
-// LEFT SIDEBAR NAVIGATION
+// CONTROL CARD
 // ============================================================================
 
-const LeftSidebar: React.FC<{
-  currentView: ViewMode;
-  onViewChange: (view: ViewMode) => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
-}> = ({ currentView, onViewChange, isCollapsed, onToggleCollapse }) => {
-  const { state, toggleDarkMode } = useCompliance();
-  const { darkMode, responses } = state;
+const ControlCard: React.FC<{
+  control: MasterControl;
+  response?: UserResponse;
+}> = ({ control, response }) => {
+  const { answerControl, triggerSync } = useApp();
+  const [showInfo, setShowInfo] = useState(false);
+  const [glowing, setGlowing] = useState(false);
 
-  const totalControls = MASTER_CONTROLS.length;
-  const answeredCount = Array.from(responses.values()).filter(r => r.answer).length;
-  const progressPct = Math.round((answeredCount / totalControls) * 100);
+  const handleAnswer = (answer: 'yes' | 'no' | 'partial' | 'na') => {
+    answerControl(control.id, answer);
+    if (answer === 'yes') {
+      setGlowing(true);
+      triggerSync(control);
+      setTimeout(() => setGlowing(false), 800);
+    }
+  };
 
-  const navItems = [
-    { id: 'overview' as ViewMode, label: 'Overview', icon: LayoutDashboard, description: 'Dashboard & Analytics' },
-    { id: 'workspaces' as ViewMode, label: 'Workspaces', icon: Layers, description: '12 Compliance Domains' },
-    { id: 'evidence' as ViewMode, label: 'Evidence', icon: FolderOpen, description: 'Document Repository' },
-    { id: 'company' as ViewMode, label: 'Company', icon: Building2, description: 'Custom Controls' },
+  const buttons: Array<{ value: 'yes' | 'no' | 'partial' | 'na'; label: string; color: string }> = [
+    { value: 'yes', label: 'Yes', color: 'emerald' },
+    { value: 'no', label: 'No', color: 'red' },
+    { value: 'partial', label: 'Partial', color: 'amber' },
+    { value: 'na', label: 'N/A', color: 'slate' },
   ];
+
+  const effortImpact = {
+    critical: { effort: 'High', impact: 'Critical', color: 'red' },
+    high: { effort: 'Medium', impact: 'High', color: 'orange' },
+    medium: { effort: 'Low', impact: 'Medium', color: 'blue' },
+    low: { effort: 'Low', impact: 'Low', color: 'slate' },
+  }[control.riskLevel];
 
   return (
     <motion.div
-      initial={false}
-      animate={{ width: isCollapsed ? 72 : 260 }}
-      className="h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-white/10 flex flex-col fixed left-0 top-0 z-30"
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`
+        rounded-xl border overflow-hidden transition-all duration-300
+        ${glowing 
+          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+          : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-white/10'
+        }
+      `}
     >
-      {/* Logo */}
-      <div className="p-4 border-b border-slate-200 dark:border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-violet-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25 flex-shrink-0">
-            <Shield className="w-5 h-5 text-white" />
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 rounded">
+                {control.id}
+              </span>
+              {/* Effort/Impact Badges */}
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full bg-${effortImpact.color}-100 dark:bg-${effortImpact.color}-500/20 text-${effortImpact.color}-600 dark:text-${effortImpact.color}-400`}>
+                {effortImpact.effort} Effort
+              </span>
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full bg-${effortImpact.color}-100 dark:bg-${effortImpact.color}-500/20 text-${effortImpact.color}-600 dark:text-${effortImpact.color}-400`}>
+                {effortImpact.impact} Impact
+              </span>
+            </div>
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm leading-tight">
+              {control.title}
+            </h3>
           </div>
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="overflow-hidden"
+          
+          {/* Info Toggle */}
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+              showInfo
+                ? 'bg-blue-500 text-white'
+                : 'bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-blue-500'
+            }`}
+          >
+            <Info className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Question */}
+        <p className="text-sm text-slate-600 dark:text-white/70 mb-4">{control.question}</p>
+
+        {/* Framework Tags */}
+        <div className="flex flex-wrap gap-1 mb-4">
+          {control.frameworkMappings.map(m => {
+            const fw = FRAMEWORKS.find(f => f.id === m.frameworkId);
+            return (
+              <span
+                key={`${m.frameworkId}-${m.clauseId}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded border"
+                style={{
+                  backgroundColor: `${fw?.color}10`,
+                  borderColor: `${fw?.color}30`,
+                  color: fw?.color,
+                }}
               >
-                <div className="font-bold text-slate-900 dark:text-white whitespace-nowrap">Compliance Engine</div>
-                <div className="text-xs text-slate-500 dark:text-white/50">v6.0</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />
+                {m.frameworkId} {m.clauseId}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Answer Buttons */}
+        <div className="flex gap-2">
+          {buttons.map(btn => {
+            const selected = response?.answer === btn.value;
+            const colors: Record<string, { selected: string; default: string }> = {
+              emerald: {
+                selected: 'bg-emerald-500 text-white border-emerald-500',
+                default: 'border-emerald-300 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10',
+              },
+              red: {
+                selected: 'bg-red-500 text-white border-red-500',
+                default: 'border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10',
+              },
+              amber: {
+                selected: 'bg-amber-500 text-white border-amber-500',
+                default: 'border-amber-300 dark:border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10',
+              },
+              slate: {
+                selected: 'bg-slate-500 text-white border-slate-500',
+                default: 'border-slate-300 dark:border-slate-500/40 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-500/10',
+              },
+            };
+            return (
+              <motion.button
+                key={btn.value}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleAnswer(btn.value)}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${
+                  selected ? colors[btn.color].selected : colors[btn.color].default
+                }`}
+              >
+                {btn.label}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Progress Summary */}
-      {!isCollapsed && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="p-4 border-b border-slate-200 dark:border-white/10"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-500 dark:text-white/50">Overall Progress</span>
-            <span className="text-xs font-bold text-slate-900 dark:text-white">{progressPct}%</span>
-          </div>
-          <div className="h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-              className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full"
-            />
-          </div>
-          <div className="mt-2 text-xs text-slate-500 dark:text-white/50">
-            {answeredCount} of {totalControls} controls assessed
-          </div>
-        </motion.div>
-      )}
+      {/* Why This Matters (Expandable) */}
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-slate-200 dark:border-white/10"
+          >
+            <div className="p-5 bg-blue-50 dark:bg-blue-900/20 space-y-3">
+              <div>
+                <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-1">
+                  Why This Matters
+                </h4>
+                <p className="text-sm text-blue-600 dark:text-blue-200/80">{control.guidance}</p>
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-1">
+                  Evidence Examples
+                </h4>
+                <ul className="space-y-1">
+                  {control.evidenceExamples.map((ex, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-blue-600 dark:text-blue-200/80">
+                      <Check className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      {ex}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems.map(item => {
-          const Icon = item.icon;
-          const isActive = currentView === item.id;
-          return (
-            <motion.button
-              key={item.id}
-              whileHover={{ x: isCollapsed ? 0 : 4 }}
-              onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
-                isActive
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-500' : ''}`} />
-              <AnimatePresence>
-                {!isCollapsed && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex-1 text-left overflow-hidden"
-                  >
-                    <div className="font-medium text-sm">{item.label}</div>
-                    <div className="text-xs text-slate-400 dark:text-white/40 truncate">{item.description}</div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          );
-        })}
-      </nav>
-
-      {/* Bottom Actions */}
-      <div className="p-3 border-t border-slate-200 dark:border-white/10 space-y-1">
-        <button
-          onClick={toggleDarkMode}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-          title={isCollapsed ? (darkMode ? 'Light Mode' : 'Dark Mode') : undefined}
-        >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          {!isCollapsed && <span className="text-sm">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
-        </button>
-        <button
-          onClick={onToggleCollapse}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-        >
-          {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-          {!isCollapsed && <span className="text-sm">Collapse</span>}
-        </button>
-      </div>
+      {/* Gap Remediation Note */}
+      <AnimatePresence>
+        {response?.answer === 'no' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-red-200 dark:border-red-500/30"
+          >
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div>
+                <div className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-1">Gap Detected</div>
+                <p className="text-sm text-red-600 dark:text-red-300">{control.remediationTip}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
 // ============================================================================
-// OVERVIEW (DASHBOARD) VIEW
+// TAB 1: DASHBOARD (Command Center)
 // ============================================================================
 
-const OverviewView: React.FC<{
-  onNavigate: (view: ViewMode) => void;
-  onSelectDomain: (domain: ComplianceDomainMeta) => void;
-}> = ({ onNavigate, onSelectDomain }) => {
-  const { state, setFrameworkFilter } = useCompliance();
-  const { responses, frameworkFilter } = state;
+const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomainMeta) => void }> = ({ onNavigate }) => {
+  const { state } = useApp();
+  const { responses } = state;
 
-  // Framework progress
-  const frameworkProgress = FRAMEWORKS.map(fw => ({
+  // Calculate framework progress
+  const frameworks = FRAMEWORKS.map(fw => ({
     ...fw,
     ...calculateFrameworkProgress(fw.id, responses),
   }));
 
   // Stats
-  const totalControls = MASTER_CONTROLS.length;
-  const answeredCount = Array.from(responses.values()).filter(r => r.answer).length;
-  const passedCount = Array.from(responses.values()).filter(r => r.answer === 'yes' || r.answer === 'na').length;
-  const gapsCount = Array.from(responses.values()).filter(r => r.answer === 'no').length;
-
-  // Critical Gaps (top 5 high-impact "No" or unanswered)
-  const criticalGaps = MASTER_CONTROLS
-    .filter(c => {
-      const r = responses.get(c.id);
-      return (r?.answer === 'no' || r?.answer === 'partial') && (c.riskLevel === 'critical' || c.riskLevel === 'high');
-    })
-    .sort((a, b) => {
-      const order = { critical: 0, high: 1, medium: 2, low: 3 };
-      return order[a.riskLevel] - order[b.riskLevel];
-    })
-    .slice(0, 5);
-
-  const handleGaugeClick = (fwId: FrameworkId) => {
-    setFrameworkFilter(frameworkFilter === fwId ? null : fwId);
-    if (frameworkFilter !== fwId) {
-      onNavigate('workspaces');
-    }
-  };
+  const total = MASTER_CONTROLS.length;
+  const answered = Array.from(responses.values()).filter(r => r.answer).length;
+  const compliant = Array.from(responses.values()).filter(r => r.answer === 'yes' || r.answer === 'na').length;
+  const gaps = Array.from(responses.values()).filter(r => r.answer === 'no').length;
+  const remaining = total - answered;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Compliance Overview</h1>
-          <p className="text-slate-500 dark:text-white/60">Monitor your security posture across all frameworks</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {frameworkFilter && (
-            <motion.button
+      {/* Hero Header */}
+      <div className="text-center mb-8">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-bold text-slate-900 dark:text-white mb-2"
+        >
+          Compliance Command Center
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-slate-500 dark:text-white/60"
+        >
+          {total} master controls mapped across 4 frameworks
+        </motion.p>
+      </div>
+
+      {/* Framework Gauges - Bento Style */}
+      <Glass className="p-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Framework Compliance</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {frameworks.map((fw, i) => (
+            <motion.div
+              key={fw.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              onClick={() => setFrameworkFilter(null)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium"
+              transition={{ delay: i * 0.1 }}
             >
-              <Filter className="w-4 h-4" />
-              {frameworkFilter} Filter Active
-              <X className="w-3 h-3" />
-            </motion.button>
-          )}
-        </div>
-      </div>
-
-      {/* Framework Gauges - Clickable */}
-      <GlassCard className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Framework Compliance</h2>
-          <p className="text-sm text-slate-500 dark:text-white/50">Click a gauge to filter assessments</p>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {frameworkProgress.map(fw => (
-            <CircularGauge
-              key={fw.id}
-              value={fw.completed}
-              maxValue={fw.total}
-              color={fw.color}
-              label={fw.name}
-              icon={getFrameworkIcon(fw.id)}
-              onClick={() => handleGaugeClick(fw.id)}
-              isActive={frameworkFilter === fw.id}
-            />
+              <CircularGauge
+                percentage={fw.percentage}
+                color={fw.color}
+                label={fw.name}
+                count={`${fw.completed}/${fw.total}`}
+              />
+            </motion.div>
           ))}
         </div>
-      </GlassCard>
+      </Glass>
 
-      {/* Stats + Critical Gaps Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Stats */}
-        <GlassCard className="p-5">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wide mb-4">Quick Stats</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{Math.round((answeredCount/totalControls)*100)}%</div>
-              <div className="text-xs text-blue-600/70 dark:text-blue-400/70">Assessed</div>
-            </div>
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{passedCount}</div>
-              <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70">Compliant</div>
-            </div>
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10">
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{gapsCount}</div>
-              <div className="text-xs text-red-600/70 dark:text-red-400/70">Gaps</div>
-            </div>
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10">
-              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{totalControls - answeredCount}</div>
-              <div className="text-xs text-amber-600/70 dark:text-amber-400/70">Remaining</div>
-            </div>
-          </div>
-        </GlassCard>
-
-        {/* Critical Gaps */}
-        <GlassCard className="p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wide flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              Critical Gaps
-            </h3>
-            <span className="text-xs text-slate-400 dark:text-white/40">Top 5 High-Impact</span>
-          </div>
-          {criticalGaps.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-slate-400 dark:text-white/40">
-              <div className="text-center">
-                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-                <p className="text-sm">No critical gaps detected!</p>
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Assessed', value: answered, color: 'blue', pct: `${Math.round((answered/total)*100)}%` },
+          { label: 'Compliant', value: compliant, color: 'emerald', pct: null },
+          { label: 'Gaps', value: gaps, color: 'red', pct: null },
+          { label: 'Remaining', value: remaining, color: 'amber', pct: null },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + i * 0.05 }}
+          >
+            <Glass className="p-4">
+              <div className={`text-2xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>
+                {stat.pct || stat.value}
               </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {criticalGaps.map(control => (
-                <GapCard
-                  key={control.id}
-                  control={control}
-                  onClick={() => {
-                    onSelectDomain(COMPLIANCE_DOMAINS.find(d => d.id === control.domain)!);
-                    onNavigate('workspaces');
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </GlassCard>
+              <div className="text-sm text-slate-500 dark:text-white/60">{stat.label}</div>
+            </Glass>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Domain Heatmap */}
-      <GlassCard className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wide flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Domain Heatmap
-          </h3>
-          <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-white/40">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/30" /> At Risk</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500/30" /> Needs Work</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-500/30" /> Healthy</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-          {COMPLIANCE_DOMAINS.map(domain => {
+      {/* Domain Progress Grid */}
+      <Glass className="p-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Domain Progress</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {COMPLIANCE_DOMAINS.map((domain, i) => {
             const progress = getDomainProgress(domain.id, responses);
+            const complete = progress.percentage === 100 && progress.total > 0;
+            
             return (
-              <HeatmapCell
+              <motion.button
                 key={domain.id}
-                domain={domain}
-                progress={progress}
-                onClick={() => {
-                  onSelectDomain(domain);
-                  onNavigate('workspaces');
-                }}
-              />
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 + i * 0.02 }}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => onNavigate('assessment', domain)}
+                className={`p-4 rounded-xl text-left transition-colors ${
+                  complete
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/30'
+                    : 'bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${domain.color}20` }}
+                  >
+                    <div style={{ color: domain.color }}>
+                      <DomainIcon domainId={domain.id} />
+                    </div>
+                  </div>
+                  {complete && (
+                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="font-medium text-sm text-slate-900 dark:text-white mb-2 truncate">
+                  {domain.title}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress.percentage}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: complete ? '#10B981' : domain.color }}
+                    />
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-white/50">
+                    {progress.completed}/{progress.total}
+                  </span>
+                </div>
+              </motion.button>
             );
           })}
         </div>
-      </GlassCard>
+      </Glass>
     </div>
   );
 };
 
 // ============================================================================
-// WORKSPACES (ASSESSMENT) VIEW
+// TAB 2: ASSESSMENT (Wizard)
 // ============================================================================
 
-const WorkspacesView: React.FC<{
-  selectedDomain: ComplianceDomainMeta | null;
-  onSelectDomain: (domain: ComplianceDomainMeta) => void;
-}> = ({ selectedDomain, onSelectDomain }) => {
-  const { state } = useCompliance();
-  const { responses, frameworkFilter } = state;
-  const [searchQuery, setSearchQuery] = useState('');
+const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ initialDomain }) => {
+  const { state } = useApp();
+  const { responses } = state;
+  const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || COMPLIANCE_DOMAINS[0]);
+  const [search, setSearch] = useState('');
 
-  // Get controls based on domain and framework filter
+  // Get controls
   const controls = useMemo(() => {
-    let filtered = selectedDomain ? getControlsByDomain(selectedDomain.id) : MASTER_CONTROLS;
-    
-    // Apply framework filter
-    if (frameworkFilter) {
-      filtered = filtered.filter(c => 
-        c.frameworkMappings.some(m => m.frameworkId === frameworkFilter)
-      );
-    }
-
-    // Apply search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(c =>
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return MASTER_CONTROLS.filter(c =>
         c.id.toLowerCase().includes(q) ||
         c.title.toLowerCase().includes(q) ||
         c.keywords.some(k => k.toLowerCase().includes(q))
       );
     }
-
-    return filtered;
-  }, [selectedDomain, frameworkFilter, searchQuery]);
+    return getControlsByDomain(activeDomain.id);
+  }, [activeDomain.id, search]);
 
   return (
-    <div className="flex gap-6 h-full">
-      {/* Domain List */}
-      <div className="w-64 flex-shrink-0">
-        <GlassCard className="p-3 sticky top-0">
-          <h3 className="text-xs font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wide px-3 mb-3">
-            Compliance Domains
-          </h3>
-          <div className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
+    <div className="flex gap-6">
+      {/* Domain Sidebar */}
+      <div className="w-64 flex-shrink-0 hidden lg:block">
+        <Glass className="p-3 sticky top-4">
+          <div className="text-xs font-semibold text-slate-500 dark:text-white/50 uppercase tracking-wide px-3 mb-3">
+            12 Compliance Domains
+          </div>
+          <div className="space-y-1">
             {COMPLIANCE_DOMAINS.map(domain => {
               const progress = getDomainProgress(domain.id, responses);
-              const isActive = selectedDomain?.id === domain.id;
-              const isComplete = progress.percentage === 100 && progress.total > 0;
+              const isActive = activeDomain.id === domain.id && !search;
+              const complete = progress.percentage === 100 && progress.total > 0;
 
               return (
                 <button
                   key={domain.id}
-                  onClick={() => onSelectDomain(domain)}
+                  onClick={() => { setActiveDomain(domain); setSearch(''); }}
                   className={`w-full text-left px-3 py-2.5 rounded-xl transition-all ${
                     isActive
-                      ? 'bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30'
+                      ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30'
                       : 'hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${domain.color}20` }}
+                      style={{ backgroundColor: `${domain.color}15` }}
                     >
-                      <span style={{ color: domain.color }}>{getDomainIcon(domain.id)}</span>
+                      <div style={{ color: domain.color }}>
+                        <DomainIcon domainId={domain.id} />
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-white/80'}`}>
+                      <div className={`text-sm font-medium truncate ${
+                        isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-white/80'
+                      }`}>
                         {domain.title}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <div className="flex-1 h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all"
-                            style={{ width: `${progress.percentage}%`, backgroundColor: isComplete ? '#10B981' : domain.color }}
+                            style={{
+                              width: `${progress.percentage}%`,
+                              backgroundColor: complete ? '#10B981' : domain.color,
+                            }}
                           />
                         </div>
-                        <span className="text-[10px] text-slate-400 dark:text-white/40">{progress.percentage}%</span>
+                        <span className="text-[10px] text-slate-400">{progress.percentage}%</span>
                       </div>
                     </div>
-                    {isComplete && (
+                    {/* Checkmark only at 100% */}
+                    {complete && (
                       <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
@@ -1178,63 +866,72 @@ const WorkspacesView: React.FC<{
               );
             })}
           </div>
-        </GlassCard>
+        </Glass>
       </div>
 
-      {/* Controls Area */}
+      {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-4">
-        {/* Search + Filter Bar */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search controls..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          {frameworkFilter && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl">
-              <Filter className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{frameworkFilter}</span>
-            </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search controls by ID, name, or keyword..."
+            className="w-full pl-12 pr-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
           )}
         </div>
 
         {/* Domain Header */}
-        {selectedDomain && (
-          <GlassCard className="p-4">
+        {!search && (
+          <Glass className="p-5">
             <div className="flex items-center gap-4">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${selectedDomain.color}20` }}
+                style={{ backgroundColor: `${activeDomain.color}15` }}
               >
-                <span style={{ color: selectedDomain.color }} className="scale-125">{getDomainIcon(selectedDomain.id)}</span>
+                <div style={{ color: activeDomain.color }} className="scale-125">
+                  <DomainIcon domainId={activeDomain.id} />
+                </div>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedDomain.title}</h2>
-                <p className="text-sm text-slate-500 dark:text-white/60">{selectedDomain.description}</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{activeDomain.title}</h2>
+                <p className="text-sm text-slate-500 dark:text-white/60">{activeDomain.description}</p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold" style={{ color: selectedDomain.color }}>
-                  {getDomainProgress(selectedDomain.id, responses).percentage}%
+                <div className="text-2xl font-bold" style={{ color: activeDomain.color }}>
+                  {getDomainProgress(activeDomain.id, responses).percentage}%
                 </div>
                 <div className="text-xs text-slate-500 dark:text-white/50">Complete</div>
               </div>
             </div>
-          </GlassCard>
+          </Glass>
         )}
 
-        {/* Controls List */}
+        {/* Search Results Header */}
+        {search && (
+          <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30">
+            <p className="text-blue-700 dark:text-blue-300">
+              Found <strong>{controls.length}</strong> controls matching "{search}"
+            </p>
+          </div>
+        )}
+
+        {/* Controls */}
         <div className="space-y-3">
           {controls.length === 0 ? (
             <div className="text-center py-16">
               <Search className="w-12 h-12 text-slate-300 dark:text-white/20 mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-white/50">
-                {searchQuery ? 'No controls match your search' : 'Select a domain to view controls'}
-              </p>
+              <p className="text-slate-500 dark:text-white/50">No controls found</p>
             </div>
           ) : (
             controls.map((control, i) => (
@@ -1255,96 +952,104 @@ const WorkspacesView: React.FC<{
 };
 
 // ============================================================================
-// EVIDENCE VIEW
+// TAB 3: EVIDENCE LOCKER
 // ============================================================================
 
-const EvidenceView: React.FC = () => {
-  const { state, handleUpdateNotes } = useCompliance();
+const EvidenceTab: React.FC = () => {
+  const { state, updateNotes } = useApp();
   const { responses } = state;
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
 
-  const passedControls = MASTER_CONTROLS.filter(c => responses.get(c.id)?.answer === 'yes');
+  const passed = MASTER_CONTROLS.filter(c => responses.get(c.id)?.answer === 'yes');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Evidence Repository</h1>
-          <p className="text-slate-500 dark:text-white/60">Centralized storage for audit documentation</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Evidence Locker</h1>
+          <p className="text-slate-500 dark:text-white/60">Attach notes and evidence for audit preparation</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl font-medium text-sm">
-            {passedControls.length} controls ready for evidence
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl font-medium text-sm hover:bg-blue-600 transition-colors">
-            <Download className="w-4 h-4" />
-            Export Report
-          </button>
+        <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl font-medium">
+          {passed.length} controls ready
         </div>
       </div>
 
-      {passedControls.length === 0 ? (
-        <GlassCard className="p-16 text-center">
+      {passed.length === 0 ? (
+        <Glass className="p-16 text-center">
           <FolderOpen className="w-16 h-16 text-slate-300 dark:text-white/20 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Evidence Yet</h3>
           <p className="text-slate-500 dark:text-white/60">Complete controls with "Yes" to start collecting evidence</p>
-        </GlassCard>
+        </Glass>
       ) : (
-        <GlassCard className="overflow-hidden">
+        <Glass className="overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+              <tr className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Control</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Status</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Evidence Notes</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Notes</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-              {passedControls.map(control => {
-                const response = responses.get(control.id);
-                const isEditing = editingId === control.id;
+              {passed.map(control => {
+                const r = responses.get(control.id);
+                const editing = editId === control.id;
                 return (
                   <tr key={control.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-white/10 rounded">{control.id}</span>
-                        <span className="text-sm text-slate-900 dark:text-white font-medium truncate max-w-xs">{control.title}</span>
+                        <span className="text-sm text-slate-900 dark:text-white font-medium truncate max-w-[200px]">{control.title}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full">
                         <Check className="w-3 h-3" /> Compliant
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      {isEditing ? (
+                      {editing ? (
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={editNotes}
                             onChange={e => setEditNotes(e.target.value)}
-                            placeholder="Add evidence notes..."
-                            className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/20 rounded-lg"
+                            placeholder="Add notes..."
+                            className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             autoFocus
                           />
-                          <button onClick={() => { handleUpdateNotes(control.id, editNotes); setEditingId(null); }} className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg">Save</button>
-                          <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-slate-500 text-sm">Cancel</button>
+                          <button
+                            onClick={() => { updateNotes(control.id, editNotes); setEditId(null); }}
+                            className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg"
+                          >
+                            Save
+                          </button>
+                          <button onClick={() => setEditId(null)} className="px-3 py-1.5 text-slate-500 text-sm">
+                            Cancel
+                          </button>
                         </div>
                       ) : (
                         <span className="text-sm text-slate-600 dark:text-white/70">
-                          {response?.notes || <span className="text-slate-400 dark:text-white/30 italic">No notes</span>}
+                          {r?.notes || <span className="text-slate-400 dark:text-white/30 italic">No notes</span>}
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      {!isEditing && (
+                      {!editing && (
                         <div className="flex gap-1">
-                          <button onClick={() => { setEditingId(control.id); setEditNotes(response?.notes || ''); }} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg">
+                          <button
+                            onClick={() => { setEditId(control.id); setEditNotes(r?.notes || ''); }}
+                            className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                            title="Add notes"
+                          >
                             <FileText className="w-4 h-4" />
                           </button>
-                          <button className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg" title="Upload (coming soon)">
+                          <button
+                            className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg"
+                            title="Upload file (placeholder)"
+                          >
                             <Upload className="w-4 h-4" />
                           </button>
                         </div>
@@ -1355,46 +1060,55 @@ const EvidenceView: React.FC = () => {
               })}
             </tbody>
           </table>
-        </GlassCard>
+        </Glass>
       )}
     </div>
   );
 };
 
 // ============================================================================
-// COMPANY CONTROLS VIEW
+// TAB 4: COMPANY CONTROLS
 // ============================================================================
 
-const CompanyView: React.FC = () => {
-  const { state, addCustomControl, deleteCustomControl } = useCompliance();
+const CompanyTab: React.FC = () => {
+  const { state, addCustomControl, deleteCustomControl } = useApp();
   const { customControls } = state;
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', desc: '', question: '', category: 'access_control' as ComplianceDomain, mappings: [] as { fwId: FrameworkId; clause: string }[] });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    category: 'access_control' as ComplianceDomain,
+    mappings: [] as { fwId: FrameworkId; clause: string }[],
+  });
   const [newMap, setNewMap] = useState({ fwId: 'SOC2' as FrameworkId, clause: '' });
 
   const addMapping = () => {
     if (newMap.clause.trim()) {
-      setForm(p => ({ ...p, mappings: [...p.mappings, { ...newMap, clause: newMap.clause.trim() }] }));
+      setForm(p => ({ ...p, mappings: [...p.mappings, { fwId: newMap.fwId, clause: newMap.clause.trim() }] }));
       setNewMap({ fwId: 'SOC2', clause: '' });
     }
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.name && form.desc) {
+    if (form.name && form.description) {
       addCustomControl({
         id: `CUSTOM-${Date.now()}`,
         title: form.name,
-        description: form.desc,
-        question: form.question || `Is ${form.name} implemented?`,
+        description: form.description,
+        question: `Is ${form.name} implemented?`,
         category: form.category,
-        frameworkMappings: form.mappings.map(m => ({ frameworkId: m.fwId, clauseId: m.clause, clauseTitle: 'Custom' })),
+        frameworkMappings: form.mappings.map(m => ({
+          frameworkId: m.fwId,
+          clauseId: m.clause,
+          clauseTitle: 'Custom mapping',
+        })),
         effort: 'medium',
         impact: 'medium',
         createdAt: new Date().toISOString(),
         createdBy: 'User',
       });
-      setForm({ name: '', desc: '', question: '', category: 'access_control', mappings: [] });
+      setForm({ name: '', description: '', category: 'access_control', mappings: [] });
       setShowModal(false);
     }
   };
@@ -1404,31 +1118,34 @@ const CompanyView: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Company Controls</h1>
-          <p className="text-slate-500 dark:text-white/60">Custom internal policies and framework mappings</p>
+          <p className="text-slate-500 dark:text-white/60">Create custom internal policies with framework mapping</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-violet-500/25">
-          <Plus className="w-4 h-4" /> Create Control
-        </button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/25"
+        >
+          <Plus className="w-4 h-4" />
+          Create New Control
+        </motion.button>
       </div>
 
       {customControls.length === 0 ? (
-        <GlassCard className="p-16 text-center">
+        <Glass className="p-16 text-center">
           <Building2 className="w-16 h-16 text-slate-300 dark:text-white/20 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Custom Controls</h3>
           <p className="text-slate-500 dark:text-white/60 mb-6">Add controls specific to your organization</p>
-          <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-xl">
-            <Plus className="w-4 h-4" /> Create Your First Control
-          </button>
-        </GlassCard>
+        </Glass>
       ) : (
         <div className="grid gap-4">
           {customControls.map(c => (
-            <GlassCard key={c.id} className="p-5">
+            <Glass key={c.id} className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-xs font-mono bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded">{c.id}</span>
-                    <span className="px-2 py-0.5 text-[10px] bg-violet-500/20 text-violet-500 rounded">CUSTOM</span>
+                    <span className="px-2 py-0.5 text-xs font-mono bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded">{c.id}</span>
+                    <span className="px-2 py-0.5 text-[10px] font-medium bg-violet-500/20 text-violet-500 rounded">CUSTOM</span>
                   </div>
                   <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{c.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-white/70 mb-3">{c.description}</p>
@@ -1437,7 +1154,11 @@ const CompanyView: React.FC = () => {
                       {c.frameworkMappings.map((m, i) => {
                         const fw = FRAMEWORKS.find(f => f.id === m.frameworkId);
                         return (
-                          <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded border" style={{ borderColor: `${fw?.color}40`, color: fw?.color, backgroundColor: `${fw?.color}10` }}>
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded border"
+                            style={{ borderColor: `${fw?.color}40`, color: fw?.color, backgroundColor: `${fw?.color}10` }}
+                          >
                             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />
                             {m.frameworkId} {m.clauseId}
                           </span>
@@ -1446,11 +1167,14 @@ const CompanyView: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <button onClick={() => deleteCustomControl(c.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
+                <button
+                  onClick={() => deleteCustomControl(c.id)}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-            </GlassCard>
+            </Glass>
           ))}
         </div>
       )}
@@ -1458,53 +1182,129 @@ const CompanyView: React.FC = () => {
       {/* Create Modal */}
       <AnimatePresence>
         {showModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="w-full max-w-xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden"
+            >
               <div className="p-5 border-b border-slate-200 dark:border-white/10">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Create Custom Control</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Create New Control</h2>
+                <p className="text-sm text-slate-500 dark:text-white/60">Define a custom control and map it to frameworks</p>
               </div>
               <form onSubmit={submit} className="p-5 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Control Name *</label>
-                  <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white" required />
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    placeholder="e.g., Weekly Security Standups"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Description *</label>
-                  <textarea value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} rows={2} className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white resize-none" required />
+                  <textarea
+                    value={form.description}
+                    onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    rows={2}
+                    placeholder="Describe what this control does..."
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Category</label>
-                  <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as ComplianceDomain }))} className="w-full px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white">
-                    {COMPLIANCE_DOMAINS.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
+                  <select
+                    value={form.category}
+                    onChange={e => setForm(p => ({ ...p, category: e.target.value as ComplianceDomain }))}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  >
+                    {COMPLIANCE_DOMAINS.map(d => (
+                      <option key={d.id} value={d.id}>{d.title}</option>
+                    ))}
                   </select>
                 </div>
+                
+                {/* Mapping Tool */}
                 <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-2">Framework Mappings</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-3">
+                    Framework Mapping Tool
+                  </label>
                   <div className="flex gap-2 mb-3">
-                    <select value={newMap.fwId} onChange={e => setNewMap(p => ({ ...p, fwId: e.target.value as FrameworkId }))} className="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg text-sm">
-                      {FRAMEWORKS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    <select
+                      value={newMap.fwId}
+                      onChange={e => setNewMap(p => ({ ...p, fwId: e.target.value as FrameworkId }))}
+                      className="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg text-sm"
+                    >
+                      {FRAMEWORKS.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
                     </select>
-                    <input type="text" value={newMap.clause} onChange={e => setNewMap(p => ({ ...p, clause: e.target.value }))} placeholder="Clause ID" className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg text-sm" />
-                    <button type="button" onClick={addMapping} className="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm">Add</button>
+                    <input
+                      type="text"
+                      value={newMap.clause}
+                      onChange={e => setNewMap(p => ({ ...p, clause: e.target.value }))}
+                      placeholder="Clause ID (e.g., CC6.1)"
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={addMapping}
+                      className="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                    >
+                      Add
+                    </button>
                   </div>
                   {form.mappings.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {form.mappings.map((m, i) => {
                         const fw = FRAMEWORKS.find(f => f.id === m.fwId);
                         return (
-                          <span key={i} className="inline-flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-white/10 text-sm">
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-white/10 text-sm"
+                          >
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: fw?.color }} />
                             {m.fwId} {m.clause}
-                            <button type="button" onClick={() => setForm(p => ({ ...p, mappings: p.mappings.filter((_, idx) => idx !== i) }))} className="text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                            <button
+                              type="button"
+                              onClick={() => setForm(p => ({ ...p, mappings: p.mappings.filter((_, idx) => idx !== i) }))}
+                              className="text-slate-400 hover:text-red-500"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </span>
                         );
                       })}
                     </div>
                   )}
                 </div>
+
                 <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 dark:text-white/60">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium">Create</button>
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 text-slate-600 dark:text-white/60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium"
+                  >
+                    Create Control
+                  </button>
                 </div>
               </form>
             </motion.div>
@@ -1520,129 +1320,151 @@ const CompanyView: React.FC = () => {
 // ============================================================================
 
 const AppContent: React.FC = () => {
-  const { state } = useCompliance();
-  const { syncNotifications } = state;
-  const [view, setView] = useState<ViewMode>('overview');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showSyncSidebar, setShowSyncSidebar] = useState(false);
-  const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | null>(COMPLIANCE_DOMAINS[0]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { state, toggleDarkMode } = useApp();
+  const { syncNotifications, darkMode } = state;
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
+
+  const handleNavigate = (tab: TabId, domain?: ComplianceDomainMeta) => {
+    setActiveTab(tab);
+    if (domain) setSelectedDomain(domain);
+  };
+
+  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-4 h-4" /> },
+    { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-4 h-4" /> },
+    { id: 'company', label: 'Company', icon: <Building2 className="w-4 h-4" /> },
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-      {/* Left Sidebar - Hidden on mobile */}
-      <div className="hidden lg:block">
-        <LeftSidebar
-          currentView={view}
-          onViewChange={setView}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-      </div>
-
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2">
-              <Menu className="w-5 h-5 text-slate-600 dark:text-white/60" />
-            </button>
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-violet-500 rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-b border-slate-200 dark:border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-violet-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <span className="font-bold text-slate-900 dark:text-white">Compliance Engine</span>
+                <span className="text-xs text-slate-500 dark:text-white/50 ml-2">{MASTER_CONTROLS.length} Controls</span>
+              </div>
             </div>
-            <span className="font-bold text-slate-900 dark:text-white">Compliance Engine</span>
+
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                      : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.icon}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              {/* Sync Toggle */}
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className={`relative p-2.5 rounded-xl transition-all ${
+                  showSidebar
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                    : 'text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                <Zap className="w-5 h-5" />
+                {syncNotifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {Math.min(syncNotifications.length, 99)}
+                  </span>
+                )}
+              </button>
+
+              {/* Dark Mode */}
+              <button
+                onClick={toggleDarkMode}
+                className="p-2.5 rounded-xl text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setShowSyncSidebar(!showSyncSidebar)}
-            className={`relative p-2 rounded-lg ${showSyncSidebar ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600' : 'text-slate-400'}`}
-          >
-            <Zap className="w-5 h-5" />
-            {syncNotifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {Math.min(syncNotifications.length, 99)}
-              </span>
-            )}
-          </button>
         </div>
-      </div>
+      </nav>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 z-40 lg:hidden" />
-            <motion.div initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-slate-900 z-50 lg:hidden">
-              <LeftSidebar currentView={view} onViewChange={(v) => { setView(v); setMobileMenuOpen(false); }} isCollapsed={false} onToggleCollapse={() => {}} />
+      {/* Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <AnimatePresence mode="wait">
+          {activeTab === 'dashboard' && (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <DashboardTab onNavigate={handleNavigate} />
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Main Content */}
-      <main
-        className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} pt-16 lg:pt-0`}
-        style={{ paddingRight: showSyncSidebar ? '320px' : '0' }}
-      >
-        {/* Sync Toggle Button - Desktop */}
-        <button
-          onClick={() => setShowSyncSidebar(!showSyncSidebar)}
-          className={`hidden lg:flex fixed right-4 top-4 z-30 items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-            showSyncSidebar
-              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-white/60 border border-slate-200 dark:border-white/10 hover:border-emerald-500 hover:text-emerald-500'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          <span className="text-sm font-medium">Sync Feed</span>
-          {syncNotifications.length > 0 && (
-            <span className={`px-1.5 py-0.5 text-xs font-bold rounded-full ${showSyncSidebar ? 'bg-white/20' : 'bg-emerald-500 text-white'}`}>
-              {syncNotifications.length}
-            </span>
           )}
-        </button>
-
-        <div className="p-6 lg:p-8">
-          <AnimatePresence mode="wait">
-            {view === 'overview' && (
-              <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                <OverviewView
-                  onNavigate={setView}
-                  onSelectDomain={d => { setSelectedDomain(d); setView('workspaces'); }}
-                />
-              </motion.div>
-            )}
-            {view === 'workspaces' && (
-              <motion.div key="workspaces" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                <WorkspacesView
-                  selectedDomain={selectedDomain}
-                  onSelectDomain={setSelectedDomain}
-                />
-              </motion.div>
-            )}
-            {view === 'evidence' && (
-              <motion.div key="evidence" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                <EvidenceView />
-              </motion.div>
-            )}
-            {view === 'company' && (
-              <motion.div key="company" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                <CompanyView />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+          {activeTab === 'assessment' && (
+            <motion.div
+              key="assessment"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AssessmentTab initialDomain={selectedDomain} />
+            </motion.div>
+          )}
+          {activeTab === 'evidence' && (
+            <motion.div
+              key="evidence"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <EvidenceTab />
+            </motion.div>
+          )}
+          {activeTab === 'company' && (
+            <motion.div
+              key="company"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CompanyTab />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* Sync Sidebar */}
-      <SyncSidebar isOpen={showSyncSidebar} onClose={() => setShowSyncSidebar(false)} />
+      {/* Mapping Sidebar */}
+      <MappingSidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
     </div>
   );
 };
 
+// Root Component
 const App: React.FC = () => (
-  <ComplianceProvider>
+  <AppProvider>
     <AppContent />
-  </ComplianceProvider>
+  </AppProvider>
 );
 
 export default App;
