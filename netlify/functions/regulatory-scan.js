@@ -165,7 +165,7 @@ If no changes found, return: []`
 };
 
 // Schedule: Run every Monday at 6 AM UTC
+// Note: Scheduled functions use the function name as the endpoint
 export const config = {
   schedule: '0 6 * * 1',
-  path: '/api/regulatory-scan',
 };
