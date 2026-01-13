@@ -5,7 +5,7 @@
  * These are mutable and updated by the organization
  */
 
-import type { PostQuantumAlgorithm, ZeroTrustPillar } from './framework.types';
+import type { PostQuantumAlgorithm } from './framework.types';
 
 // ============================================
 // CONTROL ENUMS
@@ -82,13 +82,9 @@ export type IdentityVerificationMethod =
   | 'device_posture'
   | 'location_context';
 
-export type VerificationFrequency =
-  | 'continuous'
-  | 'daily'
-  | 'weekly'
-  | 'monthly'
-  | 'quarterly'
-  | 'annual';
+// Use VerificationFrequency from framework.types.ts
+import type { VerificationFrequency } from './framework.types';
+export type { VerificationFrequency };
 
 export type RiskAcceptance =
   | 'accepted'

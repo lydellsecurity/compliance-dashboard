@@ -14,12 +14,8 @@ import {
   MasterControl,
   RequirementControlMapping,
   ComplianceDrift,
-  RequirementChange,
-  MappingGap,
   RequiredAction,
   UserResponse,
-  FrameworkVersion,
-  RequirementCategory2026,
 } from '../types/compliance.types';
 
 // ============================================================================
@@ -223,7 +219,7 @@ export class CrosswalkMappingService {
   }
 
   private generateRequiredActions(
-    newReq: MasterRequirement,
+    _newReq: MasterRequirement,
     affectedControlIds: string[],
     responses: UserResponse[]
   ): RequiredAction[] {

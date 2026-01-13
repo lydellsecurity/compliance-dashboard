@@ -7,11 +7,9 @@ import {
   EU_AI_ACT_TRANSPARENCY,
   NIST_PQC_MIGRATION,
   SAMPLE_CONTROLS,
-  SAMPLE_MAPPINGS,
   FRAMEWORK_VERSIONS,
 } from './data/sample-requirements-2026';
-import { CrosswalkMappingService } from './services/crosswalk.service';
-import type { ComplianceDrift, RequirementComparison, RegulatoryChangeLog } from './types/compliance.types';
+import type { ComplianceDrift, RequirementComparison } from './types/compliance.types';
 
 // ============================================================================
 // DASHBOARD PAGE

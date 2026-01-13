@@ -18,7 +18,6 @@ import {
   RegulatoryChangeLog,
   SuggestedControl,
   FrameworkType,
-  RequirementCategory2026,
 } from '../types/compliance.types';
 
 // ============================================================================

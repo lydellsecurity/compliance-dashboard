@@ -6,12 +6,10 @@
  * React components for managing regulatory updates with side-by-side comparison
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   RequirementComparison,
   ComplianceDrift,
-  RegulatoryChangeLog,
-  TextDiff,
 } from '../types/compliance.types';
 
 // ============================================================================
@@ -28,7 +26,7 @@ interface RequirementComparisonViewerProps {
 export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerProps> = ({
   comparison,
   onAccept,
-  onReject,
+  onReject: _onReject,
   onDefer,
 }) => {
   const [showRejectModal, setShowRejectModal] = useState(false);
