@@ -1,0 +1,385 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://compliance-engine.io/schemas/control-library.schema.json",
+  "title": "Master Control Library",
+  "description": "Schema for internal controls (company's actions) with implementation tracking",
+  "type": "object",
+  "required": ["library_version", "organization_id", "controls"],
+  "properties": {
+    "library_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Control"
+      }
+    }
+  },
+  "definitions": {
+    "Control": {
+      "type": "object",
+      "required": ["control_id", "title", "description", "category", "status"],
+      "properties": {
+        "control_id": {
+          "type": "string",
+          "pattern": "^CTRL-\\d{4}$",
+          "description": "Internal control identifier (e.g., 'CTRL-0001')"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "description": "What the control does and how it's implemented"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "access_control",
+            "authentication",
+            "encryption",
+            "monitoring",
+            "incident_response",
+            "business_continuity",
+            "change_management",
+            "asset_management",
+            "vendor_management",
+            "physical_security",
+            "data_protection",
+            "ai_governance",
+            "network_security",
+            "application_security",
+            "hr_security",
+            "compliance",
+            "risk_management"
+          ]
+        },
+        "subcategory": {
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/definitions/ControlOwner"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "in_progress",
+            "implemented",
+            "verified",
+            "needs_review",
+            "deprecated"
+          ]
+        },
+        "implementation_date": {
+          "type": ["string", "null"],
+          "format": "date"
+        },
+        "last_verified": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "verification_frequency": {
+          "type": "string",
+          "enum": ["continuous", "daily", "weekly", "monthly", "quarterly", "annual"]
+        },
+        "automation_level": {
+          "type": "string",
+          "enum": ["manual", "semi_automated", "fully_automated"]
+        },
+        "automation_tool": {
+          "type": "string",
+          "description": "Tool used for automation (e.g., 'CrowdStrike', 'Okta')"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Evidence"
+          }
+        },
+        "implementation_details": {
+          "$ref": "#/definitions/ImplementationDetails"
+        },
+        "effectiveness_metrics": {
+          "$ref": "#/definitions/EffectivenessMetrics"
+        },
+        "related_controls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "IDs of related/dependent controls"
+        },
+        "tags": {
+          "$ref": "#/definitions/ControlTags"
+        },
+        "version_history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ControlVersion"
+          }
+        }
+      }
+    },
+    "ControlOwner": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Primary owner email or ID"
+        },
+        "secondary": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "escalation_path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Evidence": {
+      "type": "object",
+      "required": ["evidence_id", "type", "collected_date"],
+      "properties": {
+        "evidence_id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "policy",
+            "procedure",
+            "screenshot",
+            "log",
+            "configuration",
+            "audit_report",
+            "attestation",
+            "training_record",
+            "contract",
+            "api_response",
+            "scan_result"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "file_path": {
+          "type": "string"
+        },
+        "collected_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_date": {
+          "type": ["string", "null"],
+          "format": "date"
+        },
+        "collector": {
+          "type": "string",
+          "enum": ["manual", "automated", "third_party"]
+        },
+        "verification_status": {
+          "type": "string",
+          "enum": ["pending", "verified", "rejected", "expired"]
+        }
+      }
+    },
+    "ImplementationDetails": {
+      "type": "object",
+      "properties": {
+        "procedure_document": {
+          "type": "string",
+          "description": "Link to implementation procedure"
+        },
+        "technical_configuration": {
+          "type": "string",
+          "description": "Technical implementation details"
+        },
+        "testing_procedure": {
+          "type": "string"
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ControlException"
+          }
+        },
+        "compensating_controls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Control IDs that compensate for gaps"
+        }
+      }
+    },
+    "ControlException": {
+      "type": "object",
+      "properties": {
+        "exception_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "justification": {
+          "type": "string"
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "approved_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "risk_acceptance": {
+          "type": "string",
+          "enum": ["accepted", "mitigated", "transferred"]
+        }
+      }
+    },
+    "EffectivenessMetrics": {
+      "type": "object",
+      "properties": {
+        "last_test_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "test_result": {
+          "type": "string",
+          "enum": ["pass", "fail", "partial", "not_tested"]
+        },
+        "coverage_percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "incidents_prevented": {
+          "type": "integer"
+        },
+        "false_positive_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "mean_time_to_detect": {
+          "type": "string",
+          "description": "ISO 8601 duration"
+        },
+        "mean_time_to_respond": {
+          "type": "string",
+          "description": "ISO 8601 duration"
+        }
+      }
+    },
+    "ControlTags": {
+      "type": "object",
+      "description": "Tags for 2026-specific control capabilities",
+      "properties": {
+        "ai_model_governance": {
+          "type": "boolean",
+          "description": "Control governs AI model lifecycle"
+        },
+        "training_data_lineage": {
+          "type": "boolean",
+          "description": "Tracks AI training data sources"
+        },
+        "bias_detection": {
+          "type": "boolean",
+          "description": "Detects algorithmic bias"
+        },
+        "explainability": {
+          "type": "boolean",
+          "description": "Provides AI decision explainability"
+        },
+        "quantum_resistant": {
+          "type": "boolean",
+          "description": "Uses post-quantum cryptography"
+        },
+        "pqc_algorithms_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "crypto_agile": {
+          "type": "boolean",
+          "description": "Supports cryptographic algorithm switching"
+        },
+        "zero_trust_enabled": {
+          "type": "boolean"
+        },
+        "continuous_verification": {
+          "type": "boolean",
+          "description": "Performs continuous (not session-based) verification"
+        },
+        "identity_verification_method": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "mfa",
+              "passwordless",
+              "biometric",
+              "certificate",
+              "behavioral",
+              "device_posture",
+              "location_context"
+            ]
+          }
+        },
+        "device_trust_signals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ControlVersion": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "changed_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "changed_by": {
+          "type": "string"
+        },
+        "change_reason": {
+          "type": "string"
+        },
+        "previous_state": {
+          "type": "object",
+          "description": "Snapshot of previous control state"
+        },
+        "triggered_by_requirement": {
+          "type": "string",
+          "description": "Requirement ID that triggered this update"
+        }
+      }
+    }
+  }
+}

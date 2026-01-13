@@ -1,0 +1,287 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://compliance-engine.io/schemas/master-requirement-library.schema.json",
+  "title": "Master Requirement Library",
+  "description": "Schema for regulatory framework requirements with versioning support",
+  "type": "object",
+  "required": ["library_version", "last_updated", "frameworks"],
+  "properties": {
+    "library_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the library itself"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "frameworks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Framework"
+      }
+    }
+  },
+  "definitions": {
+    "Framework": {
+      "type": "object",
+      "required": ["framework_id", "name", "versions"],
+      "properties": {
+        "framework_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Unique identifier (e.g., 'iso_27001', 'hipaa_security', 'eu_ai_act')"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable framework name"
+        },
+        "authority": {
+          "type": "string",
+          "description": "Regulatory body (e.g., 'ISO', 'HHS', 'EU Parliament')"
+        },
+        "jurisdiction": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Geographic applicability (e.g., ['US'], ['EU'], ['GLOBAL'])"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "security",
+            "privacy",
+            "ai_governance",
+            "financial",
+            "healthcare",
+            "industry_specific",
+            "data_residency"
+          ]
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FrameworkVersion"
+          }
+        }
+      }
+    },
+    "FrameworkVersion": {
+      "type": "object",
+      "required": ["version_id", "effective_date", "status", "requirements"],
+      "properties": {
+        "version_id": {
+          "type": "string",
+          "description": "Version identifier (e.g., '2022', '2025_update', '2026_q1')"
+        },
+        "full_version_key": {
+          "type": "string",
+          "description": "Computed: framework_id + '_' + version_id (e.g., 'iso_27001_2022')"
+        },
+        "effective_date": {
+          "type": "string",
+          "format": "date",
+          "description": "When this version becomes enforceable"
+        },
+        "sunset_date": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "When this version is superseded (null if current)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "final", "active", "superseded", "withdrawn"]
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Official source document URL"
+        },
+        "change_summary": {
+          "type": "string",
+          "description": "Summary of changes from previous version"
+        },
+        "breaking_changes": {
+          "type": "boolean",
+          "description": "Whether this version introduces breaking changes requiring control updates"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Requirement"
+          }
+        }
+      }
+    },
+    "Requirement": {
+      "type": "object",
+      "required": ["requirement_id", "title", "description", "category"],
+      "properties": {
+        "requirement_id": {
+          "type": "string",
+          "description": "Unique ID within framework (e.g., 'A.5.1', '164.312(a)(1)')"
+        },
+        "parent_id": {
+          "type": ["string", "null"],
+          "description": "Parent requirement for hierarchical frameworks"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Full requirement text"
+        },
+        "guidance": {
+          "type": "string",
+          "description": "Implementation guidance or clarification"
+        },
+        "category": {
+          "type": "string",
+          "description": "Domain category within framework"
+        },
+        "subcategory": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Searchable keywords for mapping"
+        },
+        "implementation_level": {
+          "type": "string",
+          "enum": ["mandatory", "recommended", "optional", "conditional"]
+        },
+        "verification_method": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["documentation", "interview", "observation", "testing", "automated"]
+          }
+        },
+        "evidence_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Expected evidence types (e.g., 'policy', 'screenshot', 'log')"
+        },
+        "frequency": {
+          "type": "string",
+          "enum": ["once", "annual", "quarterly", "monthly", "continuous"],
+          "description": "How often compliance must be demonstrated"
+        },
+        "risk_weight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Relative importance/risk score"
+        },
+        "tags": {
+          "$ref": "#/definitions/RequirementTags"
+        },
+        "change_history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ChangeRecord"
+          }
+        }
+      }
+    },
+    "RequirementTags": {
+      "type": "object",
+      "description": "2026-specific and future-ready tags",
+      "properties": {
+        "ai_transparency": {
+          "type": "boolean",
+          "description": "Related to AI model transparency (EU AI Act)"
+        },
+        "ai_bias": {
+          "type": "boolean",
+          "description": "Related to algorithmic bias detection"
+        },
+        "ai_risk_level": {
+          "type": "string",
+          "enum": ["unacceptable", "high", "limited", "minimal"],
+          "description": "EU AI Act risk classification"
+        },
+        "quantum_readiness": {
+          "type": "boolean",
+          "description": "Related to post-quantum cryptography"
+        },
+        "pqc_algorithm": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ML-KEM", "ML-DSA", "SLH-DSA", "BIKE", "HQC"]
+          },
+          "description": "Required post-quantum algorithms"
+        },
+        "zero_trust": {
+          "type": "boolean",
+          "description": "Zero Trust Architecture requirement"
+        },
+        "zero_trust_pillar": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["identity", "device", "network", "application", "data"]
+          }
+        },
+        "continuous_verification": {
+          "type": "boolean",
+          "description": "Requires continuous (not point-in-time) verification"
+        },
+        "data_residency": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Data residency jurisdictions (e.g., ['EU', 'US'])"
+        },
+        "supply_chain": {
+          "type": "boolean",
+          "description": "Supply chain security requirement"
+        },
+        "third_party_risk": {
+          "type": "boolean",
+          "description": "Third-party/vendor risk management"
+        }
+      }
+    },
+    "ChangeRecord": {
+      "type": "object",
+      "required": ["change_date", "change_type", "description"],
+      "properties": {
+        "change_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "change_type": {
+          "type": "string",
+          "enum": ["added", "modified", "deprecated", "removed", "clarified"]
+        },
+        "previous_version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "impact_level": {
+          "type": "string",
+          "enum": ["breaking", "significant", "minor", "cosmetic"]
+        },
+        "affected_controls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Control IDs that may need updating"
+        }
+      }
+    }
+  }
+}

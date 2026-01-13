@@ -1,0 +1,330 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://compliance-engine.io/schemas/crosswalk-mapping.schema.json",
+  "title": "Crosswalk Mapping Schema",
+  "description": "N:N mapping between regulatory requirements and internal controls",
+  "type": "object",
+  "required": ["crosswalk_version", "mappings"],
+  "properties": {
+    "crosswalk_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "last_computed": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "active_frameworks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Framework version keys (e.g., ['iso_27001_2022', 'hipaa_security_2026'])"
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Mapping"
+      }
+    },
+    "summary": {
+      "$ref": "#/definitions/CrosswalkSummary"
+    }
+  },
+  "definitions": {
+    "Mapping": {
+      "type": "object",
+      "required": ["mapping_id", "requirement_ref", "control_refs", "coverage_score"],
+      "properties": {
+        "mapping_id": {
+          "type": "string",
+          "description": "Unique mapping identifier"
+        },
+        "requirement_ref": {
+          "$ref": "#/definitions/RequirementReference"
+        },
+        "control_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ControlReference"
+          },
+          "description": "Controls that satisfy this requirement"
+        },
+        "coverage_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of requirement covered by mapped controls"
+        },
+        "coverage_justification": {
+          "type": "string",
+          "description": "Explanation of how controls meet the requirement"
+        },
+        "gap_analysis": {
+          "$ref": "#/definitions/GapAnalysis"
+        },
+        "compliance_status": {
+          "type": "string",
+          "enum": [
+            "compliant",
+            "partial",
+            "non_compliant",
+            "not_applicable",
+            "pending_review",
+            "drift_detected"
+          ]
+        },
+        "drift_status": {
+          "$ref": "#/definitions/DriftStatus"
+        },
+        "last_reviewed": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "RequirementReference": {
+      "type": "object",
+      "required": ["framework_version_key", "requirement_id"],
+      "properties": {
+        "framework_version_key": {
+          "type": "string",
+          "description": "e.g., 'iso_27001_2022', 'hipaa_security_2026'"
+        },
+        "requirement_id": {
+          "type": "string",
+          "description": "Requirement ID within the framework"
+        },
+        "requirement_title": {
+          "type": "string"
+        },
+        "cached_description": {
+          "type": "string",
+          "description": "Cached for quick reference, not authoritative"
+        }
+      }
+    },
+    "ControlReference": {
+      "type": "object",
+      "required": ["control_id", "contribution_weight"],
+      "properties": {
+        "control_id": {
+          "type": "string",
+          "description": "Internal control ID (e.g., 'CTRL-0042')"
+        },
+        "control_title": {
+          "type": "string"
+        },
+        "contribution_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "How much this control contributes to the requirement"
+        },
+        "coverage_aspects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Which aspects of the requirement this control covers"
+        },
+        "control_status": {
+          "type": "string",
+          "description": "Current implementation status"
+        },
+        "evidence_sufficient": {
+          "type": "boolean"
+        }
+      }
+    },
+    "GapAnalysis": {
+      "type": "object",
+      "properties": {
+        "has_gap": {
+          "type": "boolean"
+        },
+        "gap_description": {
+          "type": "string"
+        },
+        "missing_aspects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Aspects of the requirement not covered"
+        },
+        "recommended_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RecommendedAction"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "estimated_effort": {
+          "type": "string",
+          "enum": ["hours", "days", "weeks", "months"]
+        },
+        "due_date": {
+          "type": ["string", "null"],
+          "format": "date"
+        }
+      }
+    },
+    "RecommendedAction": {
+      "type": "object",
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": [
+            "create_control",
+            "update_control",
+            "add_evidence",
+            "update_procedure",
+            "implement_tool",
+            "conduct_training"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "suggested_control_id": {
+          "type": "string",
+          "description": "Existing control to update, or null for new"
+        },
+        "template_available": {
+          "type": "boolean"
+        }
+      }
+    },
+    "DriftStatus": {
+      "type": "object",
+      "description": "Tracks compliance drift due to regulatory changes",
+      "properties": {
+        "drift_detected": {
+          "type": "boolean"
+        },
+        "drift_detected_date": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "drift_type": {
+          "type": "string",
+          "enum": [
+            "requirement_updated",
+            "requirement_added",
+            "requirement_removed",
+            "control_degraded",
+            "evidence_expired",
+            "coverage_insufficient"
+          ]
+        },
+        "previous_requirement_version": {
+          "type": "string"
+        },
+        "new_requirement_version": {
+          "type": "string"
+        },
+        "breaking_change": {
+          "type": "boolean",
+          "description": "Whether the change invalidates current compliance"
+        },
+        "change_summary": {
+          "type": "string"
+        },
+        "affected_controls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resolution_status": {
+          "type": "string",
+          "enum": [
+            "unacknowledged",
+            "acknowledged",
+            "in_progress",
+            "resolved",
+            "accepted_risk"
+          ]
+        },
+        "resolution_deadline": {
+          "type": ["string", "null"],
+          "format": "date"
+        },
+        "resolution_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "CrosswalkSummary": {
+      "type": "object",
+      "description": "Aggregate compliance metrics",
+      "properties": {
+        "total_requirements": {
+          "type": "integer"
+        },
+        "total_controls": {
+          "type": "integer"
+        },
+        "compliant_count": {
+          "type": "integer"
+        },
+        "partial_count": {
+          "type": "integer"
+        },
+        "non_compliant_count": {
+          "type": "integer"
+        },
+        "not_applicable_count": {
+          "type": "integer"
+        },
+        "drift_detected_count": {
+          "type": "integer"
+        },
+        "overall_compliance_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "framework_scores": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Compliance score per framework"
+        },
+        "category_scores": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Compliance score per category"
+        },
+        "critical_gaps": {
+          "type": "integer"
+        },
+        "high_gaps": {
+          "type": "integer"
+        },
+        "controls_needing_update": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
