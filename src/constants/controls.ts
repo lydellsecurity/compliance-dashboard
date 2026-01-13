@@ -35,6 +35,9 @@ export interface FrameworkMapping {
   clauseTitle: string;
 }
 
+export type EffortLevel = 'low' | 'medium' | 'high';
+export type ImpactLevel = 'low' | 'medium' | 'high';
+
 export interface MasterControl {
   id: string;
   domain: ComplianceDomain;
@@ -42,9 +45,12 @@ export interface MasterControl {
   description: string;
   question: string;
   guidance: string;
+  whyItMatters?: string;
   evidenceExamples: string[];
   remediationTip: string;
   riskLevel: 'critical' | 'high' | 'medium' | 'low';
+  effort?: EffortLevel;
+  impact?: ImpactLevel;
   frameworkMappings: FrameworkMapping[];
   keywords: string[];
 }
@@ -54,7 +60,10 @@ export interface CustomControl {
   title: string;
   description: string;
   question: string;
+  category: ComplianceDomain;
   frameworkMappings: FrameworkMapping[];
+  effort: EffortLevel;
+  impact: ImpactLevel;
   createdAt: string;
   createdBy: string;
 }
@@ -64,7 +73,17 @@ export interface UserResponse {
   answer: 'yes' | 'no' | 'partial' | 'na' | null;
   notes: string;
   evidenceUrls: string[];
+  evidenceNotes: string;
   answeredAt: string | null;
+}
+
+export interface EvidenceItem {
+  id: string;
+  controlId: string;
+  controlTitle: string;
+  notes: string;
+  fileNames: string[];
+  uploadedAt: string;
 }
 
 export interface ComplianceDomainMeta {
@@ -1540,7 +1559,8 @@ export function getDomainProgress(
   const total = domainControls.length;
   const completed = domainControls.filter(c => {
     const response = responses.get(c.id);
-    return response?.answer !== null;
+    // Control is completed if it has a response with any answer (yes, no, partial, or na)
+    return response !== undefined && response.answer !== null && response.answer !== undefined;
   }).length;
   
   return {
