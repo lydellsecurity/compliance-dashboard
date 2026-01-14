@@ -666,7 +666,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                       <ReportCard
                         key={report.id}
                         report={report}
-                        onView={() => {}}
+                        onView={() => { /* view report */ }}
                         onDownload={() => handleExportPDF(report)}
                       />
                     ))}
