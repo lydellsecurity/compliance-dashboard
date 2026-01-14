@@ -4,12 +4,6 @@
  * ============================================================================
  * 
  * Comprehensive Supabase integration for the Modular Compliance Engine.
- * Features:
- * - Optimistic updates for instant UI feedback
- * - Background sync to database
- * - Multi-tenancy support via organization_id
- * - Evidence file uploads
- * - Audit logging
  */
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -106,23 +100,6 @@ export interface CustomControl {
   }>;
 }
 
-export interface ComplianceStats {
-  total_controls: number;
-  answered_controls: number;
-  compliant_controls: number;
-  gap_controls: number;
-  partial_controls: number;
-  na_controls: number;
-  compliance_percentage: number;
-}
-
-export interface FrameworkStats {
-  framework_id: string;
-  total_requirements: number;
-  met_requirements: number;
-  compliance_percentage: number;
-}
-
 export interface SyncCallback {
   onSuccess?: () => void;
   onError?: (error: string) => void;
@@ -135,11 +112,6 @@ export interface SyncCallback {
 class ComplianceDatabaseService {
   private organizationId: string | null = null;
   private userId: string | null = null;
-  private pendingSyncs: Map<string, Promise<any>> = new Map();
-
-  // ---------------------------------------------------------------------------
-  // INITIALIZATION
-  // ---------------------------------------------------------------------------
 
   isAvailable(): boolean {
     return isSupabaseConfigured();
@@ -159,7 +131,7 @@ class ComplianceDatabaseService {
   }
 
   // ---------------------------------------------------------------------------
-  // MASTER CONTROLS (Read-only reference data)
+  // MASTER CONTROLS
   // ---------------------------------------------------------------------------
 
   async getMasterControls(): Promise<MasterControl[]> {
@@ -263,7 +235,7 @@ class ComplianceDatabaseService {
   }
 
   // ---------------------------------------------------------------------------
-  // USER RESPONSES (With Optimistic Updates)
+  // USER RESPONSES
   // ---------------------------------------------------------------------------
 
   async getUserResponses(): Promise<UserResponse[]> {
@@ -292,17 +264,13 @@ class ComplianceDatabaseService {
       .eq('control_id', controlId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+    if (error && error.code !== 'PGRST116') {
       console.error('Error fetching response:', error);
     }
 
     return data || null;
   }
 
-  /**
-   * Save user response with optimistic update pattern
-   * Returns immediately for UI update, syncs in background
-   */
   async saveUserResponse(
     response: Partial<UserResponse>,
     callbacks?: SyncCallback
@@ -326,53 +294,38 @@ class ComplianceDatabaseService {
       answered_at: new Date().toISOString(),
     };
 
-    // Background sync
-    const syncKey = `response-${response.control_id}`;
-    const syncPromise = this.syncResponseToDatabase(fullResponse, callbacks);
-    this.pendingSyncs.set(syncKey, syncPromise);
-
-    // Return immediately for optimistic update
-    return fullResponse;
-  }
-
-  private async syncResponseToDatabase(
-    response: UserResponse,
-    callbacks?: SyncCallback
-  ): Promise<void> {
     try {
-      const { error } = await supabase!
+      const { error } = await supabase
         .from('user_responses')
         .upsert({
-          organization_id: response.organization_id,
-          user_id: response.user_id,
-          control_id: response.control_id,
-          answer: response.answer,
-          evidence_note: response.evidence_note,
-          file_url: response.file_url,
-          file_name: response.file_name,
-          remediation_plan: response.remediation_plan,
-          target_date: response.target_date,
-          status: response.status,
-          answered_at: response.answered_at,
+          organization_id: fullResponse.organization_id,
+          user_id: fullResponse.user_id,
+          control_id: fullResponse.control_id,
+          answer: fullResponse.answer,
+          evidence_note: fullResponse.evidence_note,
+          file_url: fullResponse.file_url,
+          file_name: fullResponse.file_name,
+          remediation_plan: fullResponse.remediation_plan,
+          target_date: fullResponse.target_date,
+          status: fullResponse.status,
+          answered_at: fullResponse.answered_at,
         }, {
           onConflict: 'organization_id,control_id'
         });
 
       if (error) throw error;
 
-      // Log audit trail
-      await this.logAudit('upsert', 'user_response', response.control_id, null, response);
+      await this.logAudit('upsert', 'user_response', fullResponse.control_id, null, fullResponse);
 
       callbacks?.onSuccess?.();
+      return fullResponse;
     } catch (error) {
       console.error('Sync error:', error);
       callbacks?.onError?.(error instanceof Error ? error.message : 'Sync failed');
+      return null;
     }
   }
 
-  /**
-   * Bulk save responses (for initial data migration)
-   */
   async bulkSaveResponses(responses: Partial<UserResponse>[]): Promise<number> {
     if (!supabase || !this.organizationId || !this.userId) return 0;
 
@@ -446,7 +399,7 @@ class ComplianceDatabaseService {
   async saveEvidenceRecord(evidence: Partial<EvidenceRecord>): Promise<EvidenceRecord | null> {
     if (!supabase || !this.organizationId || !this.userId) return null;
 
-    const evidenceId = evidence.evidence_id || await this.generateEvidenceId();
+    const evidenceId = evidence.evidence_id || this.generateEvidenceId();
 
     const record = {
       evidence_id: evidenceId,
@@ -487,7 +440,7 @@ class ComplianceDatabaseService {
   ): Promise<boolean> {
     if (!supabase || !this.organizationId || !this.userId) return false;
 
-    const updates: any = { status };
+    const updates: Record<string, unknown> = { status };
     
     if (status === 'approved') {
       updates.approved_by = this.userId;
@@ -514,17 +467,15 @@ class ComplianceDatabaseService {
     return true;
   }
 
-  private async generateEvidenceId(): Promise<string> {
-    if (!supabase) {
-      return `EV-${Math.random().toString(36).substring(2, 7).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    }
-
-    const { data } = await supabase.rpc('generate_evidence_id');
-    return data || `EV-${Date.now()}`;
+  private generateEvidenceId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const part1 = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const part2 = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `EV-${part1}-${part2}`;
   }
 
   // ---------------------------------------------------------------------------
-  // FILE UPLOADS (Supabase Storage)
+  // FILE UPLOADS
   // ---------------------------------------------------------------------------
 
   async uploadEvidenceFile(
@@ -593,7 +544,6 @@ class ComplianceDatabaseService {
       return [];
     }
 
-    // Fetch mappings for each control
     const controlsWithMappings = await Promise.all(
       (controls || []).map(async (control) => {
         const { data: mappings } = await supabase
@@ -614,7 +564,7 @@ class ComplianceDatabaseService {
   async saveCustomControl(control: Partial<CustomControl>): Promise<CustomControl | null> {
     if (!supabase || !this.organizationId || !this.userId) return null;
 
-    const controlId = control.id || await this.generateCustomControlId();
+    const controlId = control.id || this.generateCustomControlId();
 
     const record = {
       id: controlId,
@@ -644,15 +594,12 @@ class ComplianceDatabaseService {
       return null;
     }
 
-    // Save framework mappings
     if (control.framework_mappings && control.framework_mappings.length > 0) {
-      // Delete existing mappings
       await supabase
         .from('custom_control_mappings')
         .delete()
         .eq('custom_control_id', controlId);
 
-      // Insert new mappings
       const mappings = control.framework_mappings.map(m => ({
         custom_control_id: controlId,
         framework_id: m.framework_id,
@@ -689,56 +636,10 @@ class ComplianceDatabaseService {
     return true;
   }
 
-  private async generateCustomControlId(): Promise<string> {
-    if (!supabase) {
-      return `CC-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    }
-
-    const { data } = await supabase.rpc('generate_custom_control_id');
-    return data || `CC-${Date.now()}`;
-  }
-
-  // ---------------------------------------------------------------------------
-  // COMPLIANCE STATISTICS
-  // ---------------------------------------------------------------------------
-
-  async getComplianceStats(): Promise<ComplianceStats | null> {
-    if (!supabase || !this.organizationId) return null;
-
-    const { data, error } = await supabase
-      .rpc('get_compliance_stats', { p_org_id: this.organizationId });
-
-    if (error) {
-      console.error('Error fetching stats:', error);
-      return null;
-    }
-
-    return data?.[0] || null;
-  }
-
-  async getFrameworkStats(frameworkId: string): Promise<FrameworkStats | null> {
-    if (!supabase || !this.organizationId) return null;
-
-    const { data, error } = await supabase
-      .rpc('get_framework_compliance', { 
-        p_org_id: this.organizationId,
-        p_framework_id: frameworkId
-      });
-
-    if (error) {
-      console.error('Error fetching framework stats:', error);
-      return null;
-    }
-
-    return data?.[0] ? { framework_id: frameworkId, ...data[0] } : null;
-  }
-
-  async getAllFrameworkStats(): Promise<FrameworkStats[]> {
-    const frameworks = ['SOC2', 'ISO27001', 'HIPAA', 'NIST'];
-    const stats = await Promise.all(
-      frameworks.map(fw => this.getFrameworkStats(fw))
-    );
-    return stats.filter((s): s is FrameworkStats => s !== null);
+  private generateCustomControlId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const part = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `CC-${part}`;
   }
 
   // ---------------------------------------------------------------------------
@@ -768,7 +669,7 @@ class ComplianceDatabaseService {
       });
   }
 
-  async getSyncNotifications(limit: number = 50): Promise<any[]> {
+  async getSyncNotifications(limit: number = 50): Promise<Record<string, unknown>[]> {
     if (!supabase || !this.organizationId) return [];
 
     const { data, error } = await supabase
@@ -803,8 +704,8 @@ class ComplianceDatabaseService {
     action: string,
     entityType: string,
     entityId?: string,
-    oldValue?: any,
-    newValue?: any
+    oldValue?: unknown,
+    newValue?: unknown
   ): Promise<void> {
     if (!supabase || !this.organizationId) return;
 
@@ -825,7 +726,7 @@ class ComplianceDatabaseService {
     }
   }
 
-  async getAuditLog(limit: number = 100): Promise<any[]> {
+  async getAuditLog(limit: number = 100): Promise<Record<string, unknown>[]> {
     if (!supabase || !this.organizationId) return [];
 
     const { data, error } = await supabase
@@ -844,50 +745,47 @@ class ComplianceDatabaseService {
   }
 
   // ---------------------------------------------------------------------------
-  // DATA MIGRATION (localStorage to Supabase)
+  // DATA MIGRATION
   // ---------------------------------------------------------------------------
 
   async migrateFromLocalStorage(localData: {
-    responses: Map<string, any>;
-    evidence: any[];
-    customControls: any[];
+    responses: Map<string, Record<string, unknown>>;
+    evidence: Record<string, unknown>[];
+    customControls: Record<string, unknown>[];
   }): Promise<{ responses: number; evidence: number; controls: number }> {
     let responsesCount = 0;
     let evidenceCount = 0;
     let controlsCount = 0;
 
-    // Migrate responses
     if (localData.responses.size > 0) {
       const responses = Array.from(localData.responses.entries()).map(([controlId, data]) => ({
         control_id: controlId,
-        answer: data.answer,
-        evidence_note: data.notes || '',
-        remediation_plan: data.remediationPlan || '',
+        answer: data.answer as UserResponse['answer'],
+        evidence_note: (data.notes as string) || '',
+        remediation_plan: (data.remediationPlan as string) || '',
       }));
 
       responsesCount = await this.bulkSaveResponses(responses);
     }
 
-    // Migrate evidence
     for (const ev of localData.evidence) {
       const result = await this.saveEvidenceRecord({
-        evidence_id: ev.id,
-        control_id: ev.controlId,
-        notes: ev.notes,
-        status: ev.status,
+        evidence_id: ev.id as string,
+        control_id: ev.controlId as string,
+        notes: ev.notes as string,
+        status: ev.status as EvidenceRecord['status'],
       });
       if (result) evidenceCount++;
     }
 
-    // Migrate custom controls
     for (const ctrl of localData.customControls) {
       const result = await this.saveCustomControl({
-        id: ctrl.id,
-        title: ctrl.title,
-        description: ctrl.description,
-        question: ctrl.question,
-        risk_level: ctrl.riskLevel,
-        framework_mappings: ctrl.frameworkMappings,
+        id: ctrl.id as string,
+        title: ctrl.title as string,
+        description: ctrl.description as string,
+        question: ctrl.question as string,
+        risk_level: ctrl.riskLevel as CustomControl['risk_level'],
+        framework_mappings: ctrl.frameworkMappings as CustomControl['framework_mappings'],
       });
       if (result) controlsCount++;
     }
@@ -899,7 +797,7 @@ class ComplianceDatabaseService {
   // REAL-TIME SUBSCRIPTIONS
   // ---------------------------------------------------------------------------
 
-  subscribeToResponses(callback: (payload: any) => void): () => void {
+  subscribeToResponses(callback: (payload: Record<string, unknown>) => void): () => void {
     if (!supabase || !this.organizationId) return () => {};
 
     const subscription = supabase
@@ -921,7 +819,7 @@ class ComplianceDatabaseService {
     };
   }
 
-  subscribeToEvidence(callback: (payload: any) => void): () => void {
+  subscribeToEvidence(callback: (payload: Record<string, unknown>) => void): () => void {
     if (!supabase || !this.organizationId) return () => {};
 
     const subscription = supabase
