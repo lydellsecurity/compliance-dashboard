@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Shield, Clock, Users, FileText,
   Plus, Search, CheckCircle2, AlertCircle,
-  TrendingUp, Target, Zap, ChevronDown,
+  TrendingUp, Target, Zap,
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../hooks/useCompliance';
 import type { UseIncidentResponseReturn, CreateIncidentData } from '../hooks/useIncidentResponse';
