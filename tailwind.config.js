@@ -91,19 +91,24 @@ export default {
         '4xl': ['2.25rem', { lineHeight: '2.5rem', letterSpacing: '-0.025em' }],
       },
       boxShadow: {
-        // Command center shadows
+        // Command center shadows (dark mode glows)
         'glow-sm': '0 0 10px rgba(99, 102, 241, 0.15)',
         'glow': '0 0 20px rgba(99, 102, 241, 0.2)',
         'glow-lg': '0 0 40px rgba(99, 102, 241, 0.25)',
         'glow-success': '0 0 20px rgba(16, 185, 129, 0.3)',
         'glow-warning': '0 0 20px rgba(245, 158, 11, 0.3)',
         'glow-risk': '0 0 20px rgba(244, 63, 94, 0.3)',
-        // Card shadows
+        // Card shadows - dark mode
         'card': '0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)',
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
         'elevated': '0 10px 40px rgba(0, 0, 0, 0.5)',
+        // Light mode shadows
+        'card-light': '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)',
+        'card-light-hover': '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+        'elevated-light': '0 10px 40px rgba(0, 0, 0, 0.1)',
         // Inner shadows
         'inner-dark': 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+        'inner-light': 'inset 0 2px 4px rgba(0, 0, 0, 0.06)',
       },
       borderRadius: {
         'none': '0',

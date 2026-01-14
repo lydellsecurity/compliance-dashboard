@@ -26,6 +26,7 @@ import AuditorVerification from './components/AuditorVerification';
 import AuditBundle from './components/AuditBundle';
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
+import { ThemeToggle } from './components/ThemeToggle';
 import type { Incident } from './types/incident.types';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify';
@@ -64,7 +65,7 @@ const FRAMEWORK_COLORS: Record<string, string> = {
 const Card: React.FC<{ children: React.ReactNode; className?: string; onClick?: () => void }> = ({ children, className = '', onClick }) => (
   <div
     onClick={onClick}
-    className={`bg-midnight-800 border border-steel-800 shadow-card ${onClick ? 'cursor-pointer hover:border-steel-600 hover:shadow-card-hover transition-all duration-200' : ''} ${className}`}
+    className={`card ${onClick ? 'cursor-pointer card-interactive' : ''} ${className}`}
   >
     {children}
   </div>
@@ -97,7 +98,7 @@ const CircularGauge: React.FC<{
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-steel-800"
+            className="text-steel-800 dark:text-steel-800 light:text-slate-200"
           />
           <motion.circle
             cx={size/2}
@@ -115,12 +116,12 @@ const CircularGauge: React.FC<{
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-steel-100 tracking-tight">{percentage}%</span>
+          <span className="text-2xl font-bold tracking-tight dark:text-steel-100 text-slate-900">{percentage}%</span>
         </div>
       </div>
       <div className="mt-3 text-center">
-        <div className="font-semibold text-steel-200 text-sm tracking-tight">{label}</div>
-        <div className="text-xs text-steel-500">{count}</div>
+        <div className="font-semibold text-sm tracking-tight dark:text-steel-200 text-slate-700">{label}</div>
+        <div className="text-xs dark:text-steel-500 text-slate-500">{count}</div>
       </div>
     </div>
   );
@@ -1349,6 +1350,11 @@ const CommandSidebar: React.FC<{
           )}
         </div>
 
+        {/* Theme Toggle */}
+        <div className="relative group">
+          <ThemeToggle collapsed={!expanded} />
+        </div>
+
         {/* Toggle Expand */}
         <button
           onClick={onToggle}
@@ -1387,7 +1393,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-midnight-950">
+    <div className="min-h-screen transition-colors duration-200">
       {/* Command Center Sidebar */}
       <CommandSidebar
         activeTab={activeTab}
