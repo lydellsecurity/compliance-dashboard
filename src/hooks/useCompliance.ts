@@ -1,19 +1,26 @@
 /**
  * useCompliance Hook
- * 
+ *
  * Centralized state management for the Compliance Engine.
- * Designed for easy migration to PostgreSQL in the next phase.
- * 
+ * Supports both localStorage (offline) and Supabase (online) persistence.
+ *
  * Data Models:
  * - ControlResponse: User answers with unique evidence IDs
  * - CustomControl: Organization-specific controls
  * - EvidenceRecord: Documentation for audit preparation
  * - FrameworkMapping: Cross-framework requirement mappings
- * 
+ *
  * Every "Yes" answer generates a unique EvidenceID (UUID v4 format)
+ *
+ * Supabase Integration:
+ * - When Supabase is configured and user is authenticated, data syncs to cloud
+ * - Falls back to localStorage when offline or Supabase unavailable
+ * - Maintains full offline functionality
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { complianceDb } from '../services/compliance-database.service';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {
   MASTER_CONTROLS,
   COMPLIANCE_DOMAINS,
@@ -275,28 +282,225 @@ export function useCompliance(): UseComplianceReturn {
   // ============================================================================
   // STATE INITIALIZATION
   // ============================================================================
-  
+
   const [responsesObj, setResponsesObj] = useState<Record<string, ControlResponse>>(() =>
     loadFromStorage(STORAGE_KEYS.RESPONSES, {})
   );
-  
+
   const [evidenceObj, setEvidenceObj] = useState<Record<string, EvidenceRecord>>(() =>
     loadFromStorage(STORAGE_KEYS.EVIDENCE, {})
   );
-  
+
   const [customControls, setCustomControls] = useState<CustomControl[]>(() =>
     loadFromStorage(STORAGE_KEYS.CUSTOM_CONTROLS, [])
   );
-  
+
   const [darkMode, setDarkMode] = useState<boolean>(() =>
     loadFromStorage(STORAGE_KEYS.DARK_MODE, true)
   );
-  
+
   const [syncNotifications, setSyncNotifications] = useState<SyncNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() =>
     loadFromStorage(STORAGE_KEYS.LAST_SYNCED, null)
   );
+
+  // Supabase integration state
+  const [supabaseUser, setSupabaseUser] = useState<{ id: string; organization_id?: string } | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // ============================================================================
+  // SUPABASE AUTHENTICATION LISTENER
+  // ============================================================================
+
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase) return;
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const orgId = session.user.user_metadata?.organization_id;
+        setSupabaseUser({ id: session.user.id, organization_id: orgId });
+        if (orgId) {
+          complianceDb.setContext(orgId, session.user.id);
+        }
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const orgId = session.user.user_metadata?.organization_id;
+        setSupabaseUser({ id: session.user.id, organization_id: orgId });
+        if (orgId) {
+          complianceDb.setContext(orgId, session.user.id);
+        }
+      } else {
+        setSupabaseUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Load data from Supabase when user is authenticated
+  useEffect(() => {
+    if (supabaseUser?.organization_id && isOnline && complianceDb.isAvailable()) {
+      loadFromSupabase();
+    }
+  }, [supabaseUser?.organization_id, isOnline]);
+
+  // ============================================================================
+  // SUPABASE DATA LOADING
+  // ============================================================================
+
+  const loadFromSupabase = useCallback(async () => {
+    if (!complianceDb.isAvailable()) return;
+
+    setIsLoading(true);
+    try {
+      const [userResponses, evidenceRecords, customCtls, notifications] = await Promise.all([
+        complianceDb.getUserResponses(),
+        complianceDb.getEvidenceRecords(),
+        complianceDb.getCustomControls(),
+        complianceDb.getSyncNotifications(),
+      ]);
+
+      // Convert Supabase responses to local format
+      const responsesFromDb: Record<string, ControlResponse> = {};
+      userResponses.forEach((r: {
+        id?: string;
+        control_id: string;
+        answer: 'yes' | 'no' | 'partial' | 'na' | null;
+        file_url?: string | null;
+        remediation_plan?: string;
+        answered_at: string;
+        user_id?: string;
+        updated_at?: string;
+      }) => {
+        responsesFromDb[r.control_id] = {
+          id: r.id || generateUUID(),
+          controlId: r.control_id,
+          answer: r.answer,
+          evidenceId: r.file_url || null,
+          remediationPlan: r.remediation_plan || '',
+          answeredAt: r.answered_at,
+          answeredBy: r.user_id || 'current-user',
+          updatedAt: r.updated_at || r.answered_at,
+        };
+      });
+
+      // Merge with local data (local takes precedence for unsynced changes)
+      setResponsesObj(prev => {
+        const merged = { ...responsesFromDb };
+        // Keep local changes that might not be synced yet
+        Object.keys(prev).forEach(key => {
+          if (!merged[key] || new Date(prev[key].updatedAt) > new Date(merged[key]?.updatedAt || 0)) {
+            merged[key] = prev[key];
+          }
+        });
+        return merged;
+      });
+
+      // Convert evidence records
+      const evidenceFromDb: Record<string, EvidenceRecord> = {};
+      evidenceRecords.forEach(e => {
+        evidenceFromDb[e.evidence_id] = {
+          id: e.evidence_id,
+          controlResponseId: '',
+          controlId: e.control_id,
+          notes: e.notes || '',
+          status: e.status === 'approved' ? 'final' : e.status === 'review' ? 'review' : 'draft',
+          fileUrls: e.file_urls || [],
+          createdAt: e.created_at,
+          updatedAt: e.created_at,
+          reviewedBy: null,
+          approvedAt: null,
+        };
+      });
+
+      setEvidenceObj(prev => ({ ...evidenceFromDb, ...prev }));
+
+      // Convert custom controls from Supabase (snake_case) to local format (camelCase)
+      if (customCtls.length > 0) {
+        const convertedCustom: CustomControl[] = customCtls.map((c: {
+          id: string;
+          title: string;
+          description: string;
+          question?: string;
+          domain?: string;
+          risk_level?: 'low' | 'medium' | 'high' | 'critical';
+          created_by?: string;
+          is_active?: boolean;
+          framework_mappings?: Array<{
+            id?: string;
+            framework_id: string;
+            clause_id: string;
+            clause_title: string;
+          }>;
+        }) => ({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          question: c.question || `Is ${c.title} implemented?`,
+          category: c.domain || 'company_specific',
+          frameworkMappings: (c.framework_mappings || []).map(m => ({
+            id: m.id || generateUUID(),
+            frameworkId: m.framework_id as FrameworkId,
+            clauseId: m.clause_id || '',
+            clauseTitle: m.clause_title || '',
+            controlId: null,
+            customControlId: c.id,
+          })),
+          riskLevel: c.risk_level || 'medium',
+          createdAt: new Date().toISOString(),
+          createdBy: c.created_by || 'current-user',
+          updatedAt: new Date().toISOString(),
+          isActive: c.is_active !== false,
+        }));
+        setCustomControls(prev => {
+          const existingIds = new Set(prev.map(ctrl => ctrl.id));
+          const newControls = convertedCustom.filter(ctrl => !existingIds.has(ctrl.id));
+          return [...prev, ...newControls];
+        });
+      }
+
+      // Convert sync notifications
+      if (notifications.length > 0) {
+        const convertedNotifs: SyncNotification[] = notifications.map(n => ({
+          id: n.id,
+          controlId: n.control_id,
+          controlTitle: n.control_title,
+          frameworkId: n.framework_id as FrameworkId,
+          clauseId: n.clause_id,
+          clauseTitle: n.clause_title,
+          timestamp: new Date(n.created_at).getTime(),
+          userId: 'current-user',
+        }));
+        setSyncNotifications(prev => [...convertedNotifs, ...prev].slice(0, 50));
+      }
+
+      setLastSyncedAt(new Date().toISOString());
+    } catch (error) {
+      console.error('Error loading from Supabase:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // ============================================================================
   // PERSISTENCE EFFECTS
@@ -475,11 +679,11 @@ export function useCompliance(): UseComplianceReturn {
   const answerControl = useCallback((controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => {
     const now = new Date().toISOString();
     const existingResponse = responsesObj[controlId];
-    
+
     // Generate unique IDs
     const responseId = existingResponse?.id || generateUUID();
     const evidenceId = answer === 'yes' ? generateEvidenceId() : null;
-    
+
     // Create/update response
     const newResponse: ControlResponse = {
       id: responseId,
@@ -488,12 +692,12 @@ export function useCompliance(): UseComplianceReturn {
       evidenceId,
       remediationPlan: existingResponse?.remediationPlan || '',
       answeredAt: existingResponse?.answeredAt || now,
-      answeredBy: 'current-user', // Placeholder for auth
+      answeredBy: supabaseUser?.id || 'current-user',
       updatedAt: now,
     };
-    
+
     setResponsesObj(prev => ({ ...prev, [controlId]: newResponse }));
-    
+
     // Create evidence record for "yes" answers
     if (answer === 'yes' && evidenceId) {
       const newEvidence: EvidenceRecord = {
@@ -508,9 +712,9 @@ export function useCompliance(): UseComplianceReturn {
         reviewedBy: null,
         approvedAt: null,
       };
-      
+
       setEvidenceObj(prev => ({ ...prev, [evidenceId]: newEvidence }));
-      
+
       // Generate sync notifications
       const control = allControls.find(c => c.id === controlId);
       if (control) {
@@ -522,12 +726,25 @@ export function useCompliance(): UseComplianceReturn {
           clauseId: m.clauseId,
           clauseTitle: m.clauseTitle,
           timestamp: Date.now(),
-          userId: 'current-user',
+          userId: supabaseUser?.id || 'current-user',
         }));
         setSyncNotifications(prev => [...notifications, ...prev].slice(0, 50));
+
+        // Sync notifications to Supabase
+        if (complianceDb.isAvailable() && isOnline) {
+          notifications.forEach(n => {
+            complianceDb.createSyncNotification(
+              n.controlId,
+              n.controlTitle,
+              n.frameworkId,
+              n.clauseId,
+              n.clauseTitle
+            ).catch(console.error);
+          });
+        }
       }
     }
-    
+
     // Remove evidence if changing from "yes" to another answer
     if (answer !== 'yes' && existingResponse?.evidenceId) {
       setEvidenceObj(prev => {
@@ -535,7 +752,18 @@ export function useCompliance(): UseComplianceReturn {
         return rest;
       });
     }
-  }, [responsesObj, allControls]);
+
+    // Sync to Supabase in background
+    if (complianceDb.isAvailable() && isOnline) {
+      complianceDb.saveUserResponse({
+        control_id: controlId,
+        answer,
+        evidence_note: '',
+        remediation_plan: existingResponse?.remediationPlan || '',
+        status: 'complete',
+      }).catch(console.error);
+    }
+  }, [responsesObj, allControls, supabaseUser?.id, isOnline]);
 
   const getResponse = useCallback((controlId: string): ControlResponse | undefined => {
     return responses.get(controlId);
@@ -553,7 +781,15 @@ export function useCompliance(): UseComplianceReturn {
         },
       };
     });
-  }, []);
+
+    // Sync to Supabase in background
+    if (complianceDb.isAvailable() && isOnline) {
+      complianceDb.saveUserResponse({
+        control_id: controlId,
+        remediation_plan: plan,
+      }).catch(console.error);
+    }
+  }, [isOnline]);
 
   // ============================================================================
   // EVIDENCE ACTIONS
@@ -583,7 +819,13 @@ export function useCompliance(): UseComplianceReturn {
         },
       };
     });
-  }, []);
+
+    // Sync to Supabase in background
+    if (complianceDb.isAvailable() && isOnline && updates.status) {
+      const dbStatus = updates.status === 'final' ? 'approved' : updates.status;
+      complianceDb.updateEvidenceStatus(evidenceId, dbStatus).catch(console.error);
+    }
+  }, [isOnline]);
 
   const getAllEvidence = useCallback((): EvidenceRecord[] => {
     return Array.from(evidence.values());
@@ -610,16 +852,38 @@ export function useCompliance(): UseComplianceReturn {
         customControlId: null, // Will be set after creation
       })),
     };
-    
+
     // Update customControlId in mappings
     newControl.frameworkMappings = newControl.frameworkMappings.map(m => ({
       ...m,
       customControlId: newControl.id,
     }));
-    
+
     setCustomControls(prev => [...prev, newControl]);
+
+    // Sync to Supabase in background (convert camelCase to snake_case)
+    if (complianceDb.isAvailable() && isOnline) {
+      complianceDb.saveCustomControl({
+        id: newControl.id,
+        title: newControl.title,
+        description: newControl.description,
+        question: newControl.question,
+        domain: newControl.category,
+        domain_title: newControl.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        risk_level: newControl.riskLevel,
+        framework_mappings: newControl.frameworkMappings.map(m => ({
+          framework_id: m.frameworkId,
+          clause_id: m.clauseId,
+          clause_title: m.clauseTitle,
+        })),
+        created_by: newControl.createdBy,
+        is_active: true,
+        evidence_examples: [],
+      } as Parameters<typeof complianceDb.saveCustomControl>[0]).catch(console.error);
+    }
+
     return newControl;
-  }, []);
+  }, [isOnline]);
 
   const updateCustomControl = useCallback((id: string, updates: Partial<CustomControl>) => {
     setCustomControls(prev => prev.map(c => 
@@ -634,13 +898,18 @@ export function useCompliance(): UseComplianceReturn {
     setCustomControls(prev => prev.map(c =>
       c.id === id ? { ...c, isActive: false, updatedAt: new Date().toISOString() } : c
     ));
-    
+
     // Remove any responses for this control
     setResponsesObj(prev => {
       const { [id]: _, ...rest } = prev;
       return rest;
     });
-  }, []);
+
+    // Sync to Supabase in background
+    if (complianceDb.isAvailable() && isOnline) {
+      complianceDb.deleteCustomControl(id).catch(console.error);
+    }
+  }, [isOnline]);
 
   // ============================================================================
   // UTILITY FUNCTIONS
@@ -666,55 +935,72 @@ export function useCompliance(): UseComplianceReturn {
   }, []);
 
   // ============================================================================
-  // DATABASE SYNC (Placeholder for PostgreSQL integration)
+  // DATABASE SYNC (Supabase Integration)
   // ============================================================================
-  
+
   const syncToDatabase = useCallback(async (): Promise<void> => {
+    if (!complianceDb.isAvailable()) {
+      console.warn('Supabase not available - data saved to localStorage only');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // TODO: Implement actual database sync
-      // This would send responsesObj, evidenceObj, customControls to PostgreSQL
-      // Using Supabase, Prisma, or direct pg connection
-      
-      console.log('Syncing to database...', {
-        responses: Object.values(responsesObj),
-        evidence: Object.values(evidenceObj),
-        customControls,
-      });
-      
+      // Sync all responses to Supabase
+      const responsePromises = Object.values(responsesObj).map(r =>
+        complianceDb.saveUserResponse({
+          control_id: r.controlId,
+          answer: r.answer,
+          evidence_note: '',
+          remediation_plan: r.remediationPlan,
+          status: 'complete',
+        })
+      );
+
+      // Sync all custom controls to Supabase (convert camelCase to snake_case)
+      const customControlPromises = customControls.filter(c => c.isActive).map(c =>
+        complianceDb.saveCustomControl({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          question: c.question,
+          domain: c.category,
+          domain_title: c.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          risk_level: c.riskLevel,
+          framework_mappings: c.frameworkMappings.map(m => ({
+            framework_id: m.frameworkId,
+            clause_id: m.clauseId,
+            clause_title: m.clauseTitle,
+          })),
+          created_by: c.createdBy,
+          is_active: true,
+          evidence_examples: [],
+        } as Parameters<typeof complianceDb.saveCustomControl>[0])
+      );
+
+      await Promise.all([...responsePromises, ...customControlPromises]);
+
       const now = new Date().toISOString();
       setLastSyncedAt(now);
       saveToStorage(STORAGE_KEYS.LAST_SYNCED, now);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+
+      console.log('Successfully synced to Supabase database');
     } catch (error) {
       console.error('Database sync failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [responsesObj, evidenceObj, customControls]);
+  }, [responsesObj, customControls]);
 
   const loadFromDatabase = useCallback(async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      // TODO: Implement actual database load
-      // This would fetch data from PostgreSQL and update local state
-      
-      console.log('Loading from database...');
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-    } catch (error) {
-      console.error('Database load failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (!complianceDb.isAvailable()) {
+      console.warn('Supabase not available - loading from localStorage');
+      return;
     }
-  }, []);
+
+    await loadFromSupabase();
+  }, [loadFromSupabase]);
 
   // ============================================================================
   // RETURN VALUE
