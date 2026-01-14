@@ -249,7 +249,7 @@ const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (contr
         {/* Policy Generator Buttons */}
         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap gap-2">
           <PolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
-          <AIPolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
+          <AIPolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" controlResponse={response?.answer} />
         </div>
       </div>
       <AnimatePresence>

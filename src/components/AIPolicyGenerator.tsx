@@ -1,15 +1,15 @@
 /**
  * AI Policy Generator Component
  *
- * Generates dynamic policy documents using Claude API.
- * Displays generated markdown in a modal with PDF export capability.
+ * Generates dynamic policy documents using Claude API with live streaming display.
+ * Includes 'Approve & Save' to generate PDF and save to Evidence Locker.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Download, CheckCircle, AlertCircle, X,
-  Copy, Check, Printer,
+  Copy, Check, Printer, FileCheck, Archive,
 } from 'lucide-react';
 import type { MasterControl } from '../constants/controls';
 
@@ -20,6 +20,7 @@ import type { MasterControl } from '../constants/controls';
 interface AIPolicyGeneratorProps {
   control: MasterControl;
   organizationName?: string;
+  onSaveToEvidence?: (controlId: string, policyContent: string, metadata: PolicyMetadata) => void;
 }
 
 interface AIPolicyModalProps {
@@ -27,11 +28,12 @@ interface AIPolicyModalProps {
   isOpen: boolean;
   onClose: () => void;
   organizationName?: string;
+  onSaveToEvidence?: (controlId: string, policyContent: string, metadata: PolicyMetadata) => void;
 }
 
-interface PolicyMetadata {
+export interface PolicyMetadata {
   companyName: string;
-  controlID: string;
+  controlId: string;
   controlTitle: string;
   riskLevel: string;
   frameworks: string;
@@ -39,7 +41,7 @@ interface PolicyMetadata {
   model: string;
 }
 
-type GenerationStatus = 'idle' | 'generating' | 'success' | 'error';
+type GenerationStatus = 'idle' | 'generating' | 'streaming' | 'success' | 'error' | 'saving';
 
 // ============================================================================
 // HOOKS
@@ -48,23 +50,67 @@ type GenerationStatus = 'idle' | 'generating' | 'success' | 'error';
 function useAIPolicyGeneration() {
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [policy, setPolicy] = useState<string | null>(null);
+  const [policy, setPolicy] = useState<string>('');
+  const [displayedPolicy, setDisplayedPolicy] = useState<string>('');
   const [metadata, setMetadata] = useState<PolicyMetadata | null>(null);
+  const streamingRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Simulate streaming effect for the typing animation
+  const simulateStreaming = useCallback((fullText: string) => {
+    streamingRef.current = true;
+    setStatus('streaming');
+    setDisplayedPolicy('');
+
+    let currentIndex = 0;
+    const chunkSize = 8; // Characters per chunk
+    const intervalMs = 15; // Speed of typing
+
+    const streamInterval = setInterval(() => {
+      if (!streamingRef.current) {
+        clearInterval(streamInterval);
+        return;
+      }
+
+      if (currentIndex < fullText.length) {
+        const nextIndex = Math.min(currentIndex + chunkSize, fullText.length);
+        setDisplayedPolicy(fullText.substring(0, nextIndex));
+        currentIndex = nextIndex;
+      } else {
+        clearInterval(streamInterval);
+        streamingRef.current = false;
+        setStatus('success');
+      }
+    }, intervalMs);
+
+    return () => {
+      clearInterval(streamInterval);
+      streamingRef.current = false;
+    };
+  }, []);
 
   const generatePolicy = useCallback(async (
     control: MasterControl,
     organizationName: string
   ): Promise<void> => {
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setStatus('generating');
     setError(null);
-    setPolicy(null);
+    setPolicy('');
+    setDisplayedPolicy('');
     setMetadata(null);
 
     try {
       const payload = {
-        companyName: organizationName,
-        controlID: control.id,
-        remediationData: {
+        control_id: control.id,
+        company_name: organizationName,
+        stream: true,
+        framework_context: {
           controlTitle: control.title,
           controlDescription: control.description,
           riskLevel: control.riskLevel,
@@ -81,6 +127,7 @@ function useAIPolicyGeneration() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
@@ -96,23 +143,50 @@ function useAIPolicyGeneration() {
 
       setPolicy(data.policy);
       setMetadata(data.metadata);
-      setStatus('success');
+
+      // Start streaming animation
+      simulateStreaming(data.policy);
 
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return; // Request was cancelled
+      }
       console.error('AI Policy generation error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate policy');
       setStatus('error');
     }
-  }, []);
+  }, [simulateStreaming]);
+
+  const skipAnimation = useCallback(() => {
+    streamingRef.current = false;
+    setDisplayedPolicy(policy);
+    setStatus('success');
+  }, [policy]);
 
   const reset = useCallback(() => {
+    streamingRef.current = false;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setStatus('idle');
     setError(null);
-    setPolicy(null);
+    setPolicy('');
+    setDisplayedPolicy('');
     setMetadata(null);
   }, []);
 
-  return { status, error, policy, metadata, generatePolicy, reset };
+  return {
+    status,
+    setStatus,
+    error,
+    policy,
+    displayedPolicy,
+    metadata,
+    generatePolicy,
+    skipAnimation,
+    reset,
+    isStreaming: streamingRef.current,
+  };
 }
 
 // ============================================================================
@@ -139,18 +213,11 @@ function markdownToHtml(markdown: string): string {
     .replace(/`(.*?)`/g, '<code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">$1</code>')
     // Lists
     .replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80">$1</li>')
-    .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80">$2</li>')
+    .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80 list-decimal">$2</li>')
     // Blockquotes
     .replace(/^>\s+(.*$)/gim, '<blockquote class="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-900/20 text-slate-700 dark:text-white/80">$1</blockquote>')
     // Horizontal rules
     .replace(/^---$/gim, '<hr class="my-6 border-slate-200 dark:border-white/10" />')
-    // Tables (basic support)
-    .replace(/\|(.+)\|/g, (match) => {
-      const cells = match.split('|').filter(c => c.trim());
-      const isHeader = match.includes('---');
-      if (isHeader) return '';
-      return `<tr>${cells.map(c => `<td class="border border-slate-200 dark:border-white/10 px-4 py-2">${c.trim()}</td>`).join('')}</tr>`;
-    })
     // Paragraphs
     .replace(/\n\n/g, '</p><p class="text-slate-700 dark:text-white/80 my-3 leading-relaxed">')
     // Line breaks
@@ -169,7 +236,7 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
-// Generate PDF from markdown content
+// Export to PDF via print dialog
 function exportToPDF(policy: string, metadata: PolicyMetadata | null) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
@@ -189,7 +256,7 @@ function exportToPDF(policy: string, metadata: PolicyMetadata | null) {
 <!DOCTYPE html>
 <html>
 <head>
-  <title>${metadata?.controlID || 'Policy'} - Security Policy</title>
+  <title>${metadata?.controlId || 'Policy'} - Security Policy</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -211,41 +278,26 @@ function exportToPDF(policy: string, metadata: PolicyMetadata | null) {
     pre { background: #f3f4f6; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
     blockquote { border-left: 4px solid #3b82f6; padding-left: 16px; margin: 16px 0; background: #eff6ff; padding: 12px 16px; }
     hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
-    th { background: #f9fafb; font-weight: 600; }
     .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
     .header h1 { font-size: 28px; margin-bottom: 8px; }
     .meta { color: #6b7280; font-size: 14px; }
     .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
-    @media print {
-      body { padding: 20px; }
-      .no-print { display: none; }
-    }
+    @media print { body { padding: 20px; } }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>${metadata?.companyName || 'Organization'}</h1>
     <div class="meta">
-      <strong>${metadata?.controlID}</strong> - Security Policy Document<br />
+      <strong>${metadata?.controlId}</strong> - Security Policy Document<br />
       Generated: ${today} | Classification: Internal
     </div>
   </div>
-
-  <div class="content">
-    ${htmlContent}
-  </div>
-
+  <div class="content">${htmlContent}</div>
   <div class="footer">
     <p>Generated by AI Policy Generator | ${metadata?.companyName || 'Organization'} - Confidential</p>
   </div>
-
-  <script>
-    window.onload = function() {
-      window.print();
-    };
-  </script>
+  <script>window.onload = function() { window.print(); };</script>
 </body>
 </html>
   `);
@@ -256,25 +308,76 @@ function exportToPDF(policy: string, metadata: PolicyMetadata | null) {
 // SUB-COMPONENTS
 // ============================================================================
 
-// Loading spinner component
-const LoadingSpinner: React.FC<{ message?: string }> = ({ message = 'Generating policy with AI...' }) => (
-  <div className="flex flex-col items-center justify-center py-16">
-    <div className="relative">
-      <div className="w-16 h-16 border-4 border-violet-200 dark:border-violet-900 rounded-full" />
-      <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-violet-500 rounded-full animate-spin" />
-      <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-violet-500 animate-pulse" />
+// Animated loading component
+const GeneratingAnimation: React.FC = () => (
+  <div className="flex flex-col items-center justify-center py-12">
+    <div className="relative w-20 h-20">
+      {/* Outer ring */}
+      <div className="absolute inset-0 rounded-full border-4 border-violet-200 dark:border-violet-900" />
+      {/* Spinning ring */}
+      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-500 animate-spin" />
+      {/* Inner glow */}
+      <div className="absolute inset-2 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 opacity-20 animate-pulse" />
+      {/* Icon */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Sparkles className="w-8 h-8 text-violet-500 animate-pulse" />
+      </div>
     </div>
-    <p className="mt-6 text-slate-600 dark:text-white/60 font-medium">{message}</p>
-    <p className="mt-2 text-sm text-slate-500 dark:text-white/40">This may take a few seconds...</p>
+    <h3 className="mt-6 text-lg font-semibold text-slate-900 dark:text-white">
+      Generating Policy with AI
+    </h3>
+    <p className="mt-2 text-sm text-slate-500 dark:text-white/50 text-center max-w-sm">
+      Our GRC consultant AI is crafting a comprehensive, board-ready policy document...
+    </p>
+    <div className="mt-4 flex items-center gap-2">
+      <div className="w-2 h-2 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+      <div className="w-2 h-2 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+      <div className="w-2 h-2 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+    </div>
   </div>
 );
 
-// Inline button for control cards
-export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps> = ({
+// Streaming text display with cursor
+const StreamingDisplay: React.FC<{ content: string; isStreaming: boolean }> = ({ content, isStreaming }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current && isStreaming) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [content, isStreaming]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 overflow-auto max-h-[50vh] font-mono text-sm"
+    >
+      <div
+        className="prose prose-slate dark:prose-invert max-w-none whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
+      />
+      {isStreaming && (
+        <span className="inline-block w-2 h-5 bg-violet-500 animate-pulse ml-1" />
+      )}
+    </div>
+  );
+};
+
+// Inline button for control cards - only shows for 'no' or 'partial' responses
+export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps & { controlResponse?: 'yes' | 'no' | 'partial' | 'na' | null }> = ({
   control,
   organizationName = 'LYDELL SECURITY',
+  onSaveToEvidence,
+  controlResponse,
 }) => {
   const [showModal, setShowModal] = useState(false);
+
+  // Only show for controls marked as 'no' or 'partial' (gaps)
+  const shouldShow = controlResponse === 'no' || controlResponse === 'partial';
+
+  if (!shouldShow) {
+    return null;
+  }
 
   return (
     <>
@@ -283,7 +386,7 @@ export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps> = ({
         className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:shadow-lg hover:shadow-violet-500/25"
       >
         <Sparkles className="w-4 h-4" />
-        <span>Generate with AI</span>
+        <span>Generate AI Policy</span>
       </button>
 
       <AIPolicyModal
@@ -291,20 +394,34 @@ export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps> = ({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         organizationName={organizationName}
+        onSaveToEvidence={onSaveToEvidence}
       />
     </>
   );
 };
 
-// Full modal for AI policy generation with preview
+// Full modal for AI policy generation with live streaming
 export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
   control,
   isOpen,
   onClose,
   organizationName = 'LYDELL SECURITY',
+  onSaveToEvidence,
 }) => {
-  const { status, error, policy, metadata, generatePolicy, reset } = useAIPolicyGeneration();
+  const {
+    status,
+    setStatus,
+    error,
+    policy,
+    displayedPolicy,
+    metadata,
+    generatePolicy,
+    skipAnimation,
+    reset,
+  } = useAIPolicyGeneration();
+
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   if (!control) return null;
 
@@ -314,6 +431,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
 
   const handleClose = () => {
     reset();
+    setSaved(false);
     onClose();
   };
 
@@ -330,6 +448,27 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
       exportToPDF(policy, metadata);
     }
   };
+
+  const handleApproveAndSave = () => {
+    if (policy && metadata && onSaveToEvidence) {
+      setStatus('saving');
+
+      // Save to Evidence Locker
+      onSaveToEvidence(control.id, policy, metadata);
+
+      // Also trigger PDF download
+      exportToPDF(policy, metadata);
+
+      setSaved(true);
+      setStatus('success');
+    } else if (policy) {
+      // If no save handler, just export PDF
+      exportToPDF(policy, metadata);
+    }
+  };
+
+  const isStreaming = status === 'streaming';
+  const showContent = status === 'streaming' || status === 'success' || status === 'saving';
 
   return (
     <AnimatePresence>
@@ -421,26 +560,42 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                     <div className="p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800">
                       <h3 className="font-semibold text-violet-900 dark:text-violet-300 mb-2 flex items-center gap-2">
                         <Sparkles className="w-4 h-4" />
-                        AI-Powered Generation
+                        GRC Consultant AI
                       </h3>
                       <p className="text-sm text-violet-700 dark:text-violet-400 mb-3">
-                        Claude AI will generate a comprehensive policy document including:
+                        Generate a comprehensive, board-ready policy document with mandatory sections:
                       </p>
-                      <ul className="space-y-1 text-sm text-violet-600 dark:text-violet-400">
-                        <li>• Purpose, scope, and policy statement</li>
-                        <li>• Detailed implementation requirements</li>
-                        <li>• Roles and responsibilities matrix</li>
-                        <li>• Compliance monitoring procedures</li>
-                        <li>• Exception and enforcement processes</li>
-                        <li>• Approval signature placeholders</li>
-                      </ul>
+                      <div className="grid grid-cols-2 gap-2 text-sm text-violet-600 dark:text-violet-400">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Purpose Statement</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Scope Definition</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Policy Statement</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Enforcement</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Roles & Responsibilities</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Implementation Requirements</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {status === 'generating' && (
-                  <LoadingSpinner message="Generating comprehensive policy with AI..." />
-                )}
+                {status === 'generating' && <GeneratingAnimation />}
 
                 {status === 'error' && (
                   <div className="space-y-6">
@@ -462,43 +617,70 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                   </div>
                 )}
 
-                {status === 'success' && policy && (
+                {showContent && (
                   <div className="space-y-4">
-                    {/* Success Banner */}
-                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-emerald-500" />
-                        <p className="font-medium text-emerald-800 dark:text-emerald-300">
-                          Policy generated successfully!
-                        </p>
+                    {/* Status Banner */}
+                    {isStreaming && (
+                      <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                          <span className="text-sm font-medium text-violet-700 dark:text-violet-300">
+                            Generating policy...
+                          </span>
+                        </div>
+                        <button
+                          onClick={skipAnimation}
+                          className="text-sm text-violet-600 dark:text-violet-400 hover:underline"
+                        >
+                          Skip animation
+                        </button>
                       </div>
-                    </div>
+                    )}
+
+                    {status === 'success' && !saved && (
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-emerald-500" />
+                          <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                            Policy generated successfully! Review and approve to save to Evidence Locker.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {saved && (
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2">
+                          <Archive className="w-5 h-5 text-blue-500" />
+                          <p className="font-medium text-blue-800 dark:text-blue-300">
+                            Policy approved and saved to Evidence Locker!
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-2 px-4 py-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-lg text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
-                      >
-                        <Printer className="w-4 h-4" />
-                        Export to PDF
-                      </button>
-                      <button
-                        onClick={handleCopy}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-                      >
-                        {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                        {copied ? 'Copied!' : 'Copy Markdown'}
-                      </button>
-                    </div>
+                    {status === 'success' && (
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleCopy}
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                          {copied ? 'Copied!' : 'Copy Markdown'}
+                        </button>
+                        <button
+                          onClick={handleExportPDF}
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                          <Printer className="w-4 h-4" />
+                          Print / Export PDF
+                        </button>
+                      </div>
+                    )}
 
                     {/* Policy Content */}
-                    <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 overflow-auto max-h-[50vh]">
-                      <div
-                        className="prose prose-slate dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: markdownToHtml(policy) }}
-                      />
-                    </div>
+                    <StreamingDisplay content={displayedPolicy} isStreaming={isStreaming} />
                   </div>
                 )}
               </div>
@@ -507,7 +689,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
               <div className="flex items-center justify-between p-6 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex-shrink-0">
                 <div className="text-sm text-slate-500 dark:text-white/40">
                   {metadata && (
-                    <span>Generated at {new Date(metadata.generatedAt).toLocaleString()}</span>
+                    <span>Model: {metadata.model}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -517,7 +699,8 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                   >
                     Close
                   </button>
-                  {(status === 'idle' || status === 'error') && (
+
+                  {status === 'idle' && (
                     <button
                       onClick={handleGenerate}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
@@ -526,13 +709,34 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                       Generate Policy
                     </button>
                   )}
-                  {status === 'success' && (
+
+                  {status === 'error' && (
                     <button
-                      onClick={handleExportPDF}
+                      onClick={handleGenerate}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
                     >
+                      <Sparkles className="w-4 h-4" />
+                      Try Again
+                    </button>
+                  )}
+
+                  {status === 'success' && !saved && (
+                    <button
+                      onClick={handleApproveAndSave}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg hover:shadow-emerald-500/25"
+                    >
+                      <FileCheck className="w-4 h-4" />
+                      Approve & Save to Evidence
+                    </button>
+                  )}
+
+                  {saved && (
+                    <button
+                      onClick={handleExportPDF}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:shadow-lg hover:shadow-blue-500/25"
+                    >
                       <Download className="w-4 h-4" />
-                      Export to PDF
+                      Download Again
                     </button>
                   )}
                 </div>
