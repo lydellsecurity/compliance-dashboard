@@ -54,9 +54,8 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
       className={`
         relative flex items-center gap-3 w-full px-3 py-2.5
         text-sm transition-all duration-200 cursor-pointer
-        text-steel-400 hover:text-steel-200
+        text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200
         hover:bg-slate-200/50 dark:hover:bg-steel-800/50
-        hover:bg-steel-800/50
         ${collapsed ? 'justify-center' : ''}
       `}
       whileHover={{ scale: 1.02 }}
