@@ -9,7 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Download, Plus, Building2, Target,
-  AlertTriangle, BarChart3, TrendingUp, Eye,
+  AlertTriangle, BarChart3, TrendingUp, Eye, X,
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../hooks/useCompliance';
 import type { UseIncidentResponseReturn } from '../hooks/useIncidentResponse';
@@ -390,6 +390,214 @@ const CreateEngagementModal: React.FC<{
 };
 
 // ============================================================================
+// REPORT PREVIEW MODAL
+// ============================================================================
+
+const ReportPreviewModal: React.FC<{
+  report: ComplianceReport | null;
+  onClose: () => void;
+  onExport: (report: ComplianceReport) => void;
+}> = ({ report, onClose, onExport }) => {
+  if (!report) return null;
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return '#10B981';
+    if (score >= 60) return '#F59E0B';
+    return '#EF4444';
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          onClick={e => e.stopPropagation()}
+          className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        >
+          {/* Modal Header */}
+          <div className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{report.title}</h2>
+              <p className="text-sm text-slate-500 dark:text-white/50">
+                Generated {new Date(report.generatedAt).toLocaleDateString('en-US', {
+                  year: 'numeric', month: 'long', day: 'numeric'
+                })}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onExport(report)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export PDF
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Overall Score */}
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div
+                  className="w-32 h-32 rounded-full border-8 flex flex-col items-center justify-center mx-auto mb-3"
+                  style={{ borderColor: getScoreColor(report.overallScore) }}
+                >
+                  <span
+                    className="text-4xl font-bold"
+                    style={{ color: getScoreColor(report.overallScore) }}
+                  >
+                    {report.overallScore}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-white/50">/ 100</span>
+                </div>
+                <p className="text-sm font-medium text-slate-600 dark:text-white/70">Overall Compliance Score</p>
+              </div>
+            </div>
+
+            {/* Framework Scores */}
+            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-5">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Framework Compliance</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-xs text-slate-500 dark:text-white/50 uppercase">
+                      <th className="pb-3">Framework</th>
+                      <th className="pb-3 text-center">Score</th>
+                      <th className="pb-3 text-center">Assessed</th>
+                      <th className="pb-3 text-center">Compliant</th>
+                      <th className="pb-3 text-center">Gaps</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+                    {report.frameworkScores.map(fs => (
+                      <tr key={fs.frameworkId}>
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: FRAMEWORK_CONFIG[fs.frameworkId].color }}
+                            />
+                            <span className="font-medium text-slate-900 dark:text-white">
+                              {FRAMEWORK_CONFIG[fs.frameworkId].name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-center">
+                          <span
+                            className="font-bold"
+                            style={{ color: getScoreColor(fs.score) }}
+                          >
+                            {fs.score}%
+                          </span>
+                        </td>
+                        <td className="py-3 text-center text-slate-600 dark:text-white/70">
+                          {fs.controlsAssessed}
+                        </td>
+                        <td className="py-3 text-center text-emerald-600">
+                          {fs.controlsCompliant}
+                        </td>
+                        <td className="py-3 text-center text-red-500">
+                          {fs.gaps}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Critical Findings */}
+            {report.criticalFindings.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-500/10 rounded-xl p-5 border border-red-200 dark:border-red-500/20">
+                <h3 className="font-semibold text-red-800 dark:text-red-400 mb-3 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  Critical Findings ({report.criticalFindings.length})
+                </h3>
+                <ul className="space-y-2">
+                  {report.criticalFindings.map((finding, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-red-700 dark:text-red-300 bg-white dark:bg-red-500/10 rounded-lg px-4 py-2"
+                    >
+                      {finding}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Recommendations */}
+            {report.recommendations.length > 0 && (
+              <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-5 border border-emerald-200 dark:border-emerald-500/20">
+                <h3 className="font-semibold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Recommendations ({report.recommendations.length})
+                </h3>
+                <ul className="space-y-2">
+                  {report.recommendations.map((rec, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-emerald-700 dark:text-emerald-300 bg-white dark:bg-emerald-500/10 rounded-lg px-4 py-2"
+                    >
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Report Metadata */}
+            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-5">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Report Details</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-slate-500 dark:text-white/50">Report ID</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{report.id}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 dark:text-white/50">Report Type</p>
+                  <p className="font-medium text-slate-900 dark:text-white capitalize">
+                    {report.reportType.replace(/_/g, ' ')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-500 dark:text-white/50">Period Start</p>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    {new Date(report.periodStart).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-500 dark:text-white/50">Period End</p>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    {new Date(report.periodEnd).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -402,6 +610,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedEngagement, setSelectedEngagement] = useState<ClientEngagement | null>(null);
   const [selectedReportType, setSelectedReportType] = useState<string>('executive_summary');
+  const [previewReport, setPreviewReport] = useState<ComplianceReport | null>(null);
 
   const engagementReports = useMemo(() => {
     if (!selectedEngagement) return [];
@@ -532,8 +741,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
   };
 
   const handleViewReport = (report: ComplianceReport) => {
-    // Open report in new tab or modal
-    console.log('Viewing report:', report.id);
+    setPreviewReport(report);
   };
 
   return (
@@ -686,6 +894,13 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreate={handleCreateEngagement}
+      />
+
+      {/* Report Preview Modal */}
+      <ReportPreviewModal
+        report={previewReport}
+        onClose={() => setPreviewReport(null)}
+        onExport={handleExportPDF}
       />
     </div>
   );
