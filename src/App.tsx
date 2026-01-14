@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
   Info, AlertTriangle, Zap, Moon, Sun, Shield, Upload, FileText, Lock, Users,
   Server, Database, Eye, Settings, RefreshCw, CheckCircle2, Target, Activity,
-  Download, AlertCircle, ChevronDown, Save, Briefcase,
+  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -17,6 +17,7 @@ import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type Framewo
 import IncidentDashboard from './components/IncidentDashboard';
 import IncidentDetail from './components/IncidentDetail';
 import ClientReporting from './components/ClientReporting';
+import RemediationEngine from './components/RemediationEngine';
 import type { Incident } from './types/incident.types';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company';
@@ -174,7 +175,7 @@ const MappingSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
 };
 
 // Control Card
-const ControlCard: React.FC<{ control: MasterControl }> = ({ control }) => {
+const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
   const { answerControl, getResponse, updateRemediation, getEvidenceByControlId } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
   const [glowing, setGlowing] = useState(false);
@@ -263,6 +264,15 @@ const ControlCard: React.FC<{ control: MasterControl }> = ({ control }) => {
                 <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
                 <div className="flex-1"><div className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-1">Gap Detected</div><p className="text-sm text-red-600 dark:text-red-300">{control.remediationTip}</p></div>
               </div>
+              {onOpenRemediation && (
+                <button
+                  onClick={() => onOpenRemediation(control.id, control.title)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-blue-500/25 transition-shadow"
+                >
+                  <Wrench className="w-4 h-4" />
+                  View Remediation Guide
+                </button>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-red-600 dark:text-red-400 uppercase mb-2">Remediation Plan</label>
                 <textarea value={localRemediation} onChange={e => setLocalRemediation(e.target.value)} placeholder="Document your plan..." className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-red-200 dark:border-red-500/30 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-red-500" rows={3} />
@@ -366,6 +376,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const { allDomains, domainProgress, getControlsByDomain, allControls } = useComplianceContext();
   const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || allDomains[0]);
   const [search, setSearch] = useState('');
+  const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
   const controls = useMemo(() => {
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -374,6 +385,10 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
     return getControlsByDomain(activeDomain.id as string);
   }, [activeDomain.id, search, allControls, getControlsByDomain]);
   const currentDomainProgress = domainProgress.find(d => d.id === (activeDomain.id as string));
+
+  const handleOpenRemediation = (controlId: string, controlTitle: string) => {
+    setRemediationControl({ id: controlId, title: controlTitle });
+  };
 
   return (
     <div className="flex gap-6">
@@ -428,10 +443,18 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           {controls.length === 0 ? (
             <div className="text-center py-16"><Search className="w-12 h-12 text-slate-300 dark:text-white/20 mx-auto mb-4" /><p className="text-slate-500 dark:text-white/50">{(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}</p></div>
           ) : (
-            controls.map((control, i) => <motion.div key={control.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}><ControlCard control={control} /></motion.div>)
+            controls.map((control, i) => <motion.div key={control.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}><ControlCard control={control} onOpenRemediation={handleOpenRemediation} /></motion.div>)
           )}
         </div>
       </div>
+
+      {/* Remediation Engine Modal */}
+      <RemediationEngine
+        controlId={remediationControl?.id || ''}
+        controlTitle={remediationControl?.title || ''}
+        isOpen={remediationControl !== null}
+        onClose={() => setRemediationControl(null)}
+      />
     </div>
   );
 };
