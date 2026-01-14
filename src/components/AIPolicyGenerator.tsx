@@ -1,0 +1,548 @@
+/**
+ * AI Policy Generator Component
+ *
+ * Generates dynamic policy documents using Claude API.
+ * Displays generated markdown in a modal with PDF export capability.
+ */
+
+import React, { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Sparkles, Download, CheckCircle, AlertCircle, X,
+  Copy, Check, Printer,
+} from 'lucide-react';
+import type { MasterControl } from '../constants/controls';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+interface AIPolicyGeneratorProps {
+  control: MasterControl;
+  organizationName?: string;
+}
+
+interface AIPolicyModalProps {
+  control: MasterControl | null;
+  isOpen: boolean;
+  onClose: () => void;
+  organizationName?: string;
+}
+
+interface PolicyMetadata {
+  companyName: string;
+  controlID: string;
+  controlTitle: string;
+  riskLevel: string;
+  frameworks: string;
+  generatedAt: string;
+  model: string;
+}
+
+type GenerationStatus = 'idle' | 'generating' | 'success' | 'error';
+
+// ============================================================================
+// HOOKS
+// ============================================================================
+
+function useAIPolicyGeneration() {
+  const [status, setStatus] = useState<GenerationStatus>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const [policy, setPolicy] = useState<string | null>(null);
+  const [metadata, setMetadata] = useState<PolicyMetadata | null>(null);
+
+  const generatePolicy = useCallback(async (
+    control: MasterControl,
+    organizationName: string
+  ): Promise<void> => {
+    setStatus('generating');
+    setError(null);
+    setPolicy(null);
+    setMetadata(null);
+
+    try {
+      const payload = {
+        companyName: organizationName,
+        controlID: control.id,
+        remediationData: {
+          controlTitle: control.title,
+          controlDescription: control.description,
+          riskLevel: control.riskLevel,
+          frameworks: control.frameworkMappings,
+          guidance: control.guidance,
+          evidenceExamples: control.evidenceExamples,
+          remediationTip: control.remediationTip,
+        },
+      };
+
+      const response = await fetch('/.netlify/functions/generate-ai-policy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to generate policy: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.policy) {
+        throw new Error('Invalid response from policy generator');
+      }
+
+      setPolicy(data.policy);
+      setMetadata(data.metadata);
+      setStatus('success');
+
+    } catch (err) {
+      console.error('AI Policy generation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate policy');
+      setStatus('error');
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setStatus('idle');
+    setError(null);
+    setPolicy(null);
+    setMetadata(null);
+  }, []);
+
+  return { status, error, policy, metadata, generatePolicy, reset };
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+// Simple markdown to HTML converter for basic rendering
+function markdownToHtml(markdown: string): string {
+  let html = markdown
+    // Escape HTML
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Headers
+    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-slate-800 dark:text-white mt-6 mb-2">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-slate-900 dark:text-white mt-8 mb-3 pb-2 border-b border-slate-200 dark:border-white/10">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">$1</h1>')
+    // Bold and italic
+    .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Code blocks
+    .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg overflow-x-auto my-4 text-sm"><code>$1</code></pre>')
+    .replace(/`(.*?)`/g, '<code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">$1</code>')
+    // Lists
+    .replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80">$1</li>')
+    .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80">$2</li>')
+    // Blockquotes
+    .replace(/^>\s+(.*$)/gim, '<blockquote class="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-900/20 text-slate-700 dark:text-white/80">$1</blockquote>')
+    // Horizontal rules
+    .replace(/^---$/gim, '<hr class="my-6 border-slate-200 dark:border-white/10" />')
+    // Tables (basic support)
+    .replace(/\|(.+)\|/g, (match) => {
+      const cells = match.split('|').filter(c => c.trim());
+      const isHeader = match.includes('---');
+      if (isHeader) return '';
+      return `<tr>${cells.map(c => `<td class="border border-slate-200 dark:border-white/10 px-4 py-2">${c.trim()}</td>`).join('')}</tr>`;
+    })
+    // Paragraphs
+    .replace(/\n\n/g, '</p><p class="text-slate-700 dark:text-white/80 my-3 leading-relaxed">')
+    // Line breaks
+    .replace(/\n/g, '<br />');
+
+  // Wrap in paragraph tags
+  html = `<p class="text-slate-700 dark:text-white/80 my-3 leading-relaxed">${html}</p>`;
+
+  // Clean up empty paragraphs
+  html = html.replace(/<p[^>]*><\/p>/g, '');
+  html = html.replace(/<p[^>]*><br \/><\/p>/g, '');
+
+  // Wrap consecutive li elements in ul
+  html = html.replace(/(<li[^>]*>.*?<\/li>)+/g, '<ul class="list-disc my-3 space-y-1">$&</ul>');
+
+  return html;
+}
+
+// Generate PDF from markdown content
+function exportToPDF(policy: string, metadata: PolicyMetadata | null) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Please allow popups to export PDF');
+    return;
+  }
+
+  const today = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const htmlContent = markdownToHtml(policy);
+
+  printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${metadata?.controlID || 'Policy'} - Security Policy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 24px; color: #111827; margin-bottom: 16px; }
+    h2 { font-size: 18px; color: #1f2937; margin-top: 24px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+    h3 { font-size: 16px; color: #374151; margin-top: 16px; margin-bottom: 8px; }
+    p { margin-bottom: 12px; }
+    ul, ol { margin-left: 24px; margin-bottom: 12px; }
+    li { margin-bottom: 4px; }
+    strong { font-weight: 600; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+    pre { background: #f3f4f6; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+    blockquote { border-left: 4px solid #3b82f6; padding-left: 16px; margin: 16px 0; background: #eff6ff; padding: 12px 16px; }
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+    th { background: #f9fafb; font-weight: 600; }
+    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+    .header h1 { font-size: 28px; margin-bottom: 8px; }
+    .meta { color: #6b7280; font-size: 14px; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${metadata?.companyName || 'Organization'}</h1>
+    <div class="meta">
+      <strong>${metadata?.controlID}</strong> - Security Policy Document<br />
+      Generated: ${today} | Classification: Internal
+    </div>
+  </div>
+
+  <div class="content">
+    ${htmlContent}
+  </div>
+
+  <div class="footer">
+    <p>Generated by AI Policy Generator | ${metadata?.companyName || 'Organization'} - Confidential</p>
+  </div>
+
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>
+  `);
+  printWindow.document.close();
+}
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+// Loading spinner component
+const LoadingSpinner: React.FC<{ message?: string }> = ({ message = 'Generating policy with AI...' }) => (
+  <div className="flex flex-col items-center justify-center py-16">
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-violet-200 dark:border-violet-900 rounded-full" />
+      <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-violet-500 rounded-full animate-spin" />
+      <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-violet-500 animate-pulse" />
+    </div>
+    <p className="mt-6 text-slate-600 dark:text-white/60 font-medium">{message}</p>
+    <p className="mt-2 text-sm text-slate-500 dark:text-white/40">This may take a few seconds...</p>
+  </div>
+);
+
+// Inline button for control cards
+export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps> = ({
+  control,
+  organizationName = 'LYDELL SECURITY',
+}) => {
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setShowModal(true)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:shadow-lg hover:shadow-violet-500/25"
+      >
+        <Sparkles className="w-4 h-4" />
+        <span>Generate with AI</span>
+      </button>
+
+      <AIPolicyModal
+        control={showModal ? control : null}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        organizationName={organizationName}
+      />
+    </>
+  );
+};
+
+// Full modal for AI policy generation with preview
+export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
+  control,
+  isOpen,
+  onClose,
+  organizationName = 'LYDELL SECURITY',
+}) => {
+  const { status, error, policy, metadata, generatePolicy, reset } = useAIPolicyGeneration();
+  const [copied, setCopied] = useState(false);
+
+  if (!control) return null;
+
+  const handleGenerate = async () => {
+    await generatePolicy(control, organizationName);
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const handleCopy = async () => {
+    if (policy) {
+      await navigator.clipboard.writeText(policy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (policy) {
+      exportToPDF(policy, metadata);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <div
+              className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500 to-purple-600 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">AI Policy Generator</h2>
+                    <p className="text-white/80 text-sm">{control.id} - {control.title}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleClose}
+                  className="p-2 rounded-lg hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {status === 'idle' && (
+                  <div className="space-y-6">
+                    {/* Control Info */}
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                      <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Control Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-slate-600 dark:text-white/60">Control ID:</span>
+                          <span className="ml-2 text-slate-900 dark:text-white">{control.id}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-600 dark:text-white/60">Risk Level:</span>
+                          <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${
+                            control.riskLevel === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            control.riskLevel === 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                            control.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                            'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          }`}>
+                            {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)}
+                          </span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-medium text-slate-600 dark:text-white/60">Title:</span>
+                          <span className="ml-2 text-slate-900 dark:text-white">{control.title}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-medium text-slate-600 dark:text-white/60">Frameworks:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {control.frameworkMappings.map((m, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 rounded text-xs text-slate-600 dark:text-white/60"
+                              >
+                                {m.frameworkId} {m.clauseId}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Generation Info */}
+                    <div className="p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800">
+                      <h3 className="font-semibold text-violet-900 dark:text-violet-300 mb-2 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        AI-Powered Generation
+                      </h3>
+                      <p className="text-sm text-violet-700 dark:text-violet-400 mb-3">
+                        Claude AI will generate a comprehensive policy document including:
+                      </p>
+                      <ul className="space-y-1 text-sm text-violet-600 dark:text-violet-400">
+                        <li>• Purpose, scope, and policy statement</li>
+                        <li>• Detailed implementation requirements</li>
+                        <li>• Roles and responsibilities matrix</li>
+                        <li>• Compliance monitoring procedures</li>
+                        <li>• Exception and enforcement processes</li>
+                        <li>• Approval signature placeholders</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {status === 'generating' && (
+                  <LoadingSpinner message="Generating comprehensive policy with AI..." />
+                )}
+
+                {status === 'error' && (
+                  <div className="space-y-6">
+                    <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="font-semibold text-red-800 dark:text-red-300">Generation Failed</h3>
+                          <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</p>
+                          <button
+                            onClick={reset}
+                            className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                          >
+                            Try Again
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {status === 'success' && policy && (
+                  <div className="space-y-4">
+                    {/* Success Banner */}
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                        <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                          Policy generated successfully!
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-lg text-sm font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+                      >
+                        <Printer className="w-4 h-4" />
+                        Export to PDF
+                      </button>
+                      <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                      >
+                        {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                        {copied ? 'Copied!' : 'Copy Markdown'}
+                      </button>
+                    </div>
+
+                    {/* Policy Content */}
+                    <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 overflow-auto max-h-[50vh]">
+                      <div
+                        className="prose prose-slate dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: markdownToHtml(policy) }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between p-6 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex-shrink-0">
+                <div className="text-sm text-slate-500 dark:text-white/40">
+                  {metadata && (
+                    <span>Generated at {new Date(metadata.generatedAt).toLocaleString()}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleClose}
+                    className="px-4 py-2.5 text-slate-600 dark:text-white/60 hover:text-slate-800 dark:hover:text-white font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                  {(status === 'idle' || status === 'error') && (
+                    <button
+                      onClick={handleGenerate}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Generate Policy
+                    </button>
+                  )}
+                  {status === 'success' && (
+                    <button
+                      onClick={handleExportPDF}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export to PDF
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+export default AIPolicyGeneratorButton;

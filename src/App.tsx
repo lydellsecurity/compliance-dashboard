@@ -20,6 +20,7 @@ import ClientReporting from './components/ClientReporting';
 import RemediationEngine from './components/RemediationEngine';
 import TrustCenter from './components/TrustCenter';
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
+import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
 import type { Incident } from './types/incident.types';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center';
@@ -245,9 +246,10 @@ const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (contr
             return <button key={btn.value} onClick={() => handleAnswer(btn.value)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${selected ? colors[btn.color].selected : colors[btn.color].default}`}>{btn.label}</button>;
           })}
         </div>
-        {/* Policy Generator Button */}
-        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
+        {/* Policy Generator Buttons */}
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap gap-2">
           <PolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
+          <AIPolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
         </div>
       </div>
       <AnimatePresence>
