@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
   Info, AlertTriangle, Zap, Moon, Sun, Shield, Upload, FileText, Lock, Users,
   Server, Database, Eye, Settings, RefreshCw, CheckCircle2, Target, Activity,
-  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench,
+  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -18,9 +18,11 @@ import IncidentDashboard from './components/IncidentDashboard';
 import IncidentDetail from './components/IncidentDetail';
 import ClientReporting from './components/ClientReporting';
 import RemediationEngine from './components/RemediationEngine';
+import TrustCenter from './components/TrustCenter';
+import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import type { Incident } from './types/incident.types';
 
-type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company';
+type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center';
 
 // Context
 const ComplianceContext = createContext<UseComplianceReturn | null>(null);
@@ -242,6 +244,10 @@ const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (contr
             };
             return <button key={btn.value} onClick={() => handleAnswer(btn.value)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${selected ? colors[btn.color].selected : colors[btn.color].default}`}>{btn.label}</button>;
           })}
+        </div>
+        {/* Policy Generator Button */}
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
+          <PolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
         </div>
       </div>
       <AnimatePresence>
@@ -631,6 +637,7 @@ const AppContent: React.FC = () => {
     { id: 'reporting', label: 'Reporting', icon: <FileText className="w-4 h-4" /> },
     { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-4 h-4" /> },
     { id: 'company', label: 'Company', icon: <Building2 className="w-4 h-4" /> },
+    { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-4 h-4" /> },
   ];
 
   return (
@@ -663,6 +670,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'reporting' && <motion.div key="reporting" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><ClientReporting compliance={compliance} ir={ir} /></motion.div>}
           {activeTab === 'evidence' && <motion.div key="evidence" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><EvidenceTab /></motion.div>}
           {activeTab === 'company' && <motion.div key="company" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CompanyTab /></motion.div>}
+          {activeTab === 'trust-center' && <motion.div key="trust-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><TrustCenter compliance={compliance} organizationName="LYDELL SECURITY" /></motion.div>}
         </AnimatePresence>
       </main>
       <MappingSidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
