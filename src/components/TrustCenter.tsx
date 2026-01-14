@@ -240,34 +240,34 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 p-8 lg:p-12">
-        <div className="absolute inset-0 opacity-5">
+      <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-8 lg:p-12">
+        <div className="absolute inset-0 opacity-5 dark:opacity-5">
           <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
             backgroundSize: '24px 24px'
           }} />
         </div>
 
         <div className="relative flex flex-col lg:flex-row items-center gap-8">
           <div className="flex-1 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-white/80 text-sm font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900/10 dark:bg-white/10 rounded-full text-slate-700 dark:text-white/80 text-sm font-medium mb-4">
               <Shield className="w-4 h-4" />
               {organizationName}
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">
+            <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-3">
               Trust Center
             </h1>
-            <p className="text-lg text-white/70 max-w-xl">
+            <p className="text-lg text-slate-600 dark:text-white/70 max-w-xl">
               Transparency and security are at the core of everything we do.
               View our compliance posture and security commitments.
             </p>
-            <div className="flex items-center gap-2 mt-4 text-sm text-white/50 justify-center lg:justify-start">
+            <div className="flex items-center gap-2 mt-4 text-sm text-slate-500 dark:text-white/50 justify-center lg:justify-start">
               <Calendar className="w-4 h-4" />
               <span>Last updated: {lastUpdated.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
             </div>
           </div>
 
-          <Card className="p-6 bg-white dark:bg-slate-800">
+          <Card className="p-6 bg-white dark:bg-slate-800 shadow-lg">
             <div className="flex items-center gap-6">
               <ComplianceGauge
                 percentage={overallScore}
