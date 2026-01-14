@@ -253,7 +253,7 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
             <div className="flex-1 overflow-y-auto p-4">
               {syncNotifications.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                  <div className="w-12 h-12 bg-steel-800 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mb-4">
                     <Activity className="w-6 h-6 text-steel-500" />
                   </div>
                   <p className="text-sm text-steel-500">Complete controls to see framework sync activity</p>
@@ -268,7 +268,7 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.02 }}
-                        className="p-3 bg-midnight-800 border border-steel-800"
+                        className="p-3 bg-steel-800 dark:bg-midnight-800 light:bg-slate-100 border border-steel-700 dark:border-steel-800 light:border-slate-200 rounded-lg"
                         style={{ borderLeftColor: color, borderLeftWidth: '2px' }}
                       >
                         <div className="flex items-start gap-2.5">
@@ -281,7 +281,7 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                               >
                                 {n.frameworkId}
                               </span>
-                              <span className="text-xs font-medium text-steel-200">{n.clauseId}</span>
+                              <span className="text-xs font-medium text-secondary">{n.clauseId}</span>
                             </div>
                             <div className="text-xs text-steel-500 truncate">{n.clauseTitle}</div>
                           </div>
@@ -369,7 +369,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-steel-800 text-steel-300">
+            <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-steel-800 dark:bg-steel-800 light:bg-slate-200 text-secondary rounded">
               {control.id}
             </span>
             {evidence && (
@@ -385,17 +385,17 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
               <span className={`status-dot risk-glow ${control.riskLevel === 'critical' ? 'status-dot-risk risk-glow-critical' : 'status-dot-warning risk-glow-high'}`} />
             )}
           </div>
-          <h3 className="font-semibold text-steel-100 text-sm tracking-tight">{control.title}</h3>
+          <h3 className="font-semibold text-primary text-sm tracking-tight">{control.title}</h3>
         </div>
         <button
           onClick={() => setShowInfo(!showInfo)}
-          className={`p-2 transition-colors flex-shrink-0 ${showInfo ? 'bg-accent-500 text-white' : 'bg-steel-800 text-steel-500 hover:text-accent-400'}`}
+          className={`p-2 transition-colors flex-shrink-0 rounded-lg ${showInfo ? 'bg-accent-500 text-white' : 'bg-steel-800 dark:bg-steel-800 light:bg-slate-200 text-secondary hover:text-accent-400'}`}
         >
           <Info className="w-4 h-4" />
         </button>
       </div>
 
-      <p className="text-sm text-steel-400 mb-4">{control.question}</p>
+      <p className="text-sm text-secondary mb-4">{control.question}</p>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {control.frameworkMappings.map(m => {
@@ -444,13 +444,13 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
             <div className="pt-4 space-y-4">
               <div className="p-3 bg-accent-500/10 border border-accent-500/20">
                 <h4 className="text-xs font-semibold text-accent-400 uppercase tracking-wider mb-1">Why This Matters</h4>
-                <p className="text-sm text-steel-300">{control.guidance}</p>
+                <p className="text-sm text-secondary">{control.guidance}</p>
               </div>
               <div>
-                <h4 className="text-xs font-semibold text-steel-400 uppercase tracking-wider mb-2">Evidence Examples</h4>
+                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Evidence Examples</h4>
                 <ul className="space-y-1.5">
                   {control.evidenceExamples.map((ex, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-steel-400">
+                    <li key={i} className="flex items-start gap-2 text-sm text-secondary">
                       <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
                       {ex}
                     </li>
@@ -475,7 +475,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
                 <AlertTriangle className="w-5 h-5 text-status-risk flex-shrink-0" />
                 <div className="flex-1">
                   <div className="text-xs font-bold text-status-risk uppercase tracking-wide mb-1">Gap Identified</div>
-                  <p className="text-sm text-steel-300">{control.remediationTip}</p>
+                  <p className="text-sm text-secondary">{control.remediationTip}</p>
                 </div>
               </div>
               {onOpenRemediation && (
@@ -493,7 +493,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
                   value={localRemediation}
                   onChange={e => setLocalRemediation(e.target.value)}
                   placeholder="Document your remediation plan..."
-                  className="input bg-midnight-900 border-status-risk/30 focus:border-status-risk resize-none"
+                  className="input border-status-risk/30 focus:border-status-risk resize-none"
                   rows={3}
                 />
                 <div className="flex items-center gap-1 mt-1.5 text-xs text-steel-500">
@@ -647,36 +647,36 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 + i * 0.02 }}
                 onClick={() => domainMeta && onNavigate('assessment', domainMeta)}
-                className={`p-4 text-left transition-all duration-200 border ${complete
+                className={`p-4 text-left transition-all duration-200 border rounded-lg ${complete
                   ? 'bg-status-success/5 border-status-success/30'
-                  : 'bg-midnight-800 border-steel-800 hover:border-accent-500/30'
+                  : 'bg-steel-800 dark:bg-midnight-800 light:bg-slate-50 border-steel-700 dark:border-steel-800 light:border-slate-200 hover:border-accent-500/30'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <div
-                    className="w-8 h-8 flex items-center justify-center"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg"
                     style={{ backgroundColor: `${color}15` }}
                   >
                     <div style={{ color }}><DomainIcon domainId={domain.id} /></div>
                   </div>
                   {complete && (
-                    <div className="w-5 h-5 bg-status-success flex items-center justify-center">
+                    <div className="w-5 h-5 bg-status-success flex items-center justify-center rounded">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
                 </div>
-                <div className="font-medium text-sm text-steel-200 mb-2 truncate tracking-tight">{domain.title}</div>
+                <div className="font-medium text-sm text-primary mb-2 truncate tracking-tight">{domain.title}</div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 progress-bar">
+                  <div className="flex-1 h-1.5 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${domain.percentage}%` }}
                       transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="progress-fill"
+                      className="h-full rounded-full"
                       style={{ backgroundColor: complete ? '#10b981' : color }}
                     />
                   </div>
-                  <span className="text-xs text-steel-500 font-medium">{domain.answered}/{domain.total}</span>
+                  <span className="text-xs text-secondary font-medium">{domain.answered}/{domain.total}</span>
                 </div>
               </motion.button>
             );
@@ -788,7 +788,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             className="input-search w-full"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-steel-500 hover:text-steel-300">
+            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-primary">
               <X className="w-5 h-5" />
             </button>
           )}
@@ -831,10 +831,10 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         <div className="space-y-3">
           {controls.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-12 h-12 bg-steel-800 flex items-center justify-center mx-auto mb-4">
-                <Search className="w-6 h-6 text-steel-500" />
+              <div className="w-12 h-12 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Search className="w-6 h-6 text-secondary" />
               </div>
-              <p className="text-steel-500">
+              <p className="text-secondary">
                 {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
               </p>
             </div>
@@ -936,18 +936,18 @@ const EvidenceTab: React.FC = () => {
       {/* Evidence Table */}
       {allEvidence.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-steel-800 flex items-center justify-center mx-auto mb-4">
-            <FolderOpen className="w-8 h-8 text-steel-500" />
+          <div className="w-16 h-16 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <FolderOpen className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-steel-100 mb-2 tracking-tight">No Evidence Yet</h3>
-          <p className="text-steel-500">Complete controls with "Yes" to generate evidence records</p>
+          <h3 className="text-lg font-semibold text-primary mb-2 tracking-tight">No Evidence Yet</h3>
+          <p className="text-secondary">Complete controls with "Yes" to generate evidence records</p>
         </Card>
       ) : filteredEvidence.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-12 h-12 bg-steel-800 flex items-center justify-center mx-auto mb-4">
-            <Search className="w-6 h-6 text-steel-500" />
+          <div className="w-12 h-12 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Search className="w-6 h-6 text-secondary" />
           </div>
-          <p className="text-steel-500">No evidence matches your search</p>
+          <p className="text-secondary">No evidence matches your search</p>
         </Card>
       ) : (
         <Card className="overflow-hidden">
@@ -970,8 +970,8 @@ const EvidenceTab: React.FC = () => {
                   <tr key={entry.id} className="table-row">
                     <td className="table-cell">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-xs font-mono bg-steel-800 text-steel-400">{entry.controlId}</span>
-                        <span className="text-sm text-steel-200 font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
+                        <span className="px-2 py-0.5 text-xs font-mono bg-steel-800 dark:bg-steel-800 light:bg-slate-200 text-secondary rounded">{entry.controlId}</span>
+                        <span className="text-sm text-primary font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
                       </div>
                     </td>
                     <td className="table-cell">
@@ -981,7 +981,7 @@ const EvidenceTab: React.FC = () => {
                       <select
                         value={entry.status}
                         onChange={e => updateEvidence(entry.id, { status: e.target.value as 'draft' | 'review' | 'final' })}
-                        className="px-2 py-1 text-xs bg-transparent border border-steel-700 text-steel-300 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                        className="px-2 py-1 text-xs bg-transparent border border-steel-700 dark:border-steel-700 light:border-slate-300 text-secondary rounded focus:outline-none focus:ring-1 focus:ring-accent-500"
                       >
                         <option value="draft">Draft</option>
                         <option value="review">Review</option>
@@ -994,7 +994,7 @@ const EvidenceTab: React.FC = () => {
                         defaultValue={entry.notes}
                         onChange={e => handleNotesChange(entry.id, e.target.value)}
                         placeholder="Add notes..."
-                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-steel-700 focus:border-accent-500 text-steel-300 focus:outline-none transition-colors"
+                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-steel-700 dark:hover:border-steel-700 light:hover:border-slate-300 focus:border-accent-500 text-secondary focus:outline-none transition-colors rounded"
                       />
                     </td>
                     <td className="table-cell">
@@ -1072,11 +1072,11 @@ const CompanyTab: React.FC = () => {
       {/* Controls Grid */}
       {customControls.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-steel-800 flex items-center justify-center mx-auto mb-4">
-            <Briefcase className="w-8 h-8 text-steel-500" />
+          <div className="w-16 h-16 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-steel-100 mb-2 tracking-tight">No Custom Controls</h3>
-          <p className="text-steel-500 mb-4">Create controls specific to your organization</p>
+          <h3 className="text-lg font-semibold text-primary mb-2 tracking-tight">No Custom Controls</h3>
+          <p className="text-secondary mb-4">Create controls specific to your organization</p>
         </Card>
       ) : (
         <div className="grid gap-4">
@@ -1085,11 +1085,11 @@ const CompanyTab: React.FC = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-xs font-mono bg-accent-500/10 text-accent-400">{c.id}</span>
+                    <span className="px-2 py-0.5 text-xs font-mono bg-accent-500/10 text-accent-400 rounded">{c.id}</span>
                     <span className="badge-info">CUSTOM</span>
                   </div>
-                  <h3 className="font-semibold text-steel-100 mb-1 tracking-tight">{c.title}</h3>
-                  <p className="text-sm text-steel-400 mb-3">{c.description}</p>
+                  <h3 className="font-semibold text-primary mb-1 tracking-tight">{c.title}</h3>
+                  <p className="text-sm text-secondary mb-3">{c.description}</p>
                   {c.frameworkMappings.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {c.frameworkMappings.map((m, i) => {
@@ -1136,13 +1136,13 @@ const CompanyTab: React.FC = () => {
               onClick={e => e.stopPropagation()}
               className="modal-content w-full max-w-xl max-h-[90vh] overflow-y-auto"
             >
-              <div className="p-5 border-b border-steel-700">
-                <h2 className="text-lg font-bold text-steel-100 tracking-tight">Create Custom Control</h2>
-                <p className="text-sm text-steel-500">Add organization-specific requirements</p>
+              <div className="p-5 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+                <h2 className="text-lg font-bold text-primary tracking-tight">Create Custom Control</h2>
+                <p className="text-sm text-secondary">Add organization-specific requirements</p>
               </div>
               <form onSubmit={submit} className="p-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Control Name *</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Control Name *</label>
                   <input
                     type="text"
                     value={form.title}
@@ -1153,7 +1153,7 @@ const CompanyTab: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Description *</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Description *</label>
                   <textarea
                     value={form.description}
                     onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
@@ -1164,7 +1164,7 @@ const CompanyTab: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Assessment Question</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Assessment Question</label>
                   <input
                     type="text"
                     value={form.question}
@@ -1174,7 +1174,7 @@ const CompanyTab: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Risk Level</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Risk Level</label>
                   <select
                     value={form.riskLevel}
                     onChange={e => setForm(p => ({ ...p, riskLevel: e.target.value as typeof form.riskLevel }))}
@@ -1186,8 +1186,8 @@ const CompanyTab: React.FC = () => {
                     <option value="critical">Critical</option>
                   </select>
                 </div>
-                <div className="p-4 bg-midnight-900 border border-steel-800">
-                  <label className="block text-sm font-medium text-steel-300 mb-3">Framework Mapping</label>
+                <div className="p-4 bg-steel-900 dark:bg-midnight-900 light:bg-slate-100 border border-steel-700 dark:border-steel-800 light:border-slate-200 rounded-lg">
+                  <label className="block text-sm font-medium text-secondary mb-3">Framework Mapping</label>
                   <div className="space-y-3">
                     {FRAMEWORKS.map(fw => {
                       const isSelected = selectedFrameworks.includes(fw.id);
@@ -1197,16 +1197,16 @@ const CompanyTab: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => toggleFramework(fw.id)}
-                            className={`flex items-center gap-2 px-3 py-2 border transition-all ${isSelected ? '' : 'border-steel-700 hover:border-steel-600'}`}
+                            className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-all ${isSelected ? '' : 'border-steel-700 dark:border-steel-700 light:border-slate-300 hover:border-steel-600 dark:hover:border-steel-600 light:hover:border-slate-400'}`}
                             style={isSelected ? { borderColor: color, backgroundColor: `${color}10`, color } : undefined}
                           >
                             <div
-                              className={`w-4 h-4 border flex items-center justify-center ${isSelected ? '' : 'border-steel-600'}`}
+                              className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? '' : 'border-steel-600 dark:border-steel-600 light:border-slate-400'}`}
                               style={isSelected ? { borderColor: color, backgroundColor: color } : undefined}
                             >
                               {isSelected && <Check className="w-3 h-3 text-white" />}
                             </div>
-                            <span className={`text-sm font-medium ${isSelected ? '' : 'text-steel-400'}`}>{fw.name}</span>
+                            <span className={`text-sm font-medium ${isSelected ? '' : 'text-secondary'}`}>{fw.name}</span>
                           </button>
                           {isSelected && (
                             <input
