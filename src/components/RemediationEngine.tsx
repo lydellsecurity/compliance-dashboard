@@ -64,7 +64,7 @@ const EFFORT_CONFIG = {
 // ============================================================================
 
 const GlassPanel: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`relative rounded-xl overflow-hidden bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-slate-200/50 dark:border-white/10 shadow-lg ${className}`}>
+  <div className={`relative rounded-xl overflow-hidden card backdrop-blur-md shadow-lg ${className}`}>
     {children}
   </div>
 );
@@ -81,10 +81,10 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   return (
     <button
       onClick={handleCopy}
-      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+      className="p-1.5 rounded-lg hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200 text-steel-400 hover:text-primary transition-colors"
       title="Copy to clipboard"
     >
-      {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+      {copied ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
     </button>
   );
 };
@@ -122,12 +122,12 @@ const StrategySection: React.FC<{ strategy: RemediationGuidance['strategy'] }> =
         <Shield className="w-5 h-5 text-white" />
       </div>
       <div>
-        <h3 className="font-bold text-slate-900 dark:text-white text-lg">{strategy.principle}</h3>
-        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{strategy.securityFramework}</p>
+        <h3 className="font-bold text-primary text-lg">{strategy.principle}</h3>
+        <p className="text-sm text-accent-400 font-medium">{strategy.securityFramework}</p>
       </div>
     </div>
 
-    <p className="text-slate-600 dark:text-white/70 leading-relaxed">{strategy.description}</p>
+    <p className="text-secondary leading-relaxed">{strategy.description}</p>
 
     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
       <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">Key Objectives</h4>
@@ -170,8 +170,8 @@ const ImplementationSection: React.FC<{
                 ${isActive
                   ? 'text-white shadow-lg'
                   : hasImpl
-                    ? 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10'
-                    : 'bg-slate-50 dark:bg-white/[0.02] text-slate-300 dark:text-white/20 cursor-not-allowed'
+                    ? 'bg-steel-800 dark:bg-steel-800 light:bg-slate-100 text-secondary hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200'
+                    : 'bg-steel-900 dark:bg-steel-900 light:bg-slate-50 text-steel-600 cursor-not-allowed'
                 }
               `}
               style={isActive ? { backgroundColor: provider.color } : undefined}
@@ -187,17 +187,17 @@ const ImplementationSection: React.FC<{
         <div className="space-y-6">
           {/* Steps */}
           <div>
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
               <Cloud className="w-4 h-4" />
               Implementation Steps
             </h4>
             <div className="space-y-2">
               {currentImpl.steps.map((step, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
-                  <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-white/60 flex-shrink-0">
+                <div key={idx} className="flex items-start gap-3 p-3 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+                  <span className="w-6 h-6 rounded-full bg-steel-700 dark:bg-steel-700 light:bg-slate-200 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
                     {idx + 1}
                   </span>
-                  <span className="text-sm text-slate-700 dark:text-white/80">{step}</span>
+                  <span className="text-sm text-secondary">{step}</span>
                 </div>
               ))}
             </div>
@@ -206,7 +206,7 @@ const ImplementationSection: React.FC<{
           {/* Console Steps */}
           {currentImpl.consoleSteps && currentImpl.consoleSteps.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
                 <Server className="w-4 h-4" />
                 Console Instructions
               </h4>
@@ -223,7 +223,7 @@ const ImplementationSection: React.FC<{
           {/* CLI Commands */}
           {currentImpl.commands.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
                 <Terminal className="w-4 h-4" />
                 CLI Commands
               </h4>
@@ -262,8 +262,8 @@ const ImplementationSection: React.FC<{
         </div>
       ) : (
         <div className="p-8 text-center">
-          <Cloud className="w-12 h-12 text-slate-300 dark:text-white/20 mx-auto mb-3" />
-          <p className="text-slate-500 dark:text-white/50">No implementation guide available for this provider</p>
+          <Cloud className="w-12 h-12 text-steel-600 mx-auto mb-3" />
+          <p className="text-steel-400">No implementation guide available for this provider</p>
         </div>
       )}
     </div>
@@ -279,7 +279,7 @@ const VerificationSection: React.FC<{
   <div className="space-y-6">
     {/* Evidence Requirements */}
     <div>
-      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+      <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
         <Upload className="w-4 h-4" />
         Evidence Requirements
       </h4>
@@ -298,7 +298,7 @@ const VerificationSection: React.FC<{
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-slate-900 dark:text-white">{config.label}</span>
+                      <span className="font-semibold text-primary">{config.label}</span>
                       <span
                         className="px-2 py-0.5 text-xs font-medium rounded-full"
                         style={{ backgroundColor: `${config.color}20`, color: config.color }}
@@ -306,15 +306,15 @@ const VerificationSection: React.FC<{
                         Required
                       </span>
                     </div>
-                    <p className="text-sm text-slate-600 dark:text-white/70 mb-3">{req.description}</p>
+                    <p className="text-sm text-secondary mb-3">{req.description}</p>
 
                     {/* Examples */}
                     <div className="mb-3">
-                      <p className="text-xs font-semibold text-slate-500 dark:text-white/50 uppercase mb-1.5">Examples</p>
+                      <p className="text-xs font-semibold text-steel-400 uppercase mb-1.5">Examples</p>
                       <ul className="space-y-1">
                         {req.examples.map((ex, i) => (
-                          <li key={i} className="text-sm text-slate-500 dark:text-white/60 flex items-center gap-2">
-                            <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-white/40" />
+                          <li key={i} className="text-sm text-steel-400 flex items-center gap-2">
+                            <span className="w-1 h-1 rounded-full bg-steel-500" />
                             {ex}
                           </li>
                         ))}
@@ -354,12 +354,12 @@ const VerificationSection: React.FC<{
     </div>
 
     {/* Auditor Notes */}
-    <div className="p-4 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+    <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-100 rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200">
+      <h4 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
         <BookOpen className="w-4 h-4" />
         Auditor Notes
       </h4>
-      <p className="text-sm text-slate-600 dark:text-white/70">{verification.auditorNotes}</p>
+      <p className="text-sm text-secondary">{verification.auditorNotes}</p>
     </div>
 
     {/* Common Mistakes */}
@@ -419,7 +419,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="modal-backdrop"
           />
 
           {/* Modal */}
@@ -428,10 +428,10 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-3xl bg-white dark:bg-slate-900 z-50 shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-3xl modal-content z-50 shadow-2xl flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-between p-5 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
@@ -457,13 +457,13 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
                     </>
                   )}
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
+                <h2 className="text-lg font-bold text-primary truncate">
                   {controlTitle}
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                className="p-2 rounded-xl hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200 text-steel-400 hover:text-primary transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -472,7 +472,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             {guidance ? (
               <>
                 {/* Tabs */}
-                <div className="flex border-b border-slate-200 dark:border-white/10">
+                <div className="flex border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
                   {tabs.map(tab => (
                     <button
                       key={tab.id}
@@ -480,8 +480,8 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
                       className={`
                         flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative
                         ${activeTab === tab.id
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white/70'
+                          ? 'text-accent-400'
+                          : 'text-steel-400 hover:text-secondary'
                         }
                       `}
                     >
@@ -490,7 +490,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
                       {activeTab === tab.id && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500"
                         />
                       )}
                     </button>
@@ -545,8 +545,8 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
 
                 {/* Footer with Resources */}
                 {guidance.resources.length > 0 && (
-                  <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
-                    <h4 className="text-xs font-semibold text-slate-500 dark:text-white/50 uppercase mb-2">Resources</h4>
+                  <div className="p-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
+                    <h4 className="text-xs font-semibold text-steel-400 uppercase mb-2">Resources</h4>
                     <div className="flex flex-wrap gap-2">
                       {guidance.resources.map((resource, idx) => (
                         <a
@@ -554,7 +554,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
                           href={resource.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm card rounded-lg text-accent-400 hover:bg-accent-500/10 transition-colors"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           {resource.title}
@@ -567,13 +567,13 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             ) : (
               /* No Guidance Available */
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4">
-                  <BookOpen className="w-10 h-10 text-slate-300 dark:text-white/20" />
+                <div className="w-20 h-20 rounded-2xl bg-steel-800 dark:bg-steel-800 light:bg-slate-100 flex items-center justify-center mb-4">
+                  <BookOpen className="w-10 h-10 text-steel-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-primary mb-2">
                   Remediation Guide Coming Soon
                 </h3>
-                <p className="text-slate-500 dark:text-white/60 max-w-sm mb-6">
+                <p className="text-secondary max-w-sm mb-6">
                   Detailed remediation guidance for this control is being developed. Check back soon for implementation steps and evidence requirements.
                 </p>
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 max-w-sm">

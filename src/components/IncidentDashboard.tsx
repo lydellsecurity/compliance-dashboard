@@ -84,7 +84,7 @@ const ATTACK_VECTOR_LABELS: Record<AttackVector, string> = {
 // ============================================================================
 
 const Card: React.FC<{ children: React.ReactNode; className?: string; style?: React.CSSProperties }> = ({ children, className = '', style }) => (
-  <div className={`bg-midnight-800 border border-steel-800 shadow-card ${className}`} style={style}>
+  <div className={`card ${className}`} style={style}>
     {children}
   </div>
 );

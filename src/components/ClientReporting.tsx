@@ -52,7 +52,7 @@ const INDUSTRIES = [
 // ============================================================================
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm ${className}`}>
+  <div className={`card ${className}`}>
     {children}
   </div>
 );
@@ -61,7 +61,7 @@ const ScoreGauge: React.FC<{ score: number; size?: number }> = ({ score, size = 
   const radius = (size - 16) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
-  
+
   const getColor = (s: number) => {
     if (s >= 80) return '#10B981';
     if (s >= 60) return '#F59E0B';
@@ -78,7 +78,7 @@ const ScoreGauge: React.FC<{ score: number; size?: number }> = ({ score, size = 
           fill="none"
           stroke="currentColor"
           strokeWidth={8}
-          className="text-slate-200 dark:text-white/10"
+          className="text-steel-700 dark:text-steel-700 light:text-slate-200"
         />
         <motion.circle
           cx={size / 2}
@@ -95,8 +95,8 @@ const ScoreGauge: React.FC<{ score: number; size?: number }> = ({ score, size = 
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-slate-900 dark:text-white">{score}</span>
-        <span className="text-xs text-slate-500 dark:text-white/50">/ 100</span>
+        <span className="text-3xl font-bold text-primary">{score}</span>
+        <span className="text-xs text-secondary">/ 100</span>
       </div>
     </div>
   );
@@ -111,17 +111,17 @@ const EngagementCard: React.FC<{
     onClick={onSelect}
     className={`w-full text-left p-4 rounded-xl border transition-all ${
       isSelected
-        ? 'bg-blue-500/10 border-blue-500/30 ring-2 ring-blue-500/20'
-        : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-white/10 hover:border-blue-500/30'
+        ? 'bg-accent-500/10 border-accent-500/30 ring-2 ring-accent-500/20'
+        : 'card-bg border-steel-700 dark:border-steel-700 light:border-slate-200 hover:border-accent-500/30'
     }`}
   >
     <div className="flex items-start gap-3">
-      <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-500/20' : 'bg-slate-100 dark:bg-white/5'}`}>
-        <Building2 className={`w-5 h-5 ${isSelected ? 'text-blue-500' : 'text-slate-500 dark:text-white/50'}`} />
+      <div className={`p-2 rounded-lg ${isSelected ? 'bg-accent-500/20' : 'bg-steel-800 dark:bg-steel-800 light:bg-slate-100'}`}>
+        <Building2 className={`w-5 h-5 ${isSelected ? 'text-accent-400' : 'text-steel-400'}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-slate-900 dark:text-white truncate">{engagement.clientName}</h4>
-        <p className="text-sm text-slate-500 dark:text-white/50">{engagement.clientIndustry}</p>
+        <h4 className="font-semibold text-primary truncate">{engagement.clientName}</h4>
+        <p className="text-sm text-secondary">{engagement.clientIndustry}</p>
         <div className="flex flex-wrap gap-1 mt-2">
           {engagement.frameworksInScope.map(fw => (
             <span
@@ -138,9 +138,9 @@ const EngagementCard: React.FC<{
         </div>
       </div>
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-        engagement.status === 'active' 
-          ? 'bg-emerald-500/10 text-emerald-500' 
-          : 'bg-slate-100 dark:bg-white/10 text-slate-500'
+        engagement.status === 'active'
+          ? 'bg-status-success/10 text-status-success'
+          : 'bg-steel-800 dark:bg-steel-700 light:bg-slate-100 text-steel-400'
       }`}>
         {engagement.status}
       </span>
@@ -153,17 +153,17 @@ const ReportCard: React.FC<{
   onView: () => void;
   onDownload: () => void;
 }> = ({ report, onView, onDownload }) => (
-  <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+  <div className="p-4 rounded-xl bg-steel-800 dark:bg-steel-800 light:bg-slate-50 border border-steel-700 dark:border-steel-700 light:border-slate-200">
     <div className="flex items-start justify-between gap-3 mb-3">
       <div>
-        <h4 className="font-medium text-slate-900 dark:text-white">{report.title}</h4>
-        <p className="text-xs text-slate-500 dark:text-white/50">
+        <h4 className="font-medium text-primary">{report.title}</h4>
+        <p className="text-xs text-secondary">
           Generated {new Date(report.generatedAt).toLocaleDateString()}
         </p>
       </div>
       <ScoreGauge score={report.overallScore} size={60} />
     </div>
-    
+
     <div className="flex flex-wrap gap-1 mb-3">
       {report.frameworkScores.map(fs => (
         <span
@@ -182,14 +182,14 @@ const ReportCard: React.FC<{
     <div className="flex gap-2">
       <button
         onClick={onView}
-        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 rounded-lg hover:border-blue-500 transition-colors"
+        className="btn-ghost flex-1"
       >
         <Eye className="w-4 h-4" />
         View
       </button>
       <button
         onClick={onDownload}
-        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+        className="btn-primary flex-1"
       >
         <Download className="w-4 h-4" />
         Export
@@ -239,7 +239,7 @@ const CreateEngagementModal: React.FC<{
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="modal-backdrop flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -247,16 +247,16 @@ const CreateEngagementModal: React.FC<{
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-lg shadow-xl overflow-hidden"
+          className="modal-content w-full max-w-lg"
         >
-          <div className="p-6 border-b border-slate-200 dark:border-white/10">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">New Client Engagement</h2>
-            <p className="text-sm text-slate-500 dark:text-white/50">Set up a new compliance engagement</p>
+          <div className="p-6 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+            <h2 className="text-xl font-bold text-primary">New Client Engagement</h2>
+            <p className="text-sm text-secondary">Set up a new compliance engagement</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-white/70 mb-1">
+              <label className="block text-sm font-medium text-secondary mb-1">
                 Client Name *
               </label>
               <input
@@ -264,20 +264,20 @@ const CreateEngagementModal: React.FC<{
                 required
                 value={formData.clientName}
                 onChange={e => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                className="input"
                 placeholder="Acme Corporation"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-white/70 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Industry
                 </label>
                 <select
                   value={formData.clientIndustry}
                   onChange={e => setFormData(prev => ({ ...prev, clientIndustry: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                  className="input"
                 >
                   {INDUSTRIES.map(industry => (
                     <option key={industry} value={industry}>{industry}</option>
@@ -286,13 +286,13 @@ const CreateEngagementModal: React.FC<{
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-white/70 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Engagement Type
                 </label>
                 <select
                   value={formData.engagementType}
                   onChange={e => setFormData(prev => ({ ...prev, engagementType: e.target.value as ClientEngagement['engagementType'] }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                  className="input"
                 >
                   <option value="assessment">Assessment</option>
                   <option value="incident_response">Incident Response</option>
@@ -303,7 +303,7 @@ const CreateEngagementModal: React.FC<{
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-white/70 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Frameworks in Scope
               </label>
               <div className="flex flex-wrap gap-2">
@@ -323,7 +323,7 @@ const CreateEngagementModal: React.FC<{
                     className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
                       formData.frameworksInScope.includes(fw)
                         ? 'text-white border-transparent'
-                        : 'border-slate-200 dark:border-white/10 hover:border-blue-500'
+                        : 'border-steel-700 dark:border-steel-700 light:border-slate-200 hover:border-accent-500'
                     }`}
                     style={{
                       backgroundColor: formData.frameworksInScope.includes(fw)
@@ -342,42 +342,42 @@ const CreateEngagementModal: React.FC<{
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-white/70 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={formData.startDate}
                   onChange={e => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                  className="input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-white/70 mb-1">
+                <label className="block text-sm font-medium text-secondary mb-1">
                   Primary Contact
                 </label>
                 <input
                   type="text"
                   value={formData.primaryContact}
                   onChange={e => setFormData(prev => ({ ...prev, primaryContact: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                  className="input"
                   placeholder="Contact name"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-white/10">
+            <div className="flex justify-end gap-3 pt-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 text-sm font-medium text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                className="btn-ghost"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
+                className="btn-primary"
               >
                 Create Engagement
               </button>
@@ -412,7 +412,7 @@ const ReportPreviewModal: React.FC<{
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="modal-backdrop flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -420,13 +420,13 @@ const ReportPreviewModal: React.FC<{
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-800 rounded-lg shadow-xl overflow-hidden flex flex-col"
+          className="modal-content w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Modal Header */}
-          <div className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+          <div className="p-6 border-b border-steel-700 dark:border-steel-700 light:border-slate-200 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{report.title}</h2>
-              <p className="text-sm text-slate-500 dark:text-white/50">
+              <h2 className="text-xl font-bold text-primary">{report.title}</h2>
+              <p className="text-sm text-secondary">
                 Generated {new Date(report.generatedAt).toLocaleDateString('en-US', {
                   year: 'numeric', month: 'long', day: 'numeric'
                 })}
@@ -435,16 +435,16 @@ const ReportPreviewModal: React.FC<{
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onExport(report)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                className="btn-primary"
               >
                 <Download className="w-4 h-4" />
                 Export PDF
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                className="p-2 hover:bg-steel-800 dark:hover:bg-steel-800 light:hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-slate-500" />
+                <X className="w-5 h-5 text-steel-400" />
               </button>
             </div>
           </div>
@@ -464,19 +464,19 @@ const ReportPreviewModal: React.FC<{
                   >
                     {report.overallScore}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-white/50">/ 100</span>
+                  <span className="text-xs text-secondary">/ 100</span>
                 </div>
-                <p className="text-sm font-medium text-slate-600 dark:text-white/70">Overall Compliance Score</p>
+                <p className="text-sm font-medium text-secondary">Overall Compliance Score</p>
               </div>
             </div>
 
             {/* Framework Scores */}
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-5">
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Framework Compliance</h3>
+            <div className="bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl p-5">
+              <h3 className="font-semibold text-primary mb-4">Framework Compliance</h3>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="data-table w-full">
                   <thead>
-                    <tr className="text-left text-xs text-slate-500 dark:text-white/50 uppercase">
+                    <tr className="text-left text-xs text-secondary uppercase">
                       <th className="pb-3">Framework</th>
                       <th className="pb-3 text-center">Score</th>
                       <th className="pb-3 text-center">Assessed</th>
@@ -484,7 +484,7 @@ const ReportPreviewModal: React.FC<{
                       <th className="pb-3 text-center">Gaps</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+                  <tbody className="divide-y divide-steel-700 dark:divide-steel-700 light:divide-slate-200">
                     {report.frameworkScores.map(fs => (
                       <tr key={fs.frameworkId}>
                         <td className="py-3">
@@ -493,7 +493,7 @@ const ReportPreviewModal: React.FC<{
                               className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: FRAMEWORK_CONFIG[fs.frameworkId].color }}
                             />
-                            <span className="font-medium text-slate-900 dark:text-white">
+                            <span className="font-medium text-primary">
                               {FRAMEWORK_CONFIG[fs.frameworkId].name}
                             </span>
                           </div>
@@ -506,13 +506,13 @@ const ReportPreviewModal: React.FC<{
                             {fs.score}%
                           </span>
                         </td>
-                        <td className="py-3 text-center text-slate-600 dark:text-white/70">
+                        <td className="py-3 text-center text-secondary">
                           {fs.controlsAssessed}
                         </td>
-                        <td className="py-3 text-center text-emerald-600">
+                        <td className="py-3 text-center text-status-success">
                           {fs.controlsCompliant}
                         </td>
-                        <td className="py-3 text-center text-red-500">
+                        <td className="py-3 text-center text-status-risk">
                           {fs.gaps}
                         </td>
                       </tr>
@@ -524,8 +524,8 @@ const ReportPreviewModal: React.FC<{
 
             {/* Critical Findings */}
             {report.criticalFindings.length > 0 && (
-              <div className="bg-red-50 dark:bg-red-500/10 rounded-xl p-5 border border-red-200 dark:border-red-500/20">
-                <h3 className="font-semibold text-red-800 dark:text-red-400 mb-3 flex items-center gap-2">
+              <div className="bg-status-risk/10 rounded-xl p-5 border border-status-risk/20">
+                <h3 className="font-semibold text-status-risk mb-3 flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5" />
                   Critical Findings ({report.criticalFindings.length})
                 </h3>
@@ -533,7 +533,7 @@ const ReportPreviewModal: React.FC<{
                   {report.criticalFindings.map((finding, index) => (
                     <li
                       key={index}
-                      className="text-sm text-red-700 dark:text-red-300 bg-white dark:bg-red-500/10 rounded-lg px-4 py-2"
+                      className="text-sm text-status-risk bg-midnight-900 dark:bg-status-risk/5 light:bg-white rounded-lg px-4 py-2"
                     >
                       {finding}
                     </li>
@@ -544,8 +544,8 @@ const ReportPreviewModal: React.FC<{
 
             {/* Recommendations */}
             {report.recommendations.length > 0 && (
-              <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-5 border border-emerald-200 dark:border-emerald-500/20">
-                <h3 className="font-semibold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center gap-2">
+              <div className="bg-status-success/10 rounded-xl p-5 border border-status-success/20">
+                <h3 className="font-semibold text-status-success mb-3 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
                   Recommendations ({report.recommendations.length})
                 </h3>
@@ -553,7 +553,7 @@ const ReportPreviewModal: React.FC<{
                   {report.recommendations.map((rec, index) => (
                     <li
                       key={index}
-                      className="text-sm text-emerald-700 dark:text-emerald-300 bg-white dark:bg-emerald-500/10 rounded-lg px-4 py-2"
+                      className="text-sm text-status-success bg-midnight-900 dark:bg-status-success/5 light:bg-white rounded-lg px-4 py-2"
                     >
                       {rec}
                     </li>
@@ -563,28 +563,28 @@ const ReportPreviewModal: React.FC<{
             )}
 
             {/* Report Metadata */}
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-5">
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Report Details</h3>
+            <div className="bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl p-5">
+              <h3 className="font-semibold text-primary mb-3">Report Details</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <p className="text-slate-500 dark:text-white/50">Report ID</p>
-                  <p className="font-medium text-slate-900 dark:text-white">{report.id}</p>
+                  <p className="text-secondary">Report ID</p>
+                  <p className="font-medium text-primary">{report.id}</p>
                 </div>
                 <div>
-                  <p className="text-slate-500 dark:text-white/50">Report Type</p>
-                  <p className="font-medium text-slate-900 dark:text-white capitalize">
+                  <p className="text-secondary">Report Type</p>
+                  <p className="font-medium text-primary capitalize">
                     {report.reportType.replace(/_/g, ' ')}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500 dark:text-white/50">Period Start</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
+                  <p className="text-secondary">Period Start</p>
+                  <p className="font-medium text-primary">
                     {new Date(report.periodStart).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500 dark:text-white/50">Period End</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
+                  <p className="text-secondary">Period End</p>
+                  <p className="font-medium text-primary">
                     {new Date(report.periodEnd).toLocaleDateString()}
                   </p>
                 </div>
@@ -749,12 +749,12 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Client Reporting</h1>
-          <p className="text-slate-500 dark:text-white/60">Generate and manage compliance reports</p>
+          <h1 className="page-title">Client Reporting</h1>
+          <p className="page-subtitle">Generate and manage compliance reports</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm"
+          className="btn-primary"
         >
           <Plus className="w-4 h-4" />
           New Engagement
@@ -765,11 +765,11 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
         {/* Engagements List */}
         <div className="lg:col-span-1">
           <Card className="p-4">
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Client Engagements</h3>
+            <h3 className="font-semibold text-primary mb-4">Client Engagements</h3>
             {ir.engagements.length === 0 ? (
               <div className="text-center py-8">
-                <Building2 className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-white/20" />
-                <p className="text-sm text-slate-500 dark:text-white/50">No engagements yet</p>
+                <Building2 className="w-10 h-10 mx-auto mb-3 text-steel-600" />
+                <p className="text-sm text-secondary">No engagements yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -790,11 +790,11 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
         <div className="lg:col-span-2">
           {!selectedEngagement ? (
             <Card className="p-12 text-center">
-              <FileText className="w-12 h-12 mx-auto mb-4 text-slate-300 dark:text-white/20" />
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              <FileText className="w-12 h-12 mx-auto mb-4 text-steel-600" />
+              <h3 className="text-lg font-semibold text-primary mb-2">
                 Select an Engagement
               </h3>
-              <p className="text-slate-500 dark:text-white/50">
+              <p className="text-secondary">
                 Choose a client engagement to generate reports
               </p>
             </Card>
@@ -804,10 +804,10 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
               <Card className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-primary">
                       {selectedEngagement.clientName}
                     </h3>
-                    <p className="text-sm text-slate-500 dark:text-white/50">
+                    <p className="text-sm text-secondary">
                       {selectedEngagement.clientIndustry} • {selectedEngagement.engagementType.replace(/_/g, ' ')}
                     </p>
                   </div>
@@ -837,7 +837,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
 
               {/* Generate Report */}
               <Card className="p-5">
-                <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Generate New Report</h4>
+                <h4 className="font-semibold text-primary mb-4">Generate New Report</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                   {REPORT_TYPES.map(type => (
                     <button
@@ -845,21 +845,21 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                       onClick={() => setSelectedReportType(type.id)}
                       className={`p-4 rounded-xl border text-left transition-all ${
                         selectedReportType === type.id
-                          ? 'bg-blue-500/10 border-blue-500/30 ring-2 ring-blue-500/20'
-                          : 'border-slate-200 dark:border-white/10 hover:border-blue-500/30'
+                          ? 'bg-accent-500/10 border-accent-500/30 ring-2 ring-accent-500/20'
+                          : 'border-steel-700 dark:border-steel-700 light:border-slate-200 hover:border-accent-500/30'
                       }`}
                     >
-                      <div className={`mb-2 ${selectedReportType === type.id ? 'text-blue-500' : 'text-slate-400'}`}>
+                      <div className={`mb-2 ${selectedReportType === type.id ? 'text-accent-400' : 'text-steel-400'}`}>
                         {type.icon}
                       </div>
-                      <p className="font-medium text-slate-900 dark:text-white text-sm">{type.label}</p>
-                      <p className="text-xs text-slate-500 dark:text-white/50 mt-1">{type.description}</p>
+                      <p className="font-medium text-primary text-sm">{type.label}</p>
+                      <p className="text-xs text-secondary mt-1">{type.description}</p>
                     </button>
                   ))}
                 </div>
                 <button
                   onClick={handleGenerateReport}
-                  className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                  className="btn-primary w-full justify-center"
                 >
                   <FileText className="w-4 h-4" />
                   Generate Report
@@ -869,7 +869,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
               {/* Previous Reports */}
               {engagementReports.length > 0 && (
                 <Card className="p-5">
-                  <h4 className="font-semibold text-slate-900 dark:text-white mb-4">
+                  <h4 className="font-semibold text-primary mb-4">
                     Previous Reports ({engagementReports.length})
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

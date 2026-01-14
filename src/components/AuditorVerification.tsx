@@ -142,10 +142,10 @@ const AuditorVerification: React.FC = () => {
         <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
           <Shield className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-primary mb-2">
           Document Verification
         </h1>
-        <p className="text-slate-500 dark:text-white/60 max-w-md">
+        <p className="text-secondary max-w-md">
           Enter a document hash to verify its authenticity and integrity.
           Valid documents will show signer details and timestamp.
         </p>
@@ -158,10 +158,10 @@ const AuditorVerification: React.FC = () => {
         transition={{ delay: 0.1 }}
         className="w-full max-w-xl"
       >
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-200/50 dark:border-white/10 shadow-xl p-8">
+        <div className="card backdrop-blur-md rounded-2xl shadow-xl p-8">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-2">
+              <label className="block text-sm font-medium text-secondary mb-2">
                 Document Hash
               </label>
               <div className="relative">
@@ -171,11 +171,11 @@ const AuditorVerification: React.FC = () => {
                   value={documentHash}
                   onChange={(e) => setDocumentHash(e.target.value.toUpperCase())}
                   placeholder="e.g., A1B2C3D4E5F6G7H8"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-mono text-lg tracking-wider placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="input pl-12 pr-4 py-4 rounded-xl font-mono text-lg tracking-wider"
                   maxLength={24}
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-500 dark:text-white/50">
+              <p className="mt-2 text-xs text-steel-400">
                 Policy documents use 16-character hashes. Certificates use 24-character hashes.
               </p>
             </div>
@@ -225,26 +225,26 @@ const AuditorVerification: React.FC = () => {
                       This document is authentic and has not been altered since signing.
                     </p>
 
-                    <div className="space-y-3 bg-white dark:bg-slate-800 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700">
+                    <div className="space-y-3 card rounded-xl p-4 border border-status-success/30">
                       {result.documentType === 'certificate' && (
                         <>
                           <div className="flex items-center gap-3">
-                            <FileText className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm text-slate-600 dark:text-white/60">Type:</span>
-                            <span className="text-sm font-semibold text-slate-900 dark:text-white">Compliance Certificate</span>
+                            <FileText className="w-4 h-4 text-status-success" />
+                            <span className="text-sm text-secondary">Type:</span>
+                            <span className="text-sm font-semibold text-primary">Compliance Certificate</span>
                           </div>
                           {result.certificateId && (
                             <div className="flex items-center gap-3">
-                              <Hash className="w-4 h-4 text-emerald-500" />
-                              <span className="text-sm text-slate-600 dark:text-white/60">Certificate ID:</span>
-                              <code className="text-sm font-mono text-violet-600 dark:text-violet-400">{result.certificateId}</code>
+                              <Hash className="w-4 h-4 text-status-success" />
+                              <span className="text-sm text-secondary">Certificate ID:</span>
+                              <code className="text-sm font-mono text-framework-hipaa">{result.certificateId}</code>
                             </div>
                           )}
                           {result.organizationName && (
                             <div className="flex items-center gap-3">
-                              <Lock className="w-4 h-4 text-emerald-500" />
-                              <span className="text-sm text-slate-600 dark:text-white/60">Organization:</span>
-                              <span className="text-sm font-semibold text-slate-900 dark:text-white">{result.organizationName}</span>
+                              <Lock className="w-4 h-4 text-status-success" />
+                              <span className="text-sm text-secondary">Organization:</span>
+                              <span className="text-sm font-semibold text-primary">{result.organizationName}</span>
                             </div>
                           )}
                         </>
@@ -252,31 +252,31 @@ const AuditorVerification: React.FC = () => {
 
                       {result.documentType === 'policy' && result.controlId && (
                         <div className="flex items-center gap-3">
-                          <FileText className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm text-slate-600 dark:text-white/60">Control ID:</span>
-                          <code className="text-sm font-mono text-violet-600 dark:text-violet-400">{result.controlId}</code>
+                          <FileText className="w-4 h-4 text-status-success" />
+                          <span className="text-sm text-secondary">Control ID:</span>
+                          <code className="text-sm font-mono text-framework-hipaa">{result.controlId}</code>
                         </div>
                       )}
 
                       {result.signedBy && (
                         <div className="flex items-center gap-3">
-                          <User className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm text-slate-600 dark:text-white/60">Signed By:</span>
-                          <span className="text-sm font-semibold text-slate-900 dark:text-white">{result.signedBy}</span>
+                          <User className="w-4 h-4 text-status-success" />
+                          <span className="text-sm text-secondary">Signed By:</span>
+                          <span className="text-sm font-semibold text-primary">{result.signedBy}</span>
                         </div>
                       )}
 
                       {result.jobTitle && (
                         <div className="flex items-center gap-3 pl-7">
-                          <span className="text-sm text-slate-500 dark:text-white/50">{result.jobTitle}</span>
+                          <span className="text-sm text-steel-400">{result.jobTitle}</span>
                         </div>
                       )}
 
                       {result.timestamp && (
                         <div className="flex items-center gap-3">
-                          <Clock className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm text-slate-600 dark:text-white/60">Timestamp:</span>
-                          <span className="text-sm text-slate-900 dark:text-white">
+                          <Clock className="w-4 h-4 text-status-success" />
+                          <span className="text-sm text-secondary">Timestamp:</span>
+                          <span className="text-sm text-primary">
                             {new Date(result.timestamp).toLocaleString('en-US', {
                               year: 'numeric',
                               month: 'long',
@@ -302,7 +302,7 @@ const AuditorVerification: React.FC = () => {
                         </a>
                         <button
                           onClick={() => handleCopy(result.documentUrl!)}
-                          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white/80 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-100 text-secondary rounded-lg text-sm font-medium hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200 transition-colors"
                         >
                           {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                           {copied ? 'Copied!' : 'Copy URL'}
@@ -325,9 +325,9 @@ const AuditorVerification: React.FC = () => {
                     <p className="text-red-600 dark:text-red-400 text-sm mb-4">
                       {result.errorMessage}
                     </p>
-                    <div className="flex items-start gap-2 p-3 bg-white dark:bg-slate-800 rounded-lg border border-red-200 dark:border-red-700">
-                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-slate-600 dark:text-white/60">
+                    <div className="flex items-start gap-2 p-3 card rounded-lg border border-status-risk/30">
+                      <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-secondary">
                         If you believe this document should be valid, contact the issuing organization
                         or check that you've entered the complete hash correctly.
                       </p>
@@ -347,10 +347,10 @@ const AuditorVerification: React.FC = () => {
         transition={{ delay: 0.3 }}
         className="mt-12 text-center max-w-lg"
       >
-        <h4 className="text-sm font-semibold text-slate-700 dark:text-white/70 mb-2">
+        <h4 className="text-sm font-semibold text-secondary mb-2">
           Where to find the document hash?
         </h4>
-        <p className="text-xs text-slate-500 dark:text-white/50">
+        <p className="text-xs text-steel-400">
           The document hash is located at the bottom of signed policy documents and certificates.
           It's a unique identifier that ensures the document hasn't been modified.
         </p>

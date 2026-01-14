@@ -290,23 +290,23 @@ INCLUDED FILES
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-xl font-bold text-primary">
             Audit Bundle Export
           </h2>
-          <p className="text-slate-500 dark:text-white/60">
+          <p className="text-secondary">
             Download all evidence and policies in a single ZIP file
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-framework-hipaa/10 text-framework-hipaa rounded-lg">
           <Archive className="w-4 h-4" />
           <span className="text-sm font-medium">{bundleFiles.length} files</span>
         </div>
       </div>
 
       {/* Bundle Preview Card */}
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-200/50 dark:border-white/10 shadow-lg overflow-hidden">
+      <div className="card overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-white/10 bg-gradient-to-r from-violet-500 to-purple-600">
+        <div className="p-6 border-b border-steel-700 dark:border-steel-700 light:border-slate-200 bg-gradient-to-r from-framework-hipaa to-purple-600">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
               <Archive className="w-7 h-7 text-white" />
@@ -326,54 +326,54 @@ INCLUDED FILES
 
         {/* Content Summary */}
         <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-            <FileText className="w-6 h-6 text-violet-500 mb-2" />
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">{policyCount}</div>
-            <div className="text-sm text-slate-500 dark:text-white/60">Policies</div>
+          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+            <FileText className="w-6 h-6 text-framework-hipaa mb-2" />
+            <div className="text-2xl font-bold text-primary">{policyCount}</div>
+            <div className="text-sm text-secondary">Policies</div>
           </div>
-          <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-            <FolderOpen className="w-6 h-6 text-emerald-500 mb-2" />
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">{evidenceCount}</div>
-            <div className="text-sm text-slate-500 dark:text-white/60">Evidence Files</div>
+          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+            <FolderOpen className="w-6 h-6 text-status-success mb-2" />
+            <div className="text-2xl font-bold text-primary">{evidenceCount}</div>
+            <div className="text-sm text-secondary">Evidence Files</div>
           </div>
-          <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-            <Shield className="w-6 h-6 text-blue-500 mb-2" />
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalControls}</div>
-            <div className="text-sm text-slate-500 dark:text-white/60">Controls</div>
+          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+            <Shield className="w-6 h-6 text-accent-400 mb-2" />
+            <div className="text-2xl font-bold text-primary">{stats.totalControls}</div>
+            <div className="text-sm text-secondary">Controls</div>
           </div>
-          <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-            <CheckCircle className="w-6 h-6 text-amber-500 mb-2" />
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+            <CheckCircle className="w-6 h-6 text-status-warning mb-2" />
+            <div className="text-2xl font-bold text-primary">
               {Math.round((stats.compliantControls / stats.totalControls) * 100)}%
             </div>
-            <div className="text-sm text-slate-500 dark:text-white/60">Compliant</div>
+            <div className="text-sm text-secondary">Compliant</div>
           </div>
         </div>
 
         {/* Bundle Contents Preview */}
         <div className="px-6 pb-4">
-          <h4 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase mb-3">
+          <h4 className="text-sm font-semibold text-secondary uppercase mb-3">
             Bundle Contents
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
-              <File className="w-4 h-4 text-slate-400" />
-              <span className="text-sm text-slate-600 dark:text-white/70">MANIFEST.txt</span>
+            <div className="flex items-center gap-2 p-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+              <File className="w-4 h-4 text-steel-400" />
+              <span className="text-sm text-secondary">MANIFEST.txt</span>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
-              <File className="w-4 h-4 text-slate-400" />
-              <span className="text-sm text-slate-600 dark:text-white/70">compliance_summary.json</span>
+            <div className="flex items-center gap-2 p-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+              <File className="w-4 h-4 text-steel-400" />
+              <span className="text-sm text-secondary">compliance_summary.json</span>
             </div>
             {bundleFiles.slice(0, 6).map((file, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
-                <File className="w-4 h-4 text-slate-400" />
-                <span className="text-sm text-slate-600 dark:text-white/70 truncate">
+              <div key={index} className="flex items-center gap-2 p-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+                <File className="w-4 h-4 text-steel-400" />
+                <span className="text-sm text-secondary truncate">
                   {file.name}
                 </span>
               </div>
             ))}
             {bundleFiles.length > 6 && (
-              <div className="flex items-center gap-2 p-2 text-slate-500 dark:text-white/50">
+              <div className="flex items-center gap-2 p-2 text-secondary">
                 <span className="text-sm">...and {bundleFiles.length - 6} more files</span>
               </div>
             )}
@@ -385,12 +385,12 @@ INCLUDED FILES
           <div className="px-6 pb-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-white/70">{progress.status}</span>
-                <span className="text-slate-500 dark:text-white/50">
+                <span className="text-secondary">{progress.status}</span>
+                <span className="text-secondary">
                   {progress.current} / {progress.total}
                 </span>
               </div>
-              <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{
@@ -398,7 +398,7 @@ INCLUDED FILES
                       ? `${(progress.current / progress.total) * 100}%`
                       : '0%',
                   }}
-                  className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+                  className="h-full bg-gradient-to-r from-framework-hipaa to-purple-500 rounded-full"
                 />
               </div>
             </div>
@@ -408,7 +408,7 @@ INCLUDED FILES
         {/* Error */}
         {error && (
           <div className="px-6 pb-4">
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400">
+            <div className="p-3 bg-status-risk/10 border border-status-risk/30 rounded-lg flex items-center gap-2 text-status-risk">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">{error}</span>
             </div>
@@ -416,16 +416,16 @@ INCLUDED FILES
         )}
 
         {/* Action Button */}
-        <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-white/10">
+        <div className="p-6 bg-steel-900 dark:bg-steel-900/50 light:bg-slate-50 border-t border-steel-700 dark:border-steel-700 light:border-slate-200">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-white/50">
+            <div className="flex items-center gap-2 text-sm text-secondary">
               <Clock className="w-4 h-4" />
               <span>Estimated download: ~{Math.ceil(bundleFiles.length * 0.5)}s</span>
             </div>
             <button
               onClick={generateBundle}
               disabled={isGenerating || bundleFiles.length === 0}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-framework-hipaa to-purple-600 text-white rounded-xl font-semibold shadow-lg shadow-framework-hipaa/25 hover:shadow-framework-hipaa/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGenerating ? (
                 <>
@@ -445,21 +445,21 @@ INCLUDED FILES
 
       {/* Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-white/10 p-5">
-          <Hash className="w-6 h-6 text-violet-500 mb-3" />
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+        <div className="card p-5">
+          <Hash className="w-6 h-6 text-framework-hipaa mb-3" />
+          <h3 className="font-semibold text-primary mb-1">
             Document Hashes Included
           </h3>
-          <p className="text-sm text-slate-500 dark:text-white/60">
+          <p className="text-sm text-secondary">
             Each signed document includes a verification hash that auditors can use to confirm authenticity.
           </p>
         </div>
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-xl border border-slate-200/50 dark:border-white/10 p-5">
-          <Shield className="w-6 h-6 text-emerald-500 mb-3" />
-          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+        <div className="card p-5">
+          <Shield className="w-6 h-6 text-status-success mb-3" />
+          <h3 className="font-semibold text-primary mb-1">
             Complete Audit Trail
           </h3>
-          <p className="text-sm text-slate-500 dark:text-white/60">
+          <p className="text-sm text-secondary">
             The manifest includes timestamps, control statuses, and remediation plans for audit review.
           </p>
         </div>

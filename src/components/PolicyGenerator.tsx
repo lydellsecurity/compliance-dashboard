@@ -239,7 +239,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="modal-backdrop"
           />
 
           {/* Modal */}
@@ -250,7 +250,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <div
-              className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+              className="w-full max-w-2xl modal-content rounded-2xl shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
@@ -276,43 +276,43 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
               <div className="p-6 space-y-6">
                 {/* Organization Name Input */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-white/80 mb-2">
+                  <label className="block text-sm font-semibold text-secondary mb-2">
                     Organization Name
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-400" />
                     <input
                       type="text"
                       value={customOrgName}
                       onChange={e => setCustomOrgName(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="input pl-11"
                       placeholder="Enter organization name"
                     />
                   </div>
                 </div>
 
                 {/* Preview Section */}
-                <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Document Preview</h3>
+                <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200">
+                  <h3 className="font-semibold text-primary mb-3">Document Preview</h3>
 
                   <div className="space-y-3 text-sm">
                     <div className="flex items-start gap-2">
-                      <Shield className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                      <Shield className="w-4 h-4 text-framework-hipaa mt-0.5 flex-shrink-0" />
                       <div>
-                        <span className="font-medium text-slate-700 dark:text-white/80">Control:</span>
-                        <span className="text-slate-600 dark:text-white/60 ml-2">{control.title}</span>
+                        <span className="font-medium text-secondary">Control:</span>
+                        <span className="text-steel-400 ml-2">{control.title}</span>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <FileText className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                      <FileText className="w-4 h-4 text-framework-hipaa mt-0.5 flex-shrink-0" />
                       <div>
-                        <span className="font-medium text-slate-700 dark:text-white/80">Risk Level:</span>
+                        <span className="font-medium text-secondary">Risk Level:</span>
                         <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${
-                          control.riskLevel === 'critical' ? 'bg-red-100 text-red-700' :
-                          control.riskLevel === 'high' ? 'bg-orange-100 text-orange-700' :
-                          control.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
-                          'bg-green-100 text-green-700'
+                          control.riskLevel === 'critical' ? 'bg-status-risk/10 text-status-risk' :
+                          control.riskLevel === 'high' ? 'bg-status-warning/10 text-status-warning' :
+                          control.riskLevel === 'medium' ? 'bg-amber-500/10 text-amber-500' :
+                          'bg-status-success/10 text-status-success'
                         }`}>
                           {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)}
                         </span>
@@ -321,24 +321,24 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
 
                     {guidance?.strategy?.principle && (
                       <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                        <CheckCircle className="w-4 h-4 text-framework-hipaa mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="font-medium text-slate-700 dark:text-white/80">Security Principle:</span>
-                          <span className="text-slate-600 dark:text-white/60 ml-2">{guidance.strategy.principle}</span>
+                          <span className="font-medium text-secondary">Security Principle:</span>
+                          <span className="text-steel-400 ml-2">{guidance.strategy.principle}</span>
                         </div>
                       </div>
                     )}
 
                     {control.frameworkMappings.length > 0 && (
                       <div className="flex items-start gap-2">
-                        <Shield className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                        <Shield className="w-4 h-4 text-framework-hipaa mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="font-medium text-slate-700 dark:text-white/80">Frameworks:</span>
+                          <span className="font-medium text-secondary">Frameworks:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {control.frameworkMappings.map((m, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 rounded text-xs text-slate-600 dark:text-white/60"
+                                className="px-2 py-0.5 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded text-xs text-secondary"
                               >
                                 {m.frameworkId} {m.clauseId}
                               </span>
@@ -390,10 +390,10 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
                 <button
                   onClick={handleClose}
-                  className="px-4 py-2.5 text-slate-600 dark:text-white/60 hover:text-slate-800 dark:hover:text-white font-medium transition-colors"
+                  className="px-4 py-2.5 text-secondary hover:text-primary font-medium transition-colors"
                 >
                   Cancel
                 </button>

@@ -124,15 +124,15 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="page-title">
             Compliance Certificate
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <p className="page-subtitle">
             Generate your official compliance completion certificate
           </p>
         </div>
         {isEligible && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-2 px-4 py-2 bg-status-success/10 text-status-success rounded-lg border border-status-success/30">
             <Trophy className="w-5 h-5" />
             <span className="font-semibold text-sm">100% Complete</span>
           </div>
@@ -143,7 +143,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        className="card overflow-hidden"
       >
         {/* Top Accent */}
         <div className="h-1.5 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600" />

@@ -69,7 +69,7 @@ const FRAMEWORK_DETAILS: Record<FrameworkId, {
 // ============================================================================
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm ${className}`}>
+  <div className={`card ${className}`}>
     {children}
   </div>
 );
@@ -98,7 +98,7 @@ const ComplianceGauge: React.FC<{
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-slate-100 dark:text-slate-700"
+            className="text-steel-700 dark:text-steel-700 light:text-slate-200"
           />
         </svg>
         <svg className="absolute inset-0 -rotate-90" width={size} height={size}>
@@ -117,13 +117,13 @@ const ComplianceGauge: React.FC<{
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-slate-900 dark:text-white">{percentage}%</span>
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Compliant</span>
+          <span className="text-2xl font-bold text-primary">{percentage}%</span>
+          <span className="text-[10px] font-semibold text-steel-400 uppercase tracking-wider">Compliant</span>
         </div>
       </div>
       <div className="mt-3 text-center">
-        <div className="font-semibold text-slate-900 dark:text-white text-sm">{label}</div>
-        {sublabel && <div className="text-xs text-slate-500 dark:text-slate-400">{sublabel}</div>}
+        <div className="font-semibold text-primary text-sm">{label}</div>
+        {sublabel && <div className="text-xs text-secondary">{sublabel}</div>}
       </div>
     </div>
   );
@@ -140,10 +140,10 @@ const FrameworkCard: React.FC<{
   const details = FRAMEWORK_DETAILS[frameworkId];
 
   const getStatusBadge = (pct: number) => {
-    if (pct >= 90) return { label: 'Excellent', bgClass: 'bg-green-50 dark:bg-green-900/20', textClass: 'text-green-700 dark:text-green-400' };
-    if (pct >= 80) return { label: 'Good', bgClass: 'bg-green-50 dark:bg-green-900/20', textClass: 'text-green-700 dark:text-green-400' };
-    if (pct >= 60) return { label: 'Moderate', bgClass: 'bg-amber-50 dark:bg-amber-900/20', textClass: 'text-amber-700 dark:text-amber-400' };
-    return { label: 'In Progress', bgClass: 'bg-slate-100 dark:bg-slate-700', textClass: 'text-slate-600 dark:text-slate-400' };
+    if (pct >= 90) return { label: 'Excellent', bgClass: 'bg-status-success/10', textClass: 'text-status-success' };
+    if (pct >= 80) return { label: 'Good', bgClass: 'bg-status-success/10', textClass: 'text-status-success' };
+    if (pct >= 60) return { label: 'Moderate', bgClass: 'bg-status-warning/10', textClass: 'text-status-warning' };
+    return { label: 'In Progress', bgClass: 'bg-steel-700 dark:bg-steel-700 light:bg-slate-100', textClass: 'text-steel-400' };
   };
 
   const status = getStatusBadge(percentage);
@@ -159,8 +159,8 @@ const FrameworkCard: React.FC<{
             <Shield className="w-5 h-5" style={{ color: details.color }} />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">{details.name}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{details.certBody}</p>
+            <h3 className="font-semibold text-primary">{details.name}</h3>
+            <p className="text-xs text-secondary">{details.certBody}</p>
           </div>
         </div>
         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${status.bgClass} ${status.textClass}`}>
@@ -168,16 +168,16 @@ const FrameworkCard: React.FC<{
         </span>
       </div>
 
-      <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 line-clamp-2">
+      <p className="text-sm text-secondary mb-4 line-clamp-2">
         {details.description}
       </p>
 
       <div className="mb-4">
         <div className="flex justify-between text-sm mb-2">
-          <span className="font-medium text-slate-700 dark:text-slate-300">Progress</span>
+          <span className="font-medium text-secondary">Progress</span>
           <span className="font-bold" style={{ color: details.color }}>{percentage}%</span>
         </div>
-        <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-steel-700 dark:bg-steel-700 light:bg-slate-100 rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: details.color }}
@@ -189,12 +189,12 @@ const FrameworkCard: React.FC<{
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-          <CheckCircle2 className="w-4 h-4 text-green-500" />
+        <div className="flex items-center gap-1.5 text-secondary">
+          <CheckCircle2 className="w-4 h-4 text-status-success" />
           <span>{completed} / {total} controls</span>
         </div>
         {lastUpdated && (
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-steel-400">
             <Clock className="w-3.5 h-3.5" />
             <span className="text-xs">{lastUpdated.toLocaleDateString()}</span>
           </div>
@@ -208,13 +208,13 @@ const FrameworkCard: React.FC<{
 const SecurityItem: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({
   icon, title, description,
 }) => (
-  <div className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
-    <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+  <div className="flex items-start gap-4 p-4 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-50 border border-steel-700 dark:border-steel-700 light:border-slate-200">
+    <div className="w-10 h-10 rounded-lg bg-accent-500/10 flex items-center justify-center text-accent-400 flex-shrink-0">
       {icon}
     </div>
     <div>
-      <h4 className="font-semibold text-slate-900 dark:text-white text-sm">{title}</h4>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
+      <h4 className="font-semibold text-primary text-sm">{title}</h4>
+      <p className="text-sm text-secondary mt-0.5">{description}</p>
     </div>
   </div>
 );
@@ -295,8 +295,8 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
       <div>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Framework Compliance</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Multi-framework security posture</p>
+            <h2 className="text-xl font-bold text-primary">Framework Compliance</h2>
+            <p className="text-sm text-secondary mt-1">Multi-framework security posture</p>
           </div>
         </div>
 
@@ -345,8 +345,8 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
       {/* Security Commitments */}
       <div>
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Security Commitments</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Our comprehensive approach to data protection</p>
+          <h2 className="text-xl font-bold text-primary">Security Commitments</h2>
+          <p className="text-sm text-secondary mt-1">Our comprehensive approach to data protection</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -387,12 +387,12 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
       <Card className="p-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">Have questions about our security practices?</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Our security team is ready to assist.</p>
+            <h3 className="font-semibold text-primary">Have questions about our security practices?</h3>
+            <p className="text-sm text-secondary">Our security team is ready to assist.</p>
           </div>
           <a
             href="mailto:security@lydellsecurity.com"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
+            className="btn-primary"
           >
             Contact Security Team
             <ChevronRight className="w-4 h-4" />

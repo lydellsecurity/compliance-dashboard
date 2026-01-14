@@ -33,9 +33,9 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
   const [activeTab, setActiveTab] = useState<'text' | 'guidance' | 'impact'>('text');
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className="card rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+      <div className="px-6 py-4 border-b border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -44,7 +44,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
               </span>
               <span className="text-sm text-slate-500">{comparison.current.sectionCode}</span>
             </div>
-            <h3 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
+            <h3 className="mt-1 text-lg font-semibold text-primary">
               Requirement Update Available
             </h3>
           </div>
@@ -57,7 +57,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 dark:border-slate-700">
+      <div className="flex border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
         {[
           { id: 'text', label: 'Requirement Text' },
           { id: 'guidance', label: 'Implementation Guidance' },
@@ -68,8 +68,8 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'text-accent-400 border-b-2 border-accent-500 bg-accent-500/10'
+                : 'text-steel-400 hover:text-secondary'
             }`}
           >
             {tab.label}
@@ -84,10 +84,10 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
             {/* Current Version */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-3 h-3 rounded-full bg-slate-400" />
-                <span className="text-sm font-medium text-slate-600">Current Version</span>
+                <div className="w-3 h-3 rounded-full bg-steel-400" />
+                <span className="text-sm font-medium text-secondary">Current Version</span>
               </div>
-              <div className="p-4 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <div className="p-4 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-100 font-mono text-sm leading-relaxed text-secondary">
                 {comparison.current.requirementText}
               </div>
             </div>
@@ -95,10 +95,10 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
             {/* New Version */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-sm font-medium text-slate-600">New 2026 Version</span>
+                <div className="w-3 h-3 rounded-full bg-status-success" />
+                <span className="text-sm font-medium text-secondary">New 2026 Version</span>
               </div>
-              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 font-mono text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <div className="p-4 rounded-lg bg-status-success/10 border border-status-success/30 font-mono text-sm leading-relaxed text-secondary">
                 {comparison.new.requirementText}
               </div>
             </div>
@@ -108,23 +108,23 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
         {activeTab === 'guidance' && (
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h4 className="text-sm font-medium text-slate-600 mb-3">Current Guidance</h4>
+              <h4 className="text-sm font-medium text-secondary mb-3">Current Guidance</h4>
               <ul className="space-y-2">
                 {comparison.current.implementationGuidance.map((item, i) => (
-                  <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
-                    <span className="text-slate-400">•</span>{item}
+                  <li key={i} className="text-sm text-secondary flex items-start gap-2">
+                    <span className="text-steel-400">•</span>{item}
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-slate-600 mb-3">New Guidance</h4>
+              <h4 className="text-sm font-medium text-secondary mb-3">New Guidance</h4>
               <ul className="space-y-2">
                 {comparison.new.implementationGuidance.map((item, i) => {
                   const isNew = !comparison.current.implementationGuidance.includes(item);
                   return (
-                    <li key={i} className={`text-sm flex items-start gap-2 ${isNew ? 'text-green-700 font-medium' : 'text-slate-700'}`}>
-                      <span className={isNew ? 'text-green-500' : 'text-slate-400'}>{isNew ? '+' : '•'}</span>
+                    <li key={i} className={`text-sm flex items-start gap-2 ${isNew ? 'text-status-success font-medium' : 'text-secondary'}`}>
+                      <span className={isNew ? 'text-status-success' : 'text-steel-400'}>{isNew ? '+' : '•'}</span>
                       {item}
                     </li>
                   );
@@ -137,32 +137,32 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
         {activeTab === 'impact' && (
           <div className="space-y-6">
             <div>
-              <h4 className="text-sm font-medium text-slate-600 mb-2">Impact Assessment</h4>
-              <p className="text-slate-700">{comparison.impactAssessment}</p>
+              <h4 className="text-sm font-medium text-secondary mb-2">Impact Assessment</h4>
+              <p className="text-secondary">{comparison.impactAssessment}</p>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-slate-600 mb-2">Significant Changes</h4>
+              <h4 className="text-sm font-medium text-secondary mb-2">Significant Changes</h4>
               <ul className="space-y-2">
                 {comparison.significantChanges.map((change, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                  <li key={i} className="flex items-start gap-2 text-sm text-status-warning">
                     <span>⚠️</span>{change}
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-slate-600 mb-2">
+              <h4 className="text-sm font-medium text-secondary mb-2">
                 Affected Controls ({comparison.affectedControls.length})
               </h4>
               <div className="space-y-2">
                 {comparison.affectedControls.map((control) => (
-                  <div key={control.controlId} className="p-3 rounded-lg bg-slate-50 flex items-center justify-between">
+                  <div key={control.controlId} className="p-3 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-50 flex items-center justify-between">
                     <div>
-                      <span className="font-mono text-sm text-slate-600">{control.controlId}</span>
-                      <span className="mx-2 text-slate-400">|</span>
-                      <span className="text-sm text-slate-700">{control.controlTitle}</span>
+                      <span className="font-mono text-sm text-secondary">{control.controlId}</span>
+                      <span className="mx-2 text-steel-500">|</span>
+                      <span className="text-sm text-secondary">{control.controlTitle}</span>
                     </div>
-                    <span className="text-xs text-amber-600">{control.requiredUpdates.length} update(s) needed</span>
+                    <span className="text-xs text-status-warning">{control.requiredUpdates.length} update(s) needed</span>
                   </div>
                 ))}
               </div>
@@ -172,18 +172,18 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
       </div>
 
       {/* Action Buttons */}
-      <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-        <div className="text-sm text-slate-500">
+      <div className="px-6 py-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 flex items-center justify-between">
+        <div className="text-sm text-steel-400">
           {comparison.affectedControls.length} control(s) will be flagged for review
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => onDefer(comparison.requirementId)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">
+          <button onClick={() => onDefer(comparison.requirementId)} className="px-4 py-2 text-sm text-secondary hover:text-primary">
             Defer
           </button>
-          <button onClick={() => setShowRejectModal(true)} className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+          <button onClick={() => setShowRejectModal(true)} className="px-4 py-2 text-sm text-status-risk border border-status-risk/30 rounded-lg hover:bg-status-risk/10">
             Reject Update
           </button>
-          <button onClick={() => onAccept(comparison.requirementId)} className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">
+          <button onClick={() => onAccept(comparison.requirementId)} className="btn-primary">
             Accept & Apply
           </button>
         </div>
@@ -191,13 +191,13 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Reject Update</h3>
-            <textarea placeholder="Reason for rejection..." className="w-full h-32 px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+        <div className="modal-backdrop flex items-center justify-center">
+          <div className="modal-content rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-primary mb-4">Reject Update</h3>
+            <textarea placeholder="Reason for rejection..." className="input h-32" />
             <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setShowRejectModal(false)} className="px-4 py-2 text-sm text-slate-600">Cancel</button>
-              <button className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg">Confirm</button>
+              <button onClick={() => setShowRejectModal(false)} className="px-4 py-2 text-sm text-secondary">Cancel</button>
+              <button className="px-4 py-2 text-sm font-medium text-white bg-status-risk rounded-lg">Confirm</button>
             </div>
           </div>
         </div>
@@ -246,8 +246,8 @@ export const ComplianceDriftAlert: React.FC<ComplianceDriftAlertProps> = ({
                 </span>
                 <span className="text-xs text-slate-500">{drift.id}</span>
               </div>
-              <h4 className="mt-1 font-semibold text-slate-900">Compliance Drift Detected</h4>
-              <p className="mt-1 text-sm text-slate-600">{drift.changeSummary}</p>
+              <h4 className="mt-1 font-semibold text-primary">Compliance Drift Detected</h4>
+              <p className="mt-1 text-sm text-secondary">{drift.changeSummary}</p>
             </div>
           </div>
           <button onClick={() => setExpanded(!expanded)} className="p-1 text-slate-400 hover:text-slate-600">
@@ -273,7 +273,7 @@ export const ComplianceDriftAlert: React.FC<ComplianceDriftAlertProps> = ({
             {/* Affected Controls */}
             {drift.affectedControlIds.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium text-slate-700 mb-2">
+                <h5 className="text-sm font-medium text-secondary mb-2">
                   Affected Controls ({drift.affectedControlIds.length})
                 </h5>
                 <div className="flex flex-wrap gap-2">
@@ -302,19 +302,19 @@ export const ComplianceDriftAlert: React.FC<ComplianceDriftAlertProps> = ({
             {/* Required Actions */}
             {drift.requiredActions.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium text-slate-700 mb-2">Required Actions</h5>
+                <h5 className="text-sm font-medium text-secondary mb-2">Required Actions</h5>
                 <div className="space-y-2">
                   {drift.requiredActions.map((action) => (
-                    <div key={action.id} className="flex items-center justify-between p-3 rounded-lg bg-white">
+                    <div key={action.id} className="flex items-center justify-between p-3 rounded-lg card">
                       <div className="flex items-center gap-3">
                         <span className={`w-2 h-2 rounded-full ${
-                          action.priority === 'critical' ? 'bg-red-500' :
-                          action.priority === 'high' ? 'bg-orange-500' : 'bg-amber-500'
+                          action.priority === 'critical' ? 'bg-status-risk' :
+                          action.priority === 'high' ? 'bg-status-warning' : 'bg-amber-500'
                         }`} />
-                        <span className="text-sm text-slate-700">{action.description}</span>
+                        <span className="text-sm text-secondary">{action.description}</span>
                       </div>
                       <span className={`px-2 py-0.5 text-xs rounded ${
-                        action.status === 'complete' ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-600'
+                        action.status === 'complete' ? 'bg-status-success/10 text-status-success' : 'bg-steel-700 text-steel-400'
                       }`}>
                         {action.status}
                       </span>
@@ -328,13 +328,13 @@ export const ComplianceDriftAlert: React.FC<ComplianceDriftAlertProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 py-3 bg-white border-t flex justify-end gap-2">
+      <div className="px-4 py-3 card border-t border-steel-700 dark:border-steel-700 light:border-slate-200 flex justify-end gap-2">
         {drift.status === 'detected' && (
-          <button onClick={() => onAcknowledge(drift.id)} className="px-3 py-1.5 text-sm text-slate-600">
+          <button onClick={() => onAcknowledge(drift.id)} className="px-3 py-1.5 text-sm text-secondary">
             Acknowledge
           </button>
         )}
-        <button onClick={() => onRemediate(drift.id)} className="px-4 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg">
+        <button onClick={() => onRemediate(drift.id)} className="btn-primary text-sm">
           Start Remediation
         </button>
       </div>
@@ -353,12 +353,12 @@ const VersionBadge: React.FC<{ version: string; label: string; variant: 'current
   variant,
 }) => (
   <div className={`px-3 py-1.5 rounded-lg text-center ${
-    variant === 'current' ? 'bg-slate-200' : 'bg-green-100'
+    variant === 'current' ? 'bg-steel-700 dark:bg-steel-700 light:bg-slate-200' : 'bg-status-success/10'
   }`}>
-    <div className={`text-xs ${variant === 'current' ? 'text-slate-500' : 'text-green-600'}`}>
+    <div className={`text-xs ${variant === 'current' ? 'text-steel-400' : 'text-status-success'}`}>
       {label}
     </div>
-    <div className={`font-mono font-bold ${variant === 'current' ? 'text-slate-700' : 'text-green-700'}`}>
+    <div className={`font-mono font-bold ${variant === 'current' ? 'text-secondary' : 'text-status-success'}`}>
       {version}
     </div>
   </div>

@@ -110,7 +110,7 @@ const GenerateReportButton: React.FC<GenerateReportButtonProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="absolute -bottom-2 left-0 right-0 h-1 bg-slate-700 rounded-full overflow-hidden"
+          className="absolute -bottom-2 left-0 right-0 h-1 bg-steel-700 rounded-full overflow-hidden"
         >
           <motion.div
             initial={{ width: 0 }}
@@ -128,21 +128,21 @@ const GenerateReportButton: React.FC<GenerateReportButtonProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-72 bg-slate-800/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl shadow-black/20 z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-72 bg-steel-800 dark:bg-steel-800 light:bg-white backdrop-blur-xl rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200 shadow-xl z-50 overflow-hidden"
           >
             <div className="p-2">
               {reportTypes.map((report) => (
                 <button
                   key={report.type}
                   onClick={() => handleGenerate(report.type)}
-                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors text-left"
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-100 transition-colors text-left"
                 >
-                  <div className="p-2 bg-violet-500/20 rounded-lg">
-                    <Download className="w-4 h-4 text-violet-400" />
+                  <div className="p-2 bg-framework-hipaa/20 rounded-lg">
+                    <Download className="w-4 h-4 text-framework-hipaa" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-white">{report.label}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{report.description}</div>
+                    <div className="text-sm font-medium text-primary">{report.label}</div>
+                    <div className="text-xs text-steel-400 mt-0.5">{report.description}</div>
                   </div>
                 </button>
               ))}

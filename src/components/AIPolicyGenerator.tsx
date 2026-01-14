@@ -246,30 +246,30 @@ function markdownToHtml(markdown: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     // Headers
-    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-slate-800 dark:text-white mt-6 mb-2">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-slate-900 dark:text-white mt-8 mb-3 pb-2 border-b border-slate-200 dark:border-white/10">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">$1</h1>')
+    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-primary mt-6 mb-2">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-primary mt-8 mb-3 pb-2 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-primary mb-4">$1</h1>')
     // Bold and italic
     .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     // Code blocks
-    .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg overflow-x-auto my-4 text-sm"><code>$1</code></pre>')
-    .replace(/`(.*?)`/g, '<code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">$1</code>')
+    .replace(/```([\s\S]*?)```/g, '<pre class="bg-steel-800 dark:bg-steel-800 light:bg-slate-100 p-4 rounded-lg overflow-x-auto my-4 text-sm"><code>$1</code></pre>')
+    .replace(/`(.*?)`/g, '<code class="bg-steel-800 dark:bg-steel-800 light:bg-slate-100 px-1.5 py-0.5 rounded text-sm">$1</code>')
     // Lists
-    .replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80">$1</li>')
-    .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 text-slate-700 dark:text-white/80 list-decimal">$2</li>')
+    .replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 text-secondary">$1</li>')
+    .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 text-secondary list-decimal">$2</li>')
     // Blockquotes
-    .replace(/^>\s+(.*$)/gim, '<blockquote class="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-900/20 text-slate-700 dark:text-white/80">$1</blockquote>')
+    .replace(/^>\s+(.*$)/gim, '<blockquote class="border-l-4 border-accent-500 pl-4 py-2 my-4 bg-accent-500/10 text-secondary">$1</blockquote>')
     // Horizontal rules
-    .replace(/^---$/gim, '<hr class="my-6 border-slate-200 dark:border-white/10" />')
+    .replace(/^---$/gim, '<hr class="my-6 border-steel-700 dark:border-steel-700 light:border-slate-200" />')
     // Paragraphs
-    .replace(/\n\n/g, '</p><p class="text-slate-700 dark:text-white/80 my-3 leading-relaxed">')
+    .replace(/\n\n/g, '</p><p class="text-secondary my-3 leading-relaxed">')
     // Line breaks
     .replace(/\n/g, '<br />');
 
   // Wrap in paragraph tags
-  html = `<p class="text-slate-700 dark:text-white/80 my-3 leading-relaxed">${html}</p>`;
+  html = `<p class="text-secondary my-3 leading-relaxed">${html}</p>`;
 
   // Clean up empty paragraphs
   html = html.replace(/<p[^>]*><\/p>/g, '');
@@ -368,10 +368,10 @@ const GeneratingAnimation: React.FC = () => (
         <Sparkles className="w-8 h-8 text-violet-500 animate-pulse" />
       </div>
     </div>
-    <h3 className="mt-6 text-lg font-semibold text-slate-900 dark:text-white">
+    <h3 className="mt-6 text-lg font-semibold text-primary">
       Generating Policy with AI
     </h3>
-    <p className="mt-2 text-sm text-slate-500 dark:text-white/50 text-center max-w-sm">
+    <p className="mt-2 text-sm text-secondary text-center max-w-sm">
       Our GRC consultant AI is crafting a comprehensive, board-ready policy document...
     </p>
     <div className="mt-4 flex items-center gap-2">
@@ -395,7 +395,7 @@ const StreamingDisplay: React.FC<{ content: string; isStreaming: boolean }> = ({
   return (
     <div
       ref={containerRef}
-      className="relative p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 overflow-auto max-h-[50vh] font-mono text-sm"
+      className="relative p-6 card rounded-xl overflow-auto max-h-[50vh] font-mono text-sm"
     >
       <div
         className="prose prose-slate dark:prose-invert max-w-none whitespace-pre-wrap"
@@ -616,7 +616,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="modal-backdrop"
           />
 
           {/* Modal */}
@@ -627,7 +627,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <div
-              className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              className="w-full max-w-4xl max-h-[90vh] modal-content rounded-2xl shadow-2xl overflow-hidden flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
@@ -654,35 +654,35 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                 {status === 'idle' && (
                   <div className="space-y-6">
                     {/* Control Info */}
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                      <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Control Information</h3>
+                    <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200">
+                      <h3 className="font-semibold text-primary mb-3">Control Information</h3>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="font-medium text-slate-600 dark:text-white/60">Control ID:</span>
-                          <span className="ml-2 text-slate-900 dark:text-white">{control.id}</span>
+                          <span className="font-medium text-secondary">Control ID:</span>
+                          <span className="ml-2 text-primary">{control.id}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-slate-600 dark:text-white/60">Risk Level:</span>
+                          <span className="font-medium text-secondary">Risk Level:</span>
                           <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${
-                            control.riskLevel === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                            control.riskLevel === 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                            control.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                            'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            control.riskLevel === 'critical' ? 'bg-status-risk/10 text-status-risk' :
+                            control.riskLevel === 'high' ? 'bg-status-warning/10 text-status-warning' :
+                            control.riskLevel === 'medium' ? 'bg-amber-500/10 text-amber-500' :
+                            'bg-status-success/10 text-status-success'
                           }`}>
                             {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)}
                           </span>
                         </div>
                         <div className="col-span-2">
-                          <span className="font-medium text-slate-600 dark:text-white/60">Title:</span>
-                          <span className="ml-2 text-slate-900 dark:text-white">{control.title}</span>
+                          <span className="font-medium text-secondary">Title:</span>
+                          <span className="ml-2 text-primary">{control.title}</span>
                         </div>
                         <div className="col-span-2">
-                          <span className="font-medium text-slate-600 dark:text-white/60">Frameworks:</span>
+                          <span className="font-medium text-secondary">Frameworks:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {control.frameworkMappings.map((m, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 rounded text-xs text-slate-600 dark:text-white/60"
+                                className="px-2 py-0.5 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded text-xs text-secondary"
                               >
                                 {m.frameworkId} {m.clauseId}
                               </span>
@@ -835,9 +835,9 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                           )}
                         </div>
                         {documentHash && (
-                          <div className="flex items-center gap-2 p-2 bg-white dark:bg-slate-800 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Document Hash:</span>
-                            <code className="text-xs font-mono text-emerald-600 dark:text-emerald-400">{documentHash}</code>
+                          <div className="flex items-center gap-2 p-2 card rounded-lg border border-status-success/30">
+                            <span className="text-xs font-medium text-secondary">Document Hash:</span>
+                            <code className="text-xs font-mono text-status-success">{documentHash}</code>
                           </div>
                         )}
                       </div>
@@ -853,7 +853,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                           type="text"
                           value={jobTitle}
                           onChange={(e) => setJobTitle(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-violet-200 dark:border-violet-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                          className="input"
                           placeholder="e.g., Chief Information Security Officer"
                         />
                         <p className="mt-1.5 text-xs text-violet-600 dark:text-violet-400">
@@ -867,14 +867,14 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                       <div className="flex items-center gap-3">
                         <button
                           onClick={handleCopy}
-                          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                          className="btn-ghost"
                         >
-                          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                          {copied ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
                           {copied ? 'Copied!' : 'Copy Markdown'}
                         </button>
                         <button
                           onClick={handleExportPDF}
-                          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                          className="btn-ghost"
                         >
                           <Printer className="w-4 h-4" />
                           Print / Export PDF
@@ -889,8 +889,8 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between p-6 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex-shrink-0">
-                <div className="text-sm text-slate-500 dark:text-white/40">
+              <div className="flex items-center justify-between p-6 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 flex-shrink-0">
+                <div className="text-sm text-steel-400">
                   {metadata && (
                     <span>Model: {metadata.model}</span>
                   )}
@@ -898,7 +898,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleClose}
-                    className="px-4 py-2.5 text-slate-600 dark:text-white/60 hover:text-slate-800 dark:hover:text-white font-medium transition-colors"
+                    className="px-4 py-2.5 text-secondary hover:text-primary font-medium transition-colors"
                   >
                     Close
                   </button>
