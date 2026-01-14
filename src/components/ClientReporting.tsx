@@ -9,8 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Download, Plus, Building2, Target,
-  AlertTriangle, BarChart3, TrendingUp,
-  Eye,
+  AlertTriangle, BarChart3, TrendingUp, Eye,
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../hooks/useCompliance';
 import type { UseIncidentResponseReturn } from '../hooks/useIncidentResponse';
@@ -63,9 +62,9 @@ const ScoreGauge: React.FC<{ score: number; size?: number }> = ({ score, size = 
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
   
-  const getColor = (score: number) => {
-    if (score >= 80) return '#10B981';
-    if (score >= 60) return '#F59E0B';
+  const getColor = (s: number) => {
+    if (s >= 80) return '#10B981';
+    if (s >= 60) return '#F59E0B';
     return '#EF4444';
   };
 
@@ -292,7 +291,7 @@ const CreateEngagementModal: React.FC<{
                 </label>
                 <select
                   value={formData.engagementType}
-                  onChange={e => setFormData(prev => ({ ...prev, engagementType: e.target.value as any }))}
+                  onChange={e => setFormData(prev => ({ ...prev, engagementType: e.target.value as ClientEngagement['engagementType'] }))}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                 >
                   <option value="assessment">Assessment</option>
@@ -416,12 +415,11 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
 
   const handleGenerateReport = () => {
     if (!selectedEngagement) return;
-    const report = ir.generateReport(
+    ir.generateReport(
       selectedEngagement.id,
       selectedReportType as ComplianceReport['reportType'],
       compliance
     );
-    // Report is now in ir.reports
   };
 
   const handleExportPDF = (report: ComplianceReport) => {
@@ -531,6 +529,11 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
       </html>
     `);
     printWindow.document.close();
+  };
+
+  const handleViewReport = (report: ComplianceReport) => {
+    // Open report in new tab or modal
+    console.log('Viewing report:', report.id);
   };
 
   return (
@@ -666,7 +669,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                       <ReportCard
                         key={report.id}
                         report={report}
-                        onView={() => { /* view report */ }}
+                        onView={() => handleViewReport(report)}
                         onDownload={() => handleExportPDF(report)}
                       />
                     ))}

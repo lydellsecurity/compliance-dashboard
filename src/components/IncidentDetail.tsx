@@ -211,17 +211,17 @@ const AffectedControlCard: React.FC<{
                 <div className="pt-3 border-t border-slate-200 dark:border-white/10">
                   <p className="text-xs font-medium text-slate-500 dark:text-white/50 mb-3">Post-Incident Assessment</p>
                   <div className="flex flex-wrap gap-2">
-                    {(['verified', 'failed', 'partially_failed', 'not_applicable'] as const).map(status => (
+                    {(['verified', 'failed', 'partially_failed', 'not_applicable'] as const).map(assessStatus => (
                       <button
-                        key={status}
-                        onClick={() => onAssess({ postIncidentStatus: status })}
+                        key={assessStatus}
+                        onClick={() => onAssess({ postIncidentStatus: assessStatus })}
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                          assessmentResult?.postIncidentStatus === status
+                          assessmentResult?.postIncidentStatus === assessStatus
                             ? 'bg-blue-500 text-white border-blue-500'
                             : 'border-slate-200 dark:border-white/10 hover:border-blue-500'
                         }`}
                       >
-                        {postStatusConfig[status]?.label}
+                        {postStatusConfig[assessStatus]?.label}
                       </button>
                     ))}
                   </div>
@@ -517,7 +517,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
                       <div className="flex gap-3">
                         <select
                           value={newEvent.eventType}
-                          onChange={e => setNewEvent(prev => ({ ...prev, eventType: e.target.value as any }))}
+                          onChange={e => setNewEvent(prev => ({ ...prev, eventType: e.target.value as 'action' }))}
                           className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                         >
                           <option value="action">Action</option>

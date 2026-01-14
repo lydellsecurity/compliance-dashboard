@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Shield, Clock, Users, FileText,
   Plus, Search, CheckCircle2, AlertCircle,
-  TrendingUp, Target, Zap,
+  TrendingUp, Target, Zap, ChevronDown,
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../hooks/useCompliance';
 import type { UseIncidentResponseReturn, CreateIncidentData } from '../hooks/useIncidentResponse';
@@ -93,18 +93,12 @@ const StatCard: React.FC<{
   value: number | string; 
   icon: React.ReactNode; 
   color: string;
-  trend?: { value: number; isPositive: boolean };
-}> = ({ label, value, icon, color, trend }) => (
+}> = ({ label, value, icon, color }) => (
   <GlassPanel className="p-5">
     <div className="flex items-start justify-between">
       <div>
         <p className="text-xs font-medium text-slate-500 dark:text-white/50 uppercase tracking-wider">{label}</p>
         <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
-        {trend && (
-          <p className={`mt-1 text-xs font-medium ${trend.isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
-            {trend.isPositive ? '↓' : '↑'} {Math.abs(trend.value)}% from last month
-          </p>
-        )}
       </div>
       <div className={`p-3 rounded-xl ${color}`}>
         {icon}
@@ -214,7 +208,6 @@ const CreateIncidentModal: React.FC<{
   });
   
   const [systemInput, setSystemInput] = useState('');
-  // responder input removed
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
