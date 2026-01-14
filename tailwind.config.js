@@ -138,5 +138,10 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Add 'light' variant for explicit light mode styling
+    function({ addVariant }) {
+      addVariant('light', 'html.light &')
+    }
+  ],
 }
