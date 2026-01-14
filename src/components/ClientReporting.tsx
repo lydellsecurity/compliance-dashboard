@@ -20,11 +20,11 @@ import type { FrameworkId } from '../constants/controls';
 // CONSTANTS
 // ============================================================================
 
-const FRAMEWORK_CONFIG: Record<FrameworkId, { name: string; color: string; icon: string }> = {
-  SOC2: { name: 'SOC 2 Type II', color: '#3B82F6', icon: '🛡️' },
-  ISO27001: { name: 'ISO 27001:2022', color: '#10B981', icon: '🌐' },
-  HIPAA: { name: 'HIPAA Security', color: '#8B5CF6', icon: '🏥' },
-  NIST: { name: 'NIST CSF 2.0', color: '#F59E0B', icon: '🔒' },
+const FRAMEWORK_CONFIG: Record<FrameworkId, { name: string; color: string }> = {
+  SOC2: { name: 'SOC 2 Type II', color: '#0066FF' },
+  ISO27001: { name: 'ISO 27001:2022', color: '#059669' },
+  HIPAA: { name: 'HIPAA Security', color: '#7C3AED' },
+  NIST: { name: 'NIST CSF 2.0', color: '#D97706' },
 };
 
 const REPORT_TYPES = [
@@ -51,8 +51,8 @@ const INDUSTRIES = [
 // SUB-COMPONENTS
 // ============================================================================
 
-const GlassPanel: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`relative rounded-2xl overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-slate-200/50 dark:border-white/10 shadow-lg ${className}`}>
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm ${className}`}>
     {children}
   </div>
 );
@@ -247,7 +247,7 @@ const CreateEngagementModal: React.FC<{
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+          className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-lg shadow-xl overflow-hidden"
         >
           <div className="p-6 border-b border-slate-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">New Client Engagement</h2>
@@ -334,7 +334,7 @@ const CreateEngagementModal: React.FC<{
                         : FRAMEWORK_CONFIG[fw].color,
                     }}
                   >
-                    {FRAMEWORK_CONFIG[fw].icon} {fw}
+                    {fw}
                   </button>
                 ))}
               </div>
@@ -420,7 +420,7 @@ const ReportPreviewModal: React.FC<{
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-800 rounded-lg shadow-xl overflow-hidden flex flex-col"
         >
           {/* Modal Header */}
           <div className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
@@ -754,7 +754,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
           New Engagement
@@ -764,7 +764,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Engagements List */}
         <div className="lg:col-span-1">
-          <GlassPanel className="p-4">
+          <Card className="p-4">
             <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Client Engagements</h3>
             {ir.engagements.length === 0 ? (
               <div className="text-center py-8">
@@ -783,13 +783,13 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                 ))}
               </div>
             )}
-          </GlassPanel>
+          </Card>
         </div>
 
         {/* Report Generation */}
         <div className="lg:col-span-2">
           {!selectedEngagement ? (
-            <GlassPanel className="p-12 text-center">
+            <Card className="p-12 text-center">
               <FileText className="w-12 h-12 mx-auto mb-4 text-slate-300 dark:text-white/20" />
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                 Select an Engagement
@@ -797,11 +797,11 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
               <p className="text-slate-500 dark:text-white/50">
                 Choose a client engagement to generate reports
               </p>
-            </GlassPanel>
+            </Card>
           ) : (
             <div className="space-y-6">
               {/* Engagement Overview */}
-              <GlassPanel className="p-5">
+              <Card className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -833,10 +833,10 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                     );
                   })}
                 </div>
-              </GlassPanel>
+              </Card>
 
               {/* Generate Report */}
-              <GlassPanel className="p-5">
+              <Card className="p-5">
                 <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Generate New Report</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                   {REPORT_TYPES.map(type => (
@@ -864,11 +864,11 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                   <FileText className="w-4 h-4" />
                   Generate Report
                 </button>
-              </GlassPanel>
+              </Card>
 
               {/* Previous Reports */}
               {engagementReports.length > 0 && (
-                <GlassPanel className="p-5">
+                <Card className="p-5">
                   <h4 className="font-semibold text-slate-900 dark:text-white mb-4">
                     Previous Reports ({engagementReports.length})
                   </h4>
@@ -882,7 +882,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                       />
                     ))}
                   </div>
-                </GlassPanel>
+                </Card>
               )}
             </div>
           )}

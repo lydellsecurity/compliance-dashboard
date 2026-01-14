@@ -9,9 +9,11 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Download, CheckCircle, AlertCircle, X,
-  Copy, Check, Printer, FileCheck, Archive,
+  Copy, Check, Printer, FileCheck, Loader2, ExternalLink, ShieldCheck,
 } from 'lucide-react';
 import type { MasterControl } from '../constants/controls';
+import { complianceDb } from '../services/compliance-database.service';
+import confetti from 'canvas-confetti';
 
 // ============================================================================
 // TYPES
@@ -39,6 +41,49 @@ export interface PolicyMetadata {
   frameworks: string;
   generatedAt: string;
   model: string;
+}
+
+interface SaveResult {
+  success: boolean;
+  evidenceUrl?: string;
+  fileName?: string;
+  error?: string;
+  controlMarkedCompliant?: boolean;
+  triggerConfetti?: boolean;
+  documentHash?: string;
+  isVerified?: boolean;
+}
+
+// Confetti celebration for closing critical risks
+function triggerConfettiCelebration() {
+  // First burst
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ['#10B981', '#059669', '#34D399', '#6EE7B7', '#A7F3D0'],
+  });
+
+  // Second burst after a short delay
+  setTimeout(() => {
+    confetti({
+      particleCount: 50,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors: ['#8B5CF6', '#7C3AED', '#A78BFA'],
+    });
+  }, 150);
+
+  setTimeout(() => {
+    confetti({
+      particleCount: 50,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors: ['#8B5CF6', '#7C3AED', '#A78BFA'],
+    });
+  }, 300);
 }
 
 type GenerationStatus = 'idle' | 'generating' | 'streaming' | 'success' | 'error' | 'saving';
@@ -363,16 +408,43 @@ const StreamingDisplay: React.FC<{ content: string; isStreaming: boolean }> = ({
   );
 };
 
+// Verified Badge Component - shows when a control has a signed policy
+export const VerifiedPolicyBadge: React.FC<{ evidenceUrl?: string | null }> = ({ evidenceUrl }) => {
+  if (!evidenceUrl) return null;
+
+  return (
+    <a
+      href={evidenceUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+      title="View signed policy document"
+    >
+      <ShieldCheck className="w-3.5 h-3.5" />
+      <span>Verified</span>
+    </a>
+  );
+};
+
 // Inline button for control cards - only shows for 'no' or 'partial' responses
-export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps & { controlResponse?: 'yes' | 'no' | 'partial' | 'na' | null }> = ({
+export const AIPolicyGeneratorButton: React.FC<AIPolicyGeneratorProps & {
+  controlResponse?: 'yes' | 'no' | 'partial' | 'na' | null;
+  evidenceUrl?: string | null;
+}> = ({
   control,
   organizationName = 'LYDELL SECURITY',
   onSaveToEvidence,
   controlResponse,
+  evidenceUrl,
 }) => {
   const [showModal, setShowModal] = useState(false);
 
-  // Only show for controls marked as 'no' or 'partial' (gaps)
+  // Show verified badge if we have evidence
+  if (evidenceUrl) {
+    return <VerifiedPolicyBadge evidenceUrl={evidenceUrl} />;
+  }
+
+  // Only show generate button for controls marked as 'no' or 'partial' (gaps)
   const shouldShow = controlResponse === 'no' || controlResponse === 'partial';
 
   if (!shouldShow) {
@@ -422,6 +494,10 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
 
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [evidenceUrl, setEvidenceUrl] = useState<string | null>(null);
+  const [documentHash, setDocumentHash] = useState<string | null>(null);
+  const [jobTitle, setJobTitle] = useState('Compliance Officer');
 
   if (!control) return null;
 
@@ -432,6 +508,9 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
   const handleClose = () => {
     reset();
     setSaved(false);
+    setSaveError(null);
+    setEvidenceUrl(null);
+    setDocumentHash(null);
     onClose();
   };
 
@@ -449,25 +528,82 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
     }
   };
 
-  const handleApproveAndSave = () => {
-    if (policy && metadata && onSaveToEvidence) {
-      setStatus('saving');
+  const handleApproveAndSave = async () => {
+    if (!policy || !metadata) return;
 
-      // Save to Evidence Locker
-      onSaveToEvidence(control.id, policy, metadata);
+    setStatus('saving');
+    setSaveError(null);
 
-      // Also trigger PDF download
-      exportToPDF(policy, metadata);
+    try {
+      // Get organization ID and user info from the compliance database service
+      const organizationId = complianceDb.getOrganizationId();
+      const userName = complianceDb.getUserName() || 'Authorized User';
+
+      if (!organizationId) {
+        // If no org ID, fall back to local-only behavior
+        if (onSaveToEvidence) {
+          onSaveToEvidence(control.id, policy, metadata);
+        }
+        exportToPDF(policy, metadata);
+        setSaved(true);
+        setStatus('success');
+
+        // Still trigger confetti for critical/high risk locally
+        if (control.riskLevel === 'critical' || control.riskLevel === 'high') {
+          triggerConfettiCelebration();
+        }
+        return;
+      }
+
+      // Save to Supabase Storage via Netlify function
+      const response = await fetch('/.netlify/functions/save-policy-evidence', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          policyMarkdown: policy,
+          metadata,
+          organizationId,
+          controlId: control.id,
+          userName,
+          jobTitle,
+          riskLevel: control.riskLevel,
+        }),
+      });
+
+      const result: SaveResult = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save policy');
+      }
+
+      // Store the evidence URL and document hash
+      setEvidenceUrl(result.evidenceUrl || null);
+      setDocumentHash(result.documentHash || null);
+
+      // Also call the local save handler if provided
+      if (onSaveToEvidence) {
+        onSaveToEvidence(control.id, policy, metadata);
+      }
 
       setSaved(true);
       setStatus('success');
-    } else if (policy) {
-      // If no save handler, just export PDF
-      exportToPDF(policy, metadata);
+
+      // Trigger confetti celebration for critical risk closures!
+      if (result.triggerConfetti) {
+        triggerConfettiCelebration();
+      }
+
+    } catch (err) {
+      console.error('Save policy error:', err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to save policy');
+      setStatus('success'); // Keep success so user can retry
     }
   };
 
   const isStreaming = status === 'streaming';
+  const isSaving = status === 'saving';
   const showContent = status === 'streaming' || status === 'success' || status === 'saving';
 
   return (
@@ -648,14 +784,81 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                       </div>
                     )}
 
-                    {saved && (
-                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                    {isSaving && (
+                      <div className="p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800">
                         <div className="flex items-center gap-2">
-                          <Archive className="w-5 h-5 text-blue-500" />
-                          <p className="font-medium text-blue-800 dark:text-blue-300">
-                            Policy approved and saved to Evidence Locker!
+                          <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                          <p className="font-medium text-violet-800 dark:text-violet-300">
+                            Saving policy to Evidence Locker...
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {saveError && (
+                      <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-5 h-5 text-red-500" />
+                          <p className="font-medium text-red-800 dark:text-red-300">
+                            {saveError}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {saved && (
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+                              <CheckCircle className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+                                Policy Verified & Locked
+                              </p>
+                              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                                Saved to Evidence Locker
+                              </p>
+                            </div>
+                          </div>
+                          {evidenceUrl && (
+                            <a
+                              href={evidenceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              View PDF
+                            </a>
+                          )}
+                        </div>
+                        {documentHash && (
+                          <div className="flex items-center gap-2 p-2 bg-white dark:bg-slate-800 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Document Hash:</span>
+                            <code className="text-xs font-mono text-emerald-600 dark:text-emerald-400">{documentHash}</code>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Job Title Input for E-Signature */}
+                    {status === 'success' && !saved && (
+                      <div className="p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800">
+                        <label className="block text-sm font-medium text-violet-800 dark:text-violet-300 mb-2">
+                          Your Job Title (for E-Signature)
+                        </label>
+                        <input
+                          type="text"
+                          value={jobTitle}
+                          onChange={(e) => setJobTitle(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-violet-200 dark:border-violet-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                          placeholder="e.g., Chief Information Security Officer"
+                        />
+                        <p className="mt-1.5 text-xs text-violet-600 dark:text-violet-400">
+                          This will appear on the signed policy document along with your name and a unique document hash.
+                        </p>
                       </div>
                     )}
 
@@ -720,7 +923,17 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                     </button>
                   )}
 
-                  {status === 'success' && !saved && (
+                  {isSaving && (
+                    <button
+                      disabled
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-violet-400 to-purple-400 text-white cursor-wait"
+                    >
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </button>
+                  )}
+
+                  {status === 'success' && !saved && !isSaving && (
                     <button
                       onClick={handleApproveAndSave}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg hover:shadow-emerald-500/25"

@@ -56,6 +56,7 @@ export interface UserResponse {
   evidence_note: string;
   file_url: string | null;
   file_name: string | null;
+  evidence_url: string | null;  // URL to AI-generated policy PDF in Supabase Storage
   remediation_plan: string;
   target_date: string | null;
   status: 'pending' | 'in_progress' | 'complete' | 'deferred';
@@ -120,14 +121,16 @@ export interface SyncCallback {
 class ComplianceDatabaseService {
   private organizationId: string | null = null;
   private userId: string | null = null;
+  private userName: string | null = null;
 
   isAvailable(): boolean {
     return isSupabaseConfigured();
   }
 
-  setContext(organizationId: string, userId: string): void {
+  setContext(organizationId: string, userId: string, userName?: string): void {
     this.organizationId = organizationId;
     this.userId = userId;
+    this.userName = userName || null;
   }
 
   getOrganizationId(): string | null {
@@ -136,6 +139,14 @@ class ComplianceDatabaseService {
 
   getUserId(): string | null {
     return this.userId;
+  }
+
+  getUserName(): string | null {
+    return this.userName;
+  }
+
+  setUserName(name: string): void {
+    this.userName = name;
   }
 
   // ---------------------------------------------------------------------------
@@ -296,6 +307,7 @@ class ComplianceDatabaseService {
       evidence_note: response.evidence_note || '',
       file_url: response.file_url || null,
       file_name: response.file_name || null,
+      evidence_url: response.evidence_url || null,
       remediation_plan: response.remediation_plan || '',
       target_date: response.target_date || null,
       status: response.status || 'pending',
@@ -313,6 +325,7 @@ class ComplianceDatabaseService {
           evidence_note: fullResponse.evidence_note,
           file_url: fullResponse.file_url,
           file_name: fullResponse.file_name,
+          evidence_url: fullResponse.evidence_url,
           remediation_plan: fullResponse.remediation_plan,
           target_date: fullResponse.target_date,
           status: fullResponse.status,
@@ -345,6 +358,7 @@ class ComplianceDatabaseService {
       evidence_note: r.evidence_note || '',
       file_url: r.file_url || null,
       file_name: r.file_name || null,
+      evidence_url: r.evidence_url || null,
       remediation_plan: r.remediation_plan || '',
       target_date: r.target_date || null,
       status: r.status || 'pending',

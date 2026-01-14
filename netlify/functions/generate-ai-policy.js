@@ -3,34 +3,50 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-// GRC Consultant System Prompt
-const GRC_SYSTEM_PROMPT = `You are a senior Governance, Risk, and Compliance (GRC) consultant with 20+ years of experience advising Fortune 500 companies on information security policies. You have deep expertise in SOC 2, ISO 27001, HIPAA, NIST CSF, and other major compliance frameworks.
+// GRC Auditor System Prompt
+const GRC_SYSTEM_PROMPT = `You are a Senior GRC (Governance, Risk, and Compliance) Auditor. Your goal is to generate formal, legally-defensible security policies.
 
-Your writing style is:
-- Professional and authoritative, suitable for board-level review
-- Clear and actionable, avoiding unnecessary jargon
-- Precise in defining responsibilities and requirements
-- Consistent with industry best practices and regulatory expectations
+**Operational Constraints:**
 
-When generating policy documents, you MUST include these mandatory sections:
+1. **Tone**: Professional, mandatory, and concise. Use "must" instead of "should."
 
-1. **PURPOSE** - A clear statement explaining why this policy exists and its importance to the organization's security posture
+2. **Alignment**: Ensure the policy satisfies requirements for SOC 2, ISO 27001, HIPAA, and NIST CSF 2.0.
 
-2. **SCOPE** - Explicit definition of who and what this policy applies to, including systems, personnel, and data
+3. **Context**: Reference specific control IDs (e.g., AM-008 for Endpoint Security, DP-002 for Encryption) when applicable.
 
-3. **POLICY STATEMENT** - The core requirements written in clear, measurable, and enforceable language. Each requirement should be specific and auditable.
+4. **No Fluff**: Do not include introductory "Here is your policy" text. Start immediately with the Document Header.
 
-4. **ENFORCEMENT** - Clear consequences for non-compliance and the process for addressing violations
+**Document Sections:**
 
-Additionally, include these supporting sections as appropriate:
-- Definitions of key terms
-- Roles and Responsibilities
-- Implementation Requirements
-- Exceptions Process
-- Related Documents
-- Review Cycle and Approval
+## HEADER
+- **Policy Name**: Clear, descriptive title
+- **Version**: 1.0
+- **Effective Date**: Current date
 
-Format the document professionally with proper Markdown headers. Use bullet points for lists and ensure all requirements are numbered for easy reference during audits.`;
+## PURPOSE
+Define the objective of the control. Be specific about what security outcome this policy achieves.
+
+## SCOPE
+Define the systems and personnel covered:
+- Which employees, contractors, and third parties are subject to this policy
+- Which systems, applications, networks, and data are covered
+- Any exclusions or exceptions
+
+## POLICY REQUIREMENTS
+Bulleted list of technical and administrative mandates. Each requirement must:
+- Use mandatory language ("must", "shall", "is required to")
+- Be specific and measurable
+- Be auditable and enforceable
+- Reference applicable framework controls where relevant
+
+## COMPLIANCE
+Statement on the consequences of policy violation:
+- Disciplinary actions for non-compliance
+- Reporting procedures for violations
+- Exception request process
+- Review and audit frequency
+
+Format using proper Markdown. All requirements must be numbered for audit traceability.`;
 
 // Input validation
 function validatePayload(payload) {
@@ -130,34 +146,37 @@ exports.handler = async (event, context) => {
     ).filter(Boolean).join(', ');
 
     // Build the user prompt
-    const userPrompt = `Generate a comprehensive security policy document for the following control:
+    const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-**Organization:** ${companyName}
-**Control ID:** ${controlId}
-**Control Title:** ${controlTitle || 'Security Control'}
-**Risk Level:** ${riskLevel}
-**Applicable Compliance Frameworks:** ${frameworkList || 'General Security Best Practices'}
+    const userPrompt = `Generate a formal, legally-defensible security policy for ${companyName}.
+
+**Control Details:**
+- **Control ID:** ${controlId}
+- **Control Title:** ${controlTitle || 'Security Control'}
+- **Risk Level:** ${riskLevel}
+- **Applicable Frameworks:** ${frameworkList || 'SOC 2, ISO 27001, HIPAA, NIST CSF 2.0'}
 
 **Control Description:**
 ${controlDescription || 'Implement appropriate security controls to protect organizational assets.'}
 
-**Security Guidance:**
+**Implementation Guidance:**
 ${guidance || 'Follow industry best practices for implementation.'}
 
-**Remediation Recommendations:**
+**Remediation Context:**
 ${remediationTip || 'Address identified gaps through documented procedures and technical controls.'}
 
-**Evidence Examples for Compliance:**
+**Evidence Requirements:**
 ${evidenceExamples.length > 0 ? evidenceExamples.map(e => `- ${e}`).join('\n') : '- Policy documentation\n- Implementation evidence\n- Audit logs'}
 
-Generate a formal, board-ready policy document that:
-1. Clearly addresses the control requirements
-2. Is specific to ${companyName}'s context
-3. Includes measurable and auditable requirements
-4. Maps to the applicable frameworks (${frameworkList || 'general best practices'})
-5. Can be immediately adopted with minimal customization
+**Instructions:**
+1. Use Effective Date: ${currentDate}
+2. Reference Control ID ${controlId} throughout the document
+3. Use mandatory language ("must", "shall") - never use "should"
+4. Make all requirements specific, measurable, and auditable
+5. Map requirements to ${frameworkList || 'SOC 2, ISO 27001, HIPAA, NIST CSF 2.0'} controls
+6. Start immediately with the HEADER section - no introduction text
 
-Use proper Markdown formatting with clear section headers.`;
+Generate the policy now.`;
 
     // Initialize Anthropic client
     const anthropic = new Anthropic({

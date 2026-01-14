@@ -1,15 +1,17 @@
 /**
- * Modular Compliance Engine - Refactored with useCompliance Hook
- * PostgreSQL-ready data models with unique EvidenceID generation
+ * Modular Compliance Engine - Command Center Design
+ * High-Trust Corporate/Enterprise GRC Platform
+ * Midnight & Steel Theme
  */
 
 import React, { useState, useMemo, createContext, useContext, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
-  Info, AlertTriangle, Zap, Moon, Sun, Shield, Upload, FileText, Lock, Users,
+  Info, AlertTriangle, Shield, Upload, FileText, Lock, Users,
   Server, Database, Eye, Settings, RefreshCw, CheckCircle2, Target, Activity,
-  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
+  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe, ExternalLink,
+  Award, ShieldCheck, ChevronRight, Menu,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -19,13 +21,19 @@ import IncidentDetail from './components/IncidentDetail';
 import ClientReporting from './components/ClientReporting';
 import RemediationEngine from './components/RemediationEngine';
 import TrustCenter from './components/TrustCenter';
+import CertificateGenerator from './components/CertificateGenerator';
+import AuditorVerification from './components/AuditorVerification';
+import AuditBundle from './components/AuditBundle';
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
 import type { Incident } from './types/incident.types';
 
-type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center';
+type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify';
 
-// Context
+// ============================================================================
+// CONTEXT
+// ============================================================================
+
 const ComplianceContext = createContext<UseComplianceReturn | null>(null);
 const useComplianceContext = () => {
   const ctx = useContext(ComplianceContext);
@@ -38,35 +46,81 @@ const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return <ComplianceContext.Provider value={compliance}>{children}</ComplianceContext.Provider>;
 };
 
-// UI Components
-const Glass: React.FC<{ children: React.ReactNode; className?: string; onClick?: () => void }> = ({ children, className = '', onClick }) => (
-  <div onClick={onClick} className={`relative rounded-2xl overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-slate-200/50 dark:border-white/10 shadow-lg ${onClick ? 'cursor-pointer hover:shadow-xl transition-shadow' : ''} ${className}`}>
+// ============================================================================
+// FRAMEWORK COLORS - Industrial Palette
+// ============================================================================
+
+const FRAMEWORK_COLORS: Record<string, string> = {
+  SOC2: '#8b5cf6',     // Violet
+  ISO27001: '#10b981', // Emerald
+  HIPAA: '#ec4899',    // Pink
+  NIST: '#f59e0b',     // Amber
+};
+
+// ============================================================================
+// UI COMPONENTS - Command Center Design System
+// ============================================================================
+
+const Card: React.FC<{ children: React.ReactNode; className?: string; onClick?: () => void }> = ({ children, className = '', onClick }) => (
+  <div
+    onClick={onClick}
+    className={`bg-midnight-800 border border-steel-800 shadow-card ${onClick ? 'cursor-pointer hover:border-steel-600 hover:shadow-card-hover transition-all duration-200' : ''} ${className}`}
+  >
     {children}
   </div>
 );
 
-const CircularGauge: React.FC<{ percentage: number; size?: number; strokeWidth?: number; color: string; label: string; count: string }> = 
-  ({ percentage, size = 110, strokeWidth = 8, color, label, count }) => {
+// Radial Glow Gauge Component
+const CircularGauge: React.FC<{
+  percentage: number;
+  size?: number;
+  strokeWidth?: number;
+  color: string;
+  label: string;
+  count: string;
+  showGlow?: boolean;
+}> = ({ percentage, size = 100, strokeWidth = 4, color, label, count, showGlow = true }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
+
+  const glowClass = percentage >= 80 ? 'gauge-glow-success' : percentage >= 50 ? 'gauge-glow-warning' : 'gauge-glow';
+
   return (
     <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: size, height: size }}>
-        <div className="absolute inset-3 rounded-full blur-xl opacity-25" style={{ backgroundColor: color }} />
-        <svg className="relative -rotate-90" width={size} height={size}>
-          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-slate-200 dark:text-white/10" />
-          <motion.circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
-            strokeDasharray={circumference} initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1, ease: 'easeOut' }} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
+      <div className={`relative ${showGlow ? glowClass : ''}`} style={{ width: size, height: size }}>
+        <svg className="-rotate-90" width={size} height={size}>
+          <circle
+            cx={size/2}
+            cy={size/2}
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            className="text-steel-800"
+          />
+          <motion.circle
+            cx={size/2}
+            cy={size/2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="square"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+            className="gauge-ring"
+          />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold text-slate-900 dark:text-white">{percentage}%</span>
+          <span className="text-2xl font-bold text-steel-100 tracking-tight">{percentage}%</span>
         </div>
       </div>
-      <div className="mt-1.5 text-center">
-        <div className="font-semibold text-slate-900 dark:text-white text-sm">{label}</div>
-        <div className="text-xs text-slate-500 dark:text-white/50">{count}</div>
+      <div className="mt-3 text-center">
+        <div className="font-semibold text-steel-200 text-sm tracking-tight">{label}</div>
+        <div className="text-xs text-steel-500">{count}</div>
       </div>
     </div>
   );
@@ -74,94 +128,161 @@ const CircularGauge: React.FC<{ percentage: number; size?: number; strokeWidth?:
 
 const DomainIcon: React.FC<{ domainId: string; className?: string }> = ({ domainId, className = 'w-4 h-4' }) => {
   const icons: Record<string, React.ReactNode> = {
-    access_control: <Lock className={className} />, asset_management: <Database className={className} />,
-    audit_logging: <FileText className={className} />, business_continuity: <RefreshCw className={className} />,
-    change_management: <Settings className={className} />, cryptography: <Shield className={className} />,
-    data_privacy: <Eye className={className} />, hr_security: <Users className={className} />,
-    incident_response: <AlertTriangle className={className} />, network_security: <Server className={className} />,
-    physical_security: <Building2 className={className} />, risk_management: <Target className={className} />,
+    access_control: <Lock className={className} />,
+    asset_management: <Database className={className} />,
+    audit_logging: <FileText className={className} />,
+    business_continuity: <RefreshCw className={className} />,
+    change_management: <Settings className={className} />,
+    cryptography: <Shield className={className} />,
+    data_privacy: <Eye className={className} />,
+    hr_security: <Users className={className} />,
+    incident_response: <AlertTriangle className={className} />,
+    network_security: <Server className={className} />,
+    physical_security: <Building2 className={className} />,
+    risk_management: <Target className={className} />,
     company_specific: <Briefcase className={className} />,
   };
   return <>{icons[domainId] || <Shield className={className} />}</>;
 };
 
-// PDF Export
-const generatePDF = (frameworks: Array<{ name: string; percentage: number; completed: number; total: number; color: string }>,
+// ============================================================================
+// PDF EXPORT
+// ============================================================================
+
+const generatePDF = (
+  frameworks: Array<{ name: string; percentage: number; completed: number; total: number; color: string }>,
   stats: { totalControls: number; answeredControls: number; compliantControls: number; gapControls: number; remainingControls: number },
-  gaps: MasterControl[]) => {
+  gaps: MasterControl[]
+) => {
   const printWindow = window.open('', '_blank');
   if (!printWindow) { alert('Please allow popups'); return; }
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
   printWindow.document.write(`<!DOCTYPE html><html><head><title>Compliance Summary - ${today}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:40px;color:#1e293b}
-.header{text-align:center;margin-bottom:40px;padding-bottom:20px;border-bottom:2px solid #e2e8f0}
-.header h1{font-size:28px;color:#0f172a;margin-bottom:8px}.header p{color:#64748b}
-.section{margin-bottom:32px}.section h2{font-size:18px;color:#334155;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #e2e8f0}
-.frameworks{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.framework-card{padding:20px;border-radius:12px;text-align:center;border:1px solid #e2e8f0}
-.framework-card .percentage{font-size:32px;font-weight:bold}.framework-card .name{font-size:14px;color:#64748b;margin-top:4px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.stat-card{padding:16px;border-radius:8px;background:#f8fafc}
-.stat-card .value{font-size:24px;font-weight:bold}.stat-card .label{font-size:12px;color:#64748b;text-transform:uppercase}
-.gaps-table{width:100%;border-collapse:collapse}.gaps-table th,.gaps-table td{padding:12px;text-align:left;border-bottom:1px solid #e2e8f0}
-.gaps-table th{background:#f8fafc;font-size:12px;text-transform:uppercase;color:#64748b}
-.severity{padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600}
-.severity-critical{background:#fef2f2;color:#dc2626}.severity-high{background:#fff7ed;color:#ea580c}
-.footer{margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:12px}
-@media print{body{padding:20px}}</style></head><body>
-<div class="header"><h1>Compliance Executive Summary</h1><p>Generated on ${today}</p></div>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 48px; color: #0F172A; background: white; }
+  .header { text-align: center; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 2px solid #6366f1; }
+  .header h1 { font-size: 28px; color: #0F172A; margin-bottom: 8px; font-weight: 700; letter-spacing: -0.025em; }
+  .header p { color: #64748B; font-size: 14px; }
+  .logo { font-size: 20px; font-weight: 700; color: #6366f1; margin-bottom: 16px; letter-spacing: -0.5px; }
+  .section { margin-bottom: 36px; }
+  .section h2 { font-size: 16px; color: #334155; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .frameworks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .framework-card { padding: 24px; text-align: center; border: 1px solid #E2E8F0; background: #F8FAFC; }
+  .framework-card .percentage { font-size: 32px; font-weight: 700; }
+  .framework-card .name { font-size: 13px; color: #64748B; margin-top: 4px; font-weight: 500; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat-card { padding: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; }
+  .stat-card .value { font-size: 28px; font-weight: 700; }
+  .stat-card .label { font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .gaps-table { width: 100%; border-collapse: collapse; }
+  .gaps-table th, .gaps-table td { padding: 14px; text-align: left; border-bottom: 1px solid #E2E8F0; }
+  .gaps-table th { background: #F8FAFC; font-size: 11px; text-transform: uppercase; color: #64748B; font-weight: 600; letter-spacing: 0.5px; }
+  .severity { padding: 4px 10px; font-size: 11px; font-weight: 600; }
+  .severity-critical { background: #FEE2E2; color: #DC2626; }
+  .severity-high { background: #FEF3C7; color: #D97706; }
+  .footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-size: 12px; }
+  @media print { body { padding: 24px; } }
+</style></head><body>
+<div class="header">
+  <div class="logo">LYDELL SECURITY</div>
+  <h1>Compliance Executive Summary</h1>
+  <p>Generated on ${today}</p>
+</div>
 <div class="section"><h2>Framework Compliance</h2><div class="frameworks">
-${frameworks.map(fw => `<div class="framework-card"><div class="percentage" style="color:${fw.color}">${fw.percentage}%</div><div class="name">${fw.name}</div><div style="font-size:12px;color:#94a3b8">${fw.completed}/${fw.total}</div></div>`).join('')}
+${frameworks.map(fw => `<div class="framework-card"><div class="percentage" style="color:${fw.color}">${fw.percentage}%</div><div class="name">${fw.name}</div><div style="font-size:11px;color:#94A3B8;margin-top:4px">${fw.completed}/${fw.total} controls</div></div>`).join('')}
 </div></div>
 <div class="section"><h2>Assessment Summary</h2><div class="stats">
-<div class="stat-card"><div class="value" style="color:#3b82f6">${Math.round((stats.answeredControls/stats.totalControls)*100)}%</div><div class="label">Assessed</div></div>
+<div class="stat-card"><div class="value" style="color:#6366f1">${Math.round((stats.answeredControls/stats.totalControls)*100)}%</div><div class="label">Assessed</div></div>
 <div class="stat-card"><div class="value" style="color:#10b981">${stats.compliantControls}</div><div class="label">Compliant</div></div>
-<div class="stat-card"><div class="value" style="color:#ef4444">${stats.gapControls}</div><div class="label">Gaps</div></div>
+<div class="stat-card"><div class="value" style="color:#f43f5e">${stats.gapControls}</div><div class="label">Gaps</div></div>
 <div class="stat-card"><div class="value" style="color:#f59e0b">${stats.remainingControls}</div><div class="label">Remaining</div></div>
 </div></div>
-${gaps.length > 0 ? `<div class="section"><h2>Action Required - Critical Gaps</h2><table class="gaps-table"><thead><tr><th>ID</th><th>Title</th><th>Severity</th></tr></thead><tbody>
+${gaps.length > 0 ? `<div class="section"><h2>Action Required - Critical Gaps</h2><table class="gaps-table"><thead><tr><th>Control ID</th><th>Title</th><th>Priority</th></tr></thead><tbody>
 ${gaps.map(g => `<tr><td><strong>${g.id}</strong></td><td>${g.title}</td><td><span class="severity severity-${g.riskLevel}">${g.riskLevel.toUpperCase()}</span></td></tr>`).join('')}
 </tbody></table></div>` : ''}
-<div class="footer"><p>Modular Compliance Engine</p></div>
+<div class="footer"><p>Lydell Security Compliance Engine | Confidential</p></div>
 <script>window.onload=()=>window.print();</script></body></html>`);
   printWindow.document.close();
 };
 
-// Mapping Sidebar
-const MappingSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+// ============================================================================
+// SYNC ACTIVITY SIDEBAR
+// ============================================================================
+
+const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const { syncNotifications } = useComplianceContext();
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/30 z-40 lg:hidden" />
-          <motion.div initial={{ x: 320 }} animate={{ x: 0 }} exit={{ x: 320 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-white/10 z-50 flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center"><Zap className="w-4 h-4 text-emerald-500" /></div>
-                <div><div className="font-semibold text-slate-900 dark:text-white text-sm">Sync Feed</div><div className="text-xs text-slate-500 dark:text-white/50">Real-time mapping</div></div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="modal-backdrop"
+          />
+          <motion.div
+            initial={{ x: 320 }}
+            animate={{ x: 0 }}
+            exit={{ x: 320 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed right-0 top-0 h-full w-80 glass-sidebar z-50 flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-steel-800">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-status-success/20 flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-status-success" />
+                </div>
+                <div>
+                  <div className="section-title">Sync Activity</div>
+                  <div className="section-subtitle">Real-time updates</div>
+                </div>
               </div>
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400"><X className="w-5 h-5" /></button>
+              <button
+                onClick={onClose}
+                className="btn-ghost p-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {syncNotifications.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                  <Activity className="w-12 h-12 text-slate-300 dark:text-white/20 mb-4" />
-                  <p className="text-sm text-slate-500 dark:text-white/50">Answer "Yes" to see framework sync</p>
+                  <div className="w-12 h-12 bg-steel-800 flex items-center justify-center mb-4">
+                    <Activity className="w-6 h-6 text-steel-500" />
+                  </div>
+                  <p className="text-sm text-steel-500">Complete controls to see framework sync activity</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {syncNotifications.map((n, i) => {
-                    const fw = FRAMEWORKS.find(f => f.id === n.frameworkId);
+                    const color = FRAMEWORK_COLORS[n.frameworkId] || '#6366f1';
                     return (
-                      <motion.div key={n.id} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
-                        className="p-3 rounded-xl border" style={{ backgroundColor: `${fw?.color}08`, borderColor: `${fw?.color}30` }}>
+                      <motion.div
+                        key={n.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.02 }}
+                        className="p-3 bg-midnight-800 border border-steel-800"
+                        style={{ borderLeftColor: color, borderLeftWidth: '2px' }}
+                      >
                         <div className="flex items-start gap-2.5">
-                          <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: fw?.color }} />
+                          <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color }} />
                           <div className="flex-1 min-w-0">
-                            <div className="text-[10px] font-semibold uppercase" style={{ color: fw?.color }}>Requirement Met</div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-white">{n.frameworkId} {n.clauseId}</div>
-                            <div className="text-xs text-slate-500 dark:text-white/50 truncate">{n.clauseTitle}</div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span
+                                className="pill"
+                                style={{ backgroundColor: `${color}20`, color, borderColor: `${color}30` }}
+                              >
+                                {n.frameworkId}
+                              </span>
+                              <span className="text-xs font-medium text-steel-200">{n.clauseId}</span>
+                            </div>
+                            <div className="text-xs text-steel-500 truncate">{n.clauseTitle}</div>
                           </div>
                         </div>
                       </motion.div>
@@ -177,17 +298,20 @@ const MappingSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   );
 };
 
-// Control Card
-const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
+// ============================================================================
+// PROTOCOL CARD (Control Assessment)
+// ============================================================================
+
+const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
   const { answerControl, getResponse, updateRemediation, getEvidenceByControlId } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
-  const [glowing, setGlowing] = useState(false);
   const [localRemediation, setLocalRemediation] = useState('');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const response = getResponse(control.id);
   const evidence = getEvidenceByControlId(control.id);
 
   useEffect(() => { setLocalRemediation(response?.remediationPlan || ''); }, [response?.remediationPlan]);
+
   useEffect(() => {
     if (response?.answer === 'no' && localRemediation !== response.remediationPlan) {
       clearTimeout(saveTimeoutRef.current);
@@ -198,93 +322,182 @@ const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (contr
 
   const handleAnswer = (answer: 'yes' | 'no' | 'partial' | 'na') => {
     answerControl(control.id, answer);
-    if (answer === 'yes') { setGlowing(true); setTimeout(() => setGlowing(false), 800); }
   };
 
-  const buttons: Array<{ value: 'yes' | 'no' | 'partial' | 'na'; label: string; color: string }> = [
-    { value: 'yes', label: 'Yes', color: 'emerald' }, { value: 'no', label: 'No', color: 'red' },
-    { value: 'partial', label: 'Partial', color: 'amber' }, { value: 'na', label: 'N/A', color: 'slate' },
+  const buttons: Array<{ value: 'yes' | 'no' | 'partial' | 'na'; label: string; activeClass: string; defaultClass: string }> = [
+    {
+      value: 'yes',
+      label: 'Yes',
+      activeClass: 'bg-status-success text-white border-status-success shadow-glow-success',
+      defaultClass: 'border-status-success/30 text-status-success hover:bg-status-success/10'
+    },
+    {
+      value: 'no',
+      label: 'No',
+      activeClass: 'bg-status-risk text-white border-status-risk shadow-glow-risk',
+      defaultClass: 'border-status-risk/30 text-status-risk hover:bg-status-risk/10'
+    },
+    {
+      value: 'partial',
+      label: 'Partial',
+      activeClass: 'bg-status-warning text-white border-status-warning shadow-glow-warning',
+      defaultClass: 'border-status-warning/30 text-status-warning hover:bg-status-warning/10'
+    },
+    {
+      value: 'na',
+      label: 'N/A',
+      activeClass: 'bg-steel-600 text-white border-steel-600',
+      defaultClass: 'border-steel-700 text-steel-400 hover:bg-steel-800'
+    },
   ];
 
+  const riskIndicatorClass = {
+    critical: 'protocol-card-critical',
+    high: 'protocol-card-high',
+    medium: 'protocol-card-medium',
+    low: 'protocol-card-low',
+  }[control.riskLevel];
+
   return (
-    <motion.div layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border overflow-hidden transition-all duration-300 ${glowing ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-white/10'}`}>
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 rounded">{control.id}</span>
-              {evidence && <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded" title="Evidence ID">{evidence.id.slice(0, 12)}...</span>}
-              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${control.riskLevel === 'critical' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : control.riskLevel === 'high' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' : control.riskLevel === 'medium' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
-                {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)} Impact
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`protocol-card ${riskIndicatorClass}`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-steel-800 text-steel-300">
+              {control.id}
+            </span>
+            {evidence && (
+              <span className="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success border border-status-success/20" title="Evidence ID">
+                {evidence.id.slice(0, 12)}...
               </span>
-            </div>
-            <h3 className="font-semibold text-slate-900 dark:text-white text-sm">{control.title}</h3>
+            )}
+            <span className={`badge ${control.riskLevel === 'critical' ? 'badge-risk' : control.riskLevel === 'high' ? 'badge-warning' : control.riskLevel === 'medium' ? 'badge-info' : 'badge-neutral'}`}>
+              {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)}
+            </span>
+            {/* Risk Glow Indicator */}
+            {(control.riskLevel === 'critical' || control.riskLevel === 'high') && !response?.answer && (
+              <span className={`status-dot risk-glow ${control.riskLevel === 'critical' ? 'status-dot-risk risk-glow-critical' : 'status-dot-warning risk-glow-high'}`} />
+            )}
           </div>
-          <button onClick={() => setShowInfo(!showInfo)} className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showInfo ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-blue-500'}`}>
-            <Info className="w-4 h-4" />
-          </button>
+          <h3 className="font-semibold text-steel-100 text-sm tracking-tight">{control.title}</h3>
         </div>
-        <p className="text-sm text-slate-600 dark:text-white/70 mb-4">{control.question}</p>
-        <div className="flex flex-wrap gap-1 mb-4">
-          {control.frameworkMappings.map(m => {
-            const fw = FRAMEWORKS.find(f => f.id === m.frameworkId);
-            return <span key={`${m.frameworkId}-${m.clauseId}`} className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded border" style={{ backgroundColor: `${fw?.color}10`, borderColor: `${fw?.color}30`, color: fw?.color }}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />{m.frameworkId} {m.clauseId}
-            </span>;
-          })}
-        </div>
-        <div className="flex gap-2">
-          {buttons.map(btn => {
-            const selected = response?.answer === btn.value;
-            const colors: Record<string, { selected: string; default: string }> = {
-              emerald: { selected: 'bg-emerald-500 text-white border-emerald-500', default: 'border-emerald-300 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10' },
-              red: { selected: 'bg-red-500 text-white border-red-500', default: 'border-red-300 dark:border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10' },
-              amber: { selected: 'bg-amber-500 text-white border-amber-500', default: 'border-amber-300 dark:border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10' },
-              slate: { selected: 'bg-slate-500 text-white border-slate-500', default: 'border-slate-300 dark:border-slate-500/40 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-500/10' },
-            };
-            return <button key={btn.value} onClick={() => handleAnswer(btn.value)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${selected ? colors[btn.color].selected : colors[btn.color].default}`}>{btn.label}</button>;
-          })}
-        </div>
-        {/* Policy Generator Buttons */}
-        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap gap-2">
-          <PolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
-          <AIPolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" controlResponse={response?.answer} />
-        </div>
+        <button
+          onClick={() => setShowInfo(!showInfo)}
+          className={`p-2 transition-colors flex-shrink-0 ${showInfo ? 'bg-accent-500 text-white' : 'bg-steel-800 text-steel-500 hover:text-accent-400'}`}
+        >
+          <Info className="w-4 h-4" />
+        </button>
       </div>
+
+      <p className="text-sm text-steel-400 mb-4">{control.question}</p>
+
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {control.frameworkMappings.map(m => {
+          const color = FRAMEWORK_COLORS[m.frameworkId] || '#6366f1';
+          return (
+            <span
+              key={`${m.frameworkId}-${m.clauseId}`}
+              className="pill"
+              style={{ backgroundColor: `${color}20`, color, borderColor: `${color}30` }}
+            >
+              {m.frameworkId} {m.clauseId}
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2">
+        {buttons.map(btn => {
+          const selected = response?.answer === btn.value;
+          return (
+            <button
+              key={btn.value}
+              onClick={() => handleAnswer(btn.value)}
+              className={`flex-1 py-2 px-3 text-sm font-medium border transition-all duration-200 ${selected ? btn.activeClass : btn.defaultClass}`}
+            >
+              {btn.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Policy Generator Buttons */}
+      <div className="mt-4 pt-4 border-t border-steel-800 flex flex-wrap gap-2">
+        <PolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
+        <AIPolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" controlResponse={response?.answer} />
+      </div>
+
       <AnimatePresence>
         {showInfo && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-slate-200 dark:border-white/10">
-            <div className="p-5 bg-blue-50 dark:bg-blue-900/20 space-y-3">
-              <div><h4 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase mb-1">Why This Matters</h4><p className="text-sm text-blue-600 dark:text-blue-200/80">{control.guidance}</p></div>
-              <div><h4 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase mb-1">Evidence Examples</h4>
-                <ul className="space-y-1">{control.evidenceExamples.map((ex, i) => <li key={i} className="flex items-start gap-2 text-sm text-blue-600 dark:text-blue-200/80"><Check className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />{ex}</li>)}</ul>
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-steel-800 mt-4"
+          >
+            <div className="pt-4 space-y-4">
+              <div className="p-3 bg-accent-500/10 border border-accent-500/20">
+                <h4 className="text-xs font-semibold text-accent-400 uppercase tracking-wider mb-1">Why This Matters</h4>
+                <p className="text-sm text-steel-300">{control.guidance}</p>
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-steel-400 uppercase tracking-wider mb-2">Evidence Examples</h4>
+                <ul className="space-y-1.5">
+                  {control.evidenceExamples.map((ex, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-steel-400">
+                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                      {ex}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {response?.answer === 'no' && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-red-200 dark:border-red-500/30">
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 space-y-3">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                <div className="flex-1"><div className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-1">Gap Detected</div><p className="text-sm text-red-600 dark:text-red-300">{control.remediationTip}</p></div>
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-status-risk/30 mt-4"
+          >
+            <div className="pt-4 space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-status-risk/10 border border-status-risk/20">
+                <AlertTriangle className="w-5 h-5 text-status-risk flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-xs font-bold text-status-risk uppercase tracking-wide mb-1">Gap Identified</div>
+                  <p className="text-sm text-steel-300">{control.remediationTip}</p>
+                </div>
               </div>
               {onOpenRemediation && (
                 <button
                   onClick={() => onOpenRemediation(control.id, control.title)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-blue-500/25 transition-shadow"
+                  className="btn-primary w-full"
                 >
                   <Wrench className="w-4 h-4" />
                   View Remediation Guide
                 </button>
               )}
               <div>
-                <label className="block text-xs font-semibold text-red-600 dark:text-red-400 uppercase mb-2">Remediation Plan</label>
-                <textarea value={localRemediation} onChange={e => setLocalRemediation(e.target.value)} placeholder="Document your plan..." className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-red-200 dark:border-red-500/30 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-red-500" rows={3} />
-                <div className="flex items-center gap-1 mt-1 text-xs text-red-400"><Save className="w-3 h-3" /> Auto-saves</div>
+                <label className="block text-xs font-semibold text-status-risk uppercase tracking-wide mb-2">Remediation Plan</label>
+                <textarea
+                  value={localRemediation}
+                  onChange={e => setLocalRemediation(e.target.value)}
+                  placeholder="Document your remediation plan..."
+                  className="input bg-midnight-900 border-status-risk/30 focus:border-status-risk resize-none"
+                  rows={3}
+                />
+                <div className="flex items-center gap-1 mt-1.5 text-xs text-steel-500">
+                  <Save className="w-3 h-3" /> Auto-saves
+                </div>
               </div>
             </div>
           </motion.div>
@@ -294,104 +507,207 @@ const ControlCard: React.FC<{ control: MasterControl; onOpenRemediation?: (contr
   );
 };
 
-// Dashboard Tab
+// ============================================================================
+// DASHBOARD TAB - Bento Grid Layout
+// ============================================================================
+
 const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomainMeta) => void }> = ({ onNavigate }) => {
   const { frameworkProgress, stats, criticalGaps, domainProgress, allDomains } = useComplianceContext();
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-slate-900 dark:text-white">Compliance Command Center</h1><p className="text-slate-500 dark:text-white/60">{stats.totalControls} controls mapped across 4 frameworks</p></div>
-        <button onClick={() => generatePDF(frameworkProgress, stats, criticalGaps)} className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-shadow">
-          <Download className="w-4 h-4" />Download Executive Summary
+        <div>
+          <h1 className="page-title">Command Center</h1>
+          <p className="page-subtitle">{stats.totalControls} controls across 4 frameworks</p>
+        </div>
+        <button
+          onClick={() => generatePDF(frameworkProgress, stats, criticalGaps)}
+          className="btn-primary"
+        >
+          <Download className="w-4 h-4" />
+          Export Report
         </button>
       </div>
-      <Glass className="p-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Framework Compliance</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {frameworkProgress.map((fw, i) => <motion.div key={fw.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}><CircularGauge percentage={fw.percentage} color={fw.color} label={fw.name} count={`${fw.completed}/${fw.total}`} /></motion.div>)}
-        </div>
-      </Glass>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Glass className="p-5">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase mb-4">Assessment Summary</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20"><div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.assessmentPercentage}%</div><div className="text-xs text-blue-600/70">Assessed</div></div>
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20"><div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.compliantControls}</div><div className="text-xs text-emerald-600/70">Compliant</div></div>
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20"><div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.gapControls}</div><div className="text-xs text-red-600/70">Gaps</div></div>
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20"><div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.remainingControls}</div><div className="text-xs text-amber-600/70">Remaining</div></div>
+
+      {/* Bento Grid - Top Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Overall Compliance Gauge - Top Left */}
+        <Card className="p-6 lg:row-span-2">
+          <h2 className="section-title mb-6">Overall Compliance</h2>
+          <div className="flex justify-center">
+            <CircularGauge
+              percentage={stats.assessmentPercentage}
+              size={160}
+              strokeWidth={6}
+              color="#6366f1"
+              label="Assessed"
+              count={`${stats.answeredControls}/${stats.totalControls} controls`}
+              showGlow
+            />
           </div>
-        </Glass>
-        <Glass className="p-5 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-3 mt-6">
+            <div className="bento-stat">
+              <div className="stat-value text-status-success">{stats.compliantControls}</div>
+              <div className="stat-label">Compliant</div>
+            </div>
+            <div className="bento-stat">
+              <div className="stat-value text-status-warning">{stats.remainingControls}</div>
+              <div className="stat-label">Remaining</div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Active Gaps - Top Right */}
+        <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-white/50 uppercase flex items-center gap-2"><AlertCircle className="w-4 h-4 text-red-500" />Action Required</h3>
-            <span className="text-xs text-slate-400">Top 5 High-Impact Gaps</span>
+            <h3 className="section-title flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-status-risk" />
+              Active Gaps
+            </h3>
+            <span className="badge-risk">{stats.gapControls}</span>
           </div>
           {criticalGaps.length === 0 ? (
-            <div className="flex items-center justify-center h-32"><div className="text-center"><CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500" /><p className="text-sm text-slate-400">No critical gaps!</p></div></div>
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-status-success/10 flex items-center justify-center mx-auto mb-2">
+                  <CheckCircle2 className="w-6 h-6 text-status-success" />
+                </div>
+                <p className="text-sm text-steel-500">No critical gaps identified</p>
+              </div>
+            </div>
           ) : (
-            <div className="space-y-2">
-              {criticalGaps.map(control => (
-                <button key={control.id} onClick={() => { const d = allDomains.find(x => (x.id as string) === (control.domain as string)); if (d) onNavigate('assessment', d); }}
-                  className="w-full p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 text-left hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors group">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {criticalGaps.slice(0, 5).map(control => (
+                <button
+                  key={control.id}
+                  onClick={() => { const d = allDomains.find(x => (x.id as string) === (control.domain as string)); if (d) onNavigate('assessment', d); }}
+                  className="w-full p-3 bg-status-risk/5 border border-status-risk/20 text-left hover:bg-status-risk/10 transition-colors group"
+                >
                   <div className="flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <span className={`status-dot ${control.riskLevel === 'critical' ? 'status-dot-risk' : 'status-dot-warning'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-mono text-red-600 dark:text-red-400">{control.id}</span>
-                        <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${control.riskLevel === 'critical' ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>{control.riskLevel.toUpperCase()}</span>
+                        <span className="text-xs font-mono text-steel-400">{control.id}</span>
+                        <span className={`badge ${control.riskLevel === 'critical' ? 'badge-risk' : 'badge-warning'}`}>
+                          {control.riskLevel.toUpperCase()}
+                        </span>
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-white/80 truncate">{control.title}</p>
+                      <p className="text-sm text-steel-200 truncate">{control.title}</p>
                     </div>
+                    <ChevronRight className="w-4 h-4 text-steel-600 group-hover:text-status-risk transition-colors" />
                   </div>
                 </button>
               ))}
             </div>
           )}
-        </Glass>
+        </Card>
+
+        {/* Framework Progress Crosswalk - Bottom */}
+        <Card className="p-6 lg:col-span-2">
+          <h2 className="section-title mb-6">Framework Progress Crosswalk</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {frameworkProgress.map((fw, i) => (
+              <motion.div
+                key={fw.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <CircularGauge
+                  percentage={fw.percentage}
+                  size={80}
+                  strokeWidth={4}
+                  color={FRAMEWORK_COLORS[fw.id] || fw.color}
+                  label={fw.name}
+                  count={`${fw.completed}/${fw.total}`}
+                  showGlow={false}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </Card>
       </div>
-      <Glass className="p-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Domain Progress</h2>
+
+      {/* Domain Progress */}
+      <Card className="p-6">
+        <h2 className="section-title mb-4">Domain Progress</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {domainProgress.map((domain, i) => {
             const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
             const complete = domain.percentage === 100 && domain.total > 0;
+            const color = FRAMEWORK_COLORS.SOC2;
+
             return (
-              <motion.button key={domain.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.02 }}
+              <motion.button
+                key={domain.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 + i * 0.02 }}
                 onClick={() => domainMeta && onNavigate('assessment', domainMeta)}
-                className={`p-4 rounded-xl text-left transition-colors ${complete ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/30' : 'bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${domain.color}20` }}><div style={{ color: domain.color }}><DomainIcon domainId={domain.id} /></div></div>
-                  {complete && <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
-                </div>
-                <div className="font-medium text-sm text-slate-900 dark:text-white mb-2 truncate">{domain.title}</div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${domain.percentage}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full" style={{ backgroundColor: complete ? '#10B981' : domain.color }} />
+                className={`p-4 text-left transition-all duration-200 border ${complete
+                  ? 'bg-status-success/5 border-status-success/30'
+                  : 'bg-midnight-800 border-steel-800 hover:border-accent-500/30'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div
+                    className="w-8 h-8 flex items-center justify-center"
+                    style={{ backgroundColor: `${color}15` }}
+                  >
+                    <div style={{ color }}><DomainIcon domainId={domain.id} /></div>
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-white/50 font-medium">{domain.answered}/{domain.total}</span>
+                  {complete && (
+                    <div className="w-5 h-5 bg-status-success flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="font-medium text-sm text-steel-200 mb-2 truncate tracking-tight">{domain.title}</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 progress-bar">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${domain.percentage}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      className="progress-fill"
+                      style={{ backgroundColor: complete ? '#10b981' : color }}
+                    />
+                  </div>
+                  <span className="text-xs text-steel-500 font-medium">{domain.answered}/{domain.total}</span>
                 </div>
               </motion.button>
             );
           })}
         </div>
-      </Glass>
+      </Card>
     </div>
   );
 };
 
-// Assessment Tab
+// ============================================================================
+// ASSESSMENT TAB
+// ============================================================================
+
 const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ initialDomain }) => {
   const { allDomains, domainProgress, getControlsByDomain, allControls } = useComplianceContext();
   const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || allDomains[0]);
   const [search, setSearch] = useState('');
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
+
   const controls = useMemo(() => {
     if (search.trim()) {
       const q = search.toLowerCase();
-      return allControls.filter(c => c.id.toLowerCase().includes(q) || c.title.toLowerCase().includes(q) || c.keywords.some(k => k.toLowerCase().includes(q)));
+      return allControls.filter(c =>
+        c.id.toLowerCase().includes(q) ||
+        c.title.toLowerCase().includes(q) ||
+        c.keywords.some(k => k.toLowerCase().includes(q))
+      );
     }
     return getControlsByDomain(activeDomain.id as string);
   }, [activeDomain.id, search, allControls, getControlsByDomain]);
+
   const currentDomainProgress = domainProgress.find(d => d.id === (activeDomain.id as string));
 
   const handleOpenRemediation = (controlId: string, controlTitle: string) => {
@@ -400,58 +716,138 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
 
   return (
     <div className="flex gap-6">
+      {/* Domain Sidebar */}
       <div className="w-64 flex-shrink-0 hidden lg:block">
-        <Glass className="p-3 sticky top-4">
-          <div className="text-xs font-semibold text-slate-500 dark:text-white/50 uppercase px-3 mb-3">Compliance Domains</div>
+        <Card className="p-3 sticky top-4">
+          <div className="stat-label px-3 mb-3">
+            Compliance Domains
+          </div>
           <div className="space-y-1 max-h-[calc(100vh-180px)] overflow-y-auto">
             {domainProgress.map(domain => {
               const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
               const isActive = (activeDomain.id as string) === domain.id && !search;
               const complete = domain.percentage === 100 && domain.total > 0;
+              const color = FRAMEWORK_COLORS.SOC2;
+
               return (
-                <button key={domain.id} onClick={() => { if (domainMeta) setActiveDomain(domainMeta); setSearch(''); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}>
+                <button
+                  key={domain.id}
+                  onClick={() => { if (domainMeta) setActiveDomain(domainMeta); setSearch(''); }}
+                  className={`w-full text-left px-3 py-2.5 transition-all ${isActive
+                    ? 'nav-item-active'
+                    : 'nav-item'
+                  }`}
+                >
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${domain.color}15` }}><div style={{ color: domain.color }}><DomainIcon domainId={domain.id} /></div></div>
+                    <div
+                      className="w-7 h-7 flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${color}10` }}
+                    >
+                      <div style={{ color }}><DomainIcon domainId={domain.id} /></div>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium truncate ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-white/80'}`}>{domain.title}</span>
-                        <span className="text-xs font-semibold text-slate-500 dark:text-white/50 ml-2">{domain.answered}/{domain.total}</span>
+                        <span className={`text-sm font-medium truncate ${isActive ? 'text-accent-400' : 'text-steel-300'}`}>
+                          {domain.title}
+                        </span>
+                        <span className="text-xs font-medium text-steel-500 ml-2">{domain.answered}/{domain.total}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <div className="flex-1 h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10B981' : domain.color }} /></div>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <div className="flex-1 progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10b981' : color }}
+                          />
+                        </div>
                       </div>
                     </div>
-                    {complete && <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0"><Check className="w-3 h-3 text-white" /></div>}
+                    {complete && (
+                      <div className="w-5 h-5 bg-status-success flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                   </div>
                 </button>
               );
             })}
           </div>
-        </Glass>
+        </Card>
       </div>
+
+      {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-4">
+        {/* Search */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search controls..."
-            className="w-full pl-12 pr-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          {search && <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>}
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search controls..."
+            className="input-search w-full"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-steel-500 hover:text-steel-300">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
+
+        {/* Domain Header */}
         {!search && currentDomainProgress && (
-          <Glass className="p-5">
+          <Card className="p-5">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${currentDomainProgress.color}15` }}><div style={{ color: currentDomainProgress.color }} className="scale-125"><DomainIcon domainId={currentDomainProgress.id} /></div></div>
-              <div className="flex-1"><h2 className="text-xl font-bold text-slate-900 dark:text-white">{currentDomainProgress.title}</h2><p className="text-sm text-slate-500 dark:text-white/60">{activeDomain.description}</p></div>
-              <div className="text-right"><div className="text-2xl font-bold" style={{ color: currentDomainProgress.color }}>{currentDomainProgress.answered}/{currentDomainProgress.total}</div><div className="text-xs text-slate-500 dark:text-white/50">Completed</div></div>
+              <div
+                className="w-12 h-12 flex items-center justify-center"
+                style={{ backgroundColor: `${FRAMEWORK_COLORS.SOC2}10` }}
+              >
+                <div style={{ color: FRAMEWORK_COLORS.SOC2 }} className="scale-125">
+                  <DomainIcon domainId={currentDomainProgress.id} />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h2 className="page-title">{currentDomainProgress.title}</h2>
+                <p className="page-subtitle">{activeDomain.description}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-accent-400">{currentDomainProgress.answered}/{currentDomainProgress.total}</div>
+                <div className="text-xs text-steel-500">Completed</div>
+              </div>
             </div>
-          </Glass>
+          </Card>
         )}
-        {search && <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30"><p className="text-blue-700 dark:text-blue-300">Found <strong>{controls.length}</strong> controls matching "{search}"</p></div>}
+
+        {/* Search Results Info */}
+        {search && (
+          <div className="p-4 bg-accent-500/10 border border-accent-500/20">
+            <p className="text-accent-400">
+              Found <strong>{controls.length}</strong> controls matching "{search}"
+            </p>
+          </div>
+        )}
+
+        {/* Controls List */}
         <div className="space-y-3">
           {controls.length === 0 ? (
-            <div className="text-center py-16"><Search className="w-12 h-12 text-slate-300 dark:text-white/20 mx-auto mb-4" /><p className="text-slate-500 dark:text-white/50">{(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}</p></div>
+            <div className="text-center py-16">
+              <div className="w-12 h-12 bg-steel-800 flex items-center justify-center mx-auto mb-4">
+                <Search className="w-6 h-6 text-steel-500" />
+              </div>
+              <p className="text-steel-500">
+                {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
+              </p>
+            </div>
           ) : (
-            controls.map((control, i) => <motion.div key={control.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}><ControlCard control={control} onOpenRemediation={handleOpenRemediation} /></motion.div>)
+            controls.map((control, i) => (
+              <motion.div
+                key={control.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
+              >
+                <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
+              </motion.div>
+            ))
           )}
         </div>
       </div>
@@ -467,22 +863,30 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   );
 };
 
-// Evidence Tab
+// ============================================================================
+// EVIDENCE TAB
+// ============================================================================
+
 const EvidenceTab: React.FC = () => {
   const { getAllEvidence, updateEvidence, getControlById } = useComplianceContext();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'review' | 'final'>('all');
   const saveTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const allEvidence = getAllEvidence();
+
   const filteredEvidence = useMemo(() => {
     let result = allEvidence;
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.filter(e => { const control = getControlById(e.controlId); return e.controlId.toLowerCase().includes(q) || control?.title.toLowerCase().includes(q) || e.notes.toLowerCase().includes(q); });
+      result = result.filter(e => {
+        const control = getControlById(e.controlId);
+        return e.controlId.toLowerCase().includes(q) || control?.title.toLowerCase().includes(q) || e.notes.toLowerCase().includes(q);
+      });
     }
     if (statusFilter !== 'all') result = result.filter(e => e.status === statusFilter);
     return result;
   }, [allEvidence, search, statusFilter, getControlById]);
+
   const handleNotesChange = (evidenceId: string, notes: string) => {
     clearTimeout(saveTimeoutRef.current[evidenceId]);
     saveTimeoutRef.current[evidenceId] = setTimeout(() => updateEvidence(evidenceId, { notes }), 300);
@@ -490,66 +894,154 @@ const EvidenceTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-slate-900 dark:text-white">Evidence Locker</h1><p className="text-slate-500 dark:text-white/60">Manage documentation for audit preparation</p></div>
-        <div className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl font-medium">{allEvidence.length} evidence records</div>
+        <div>
+          <h1 className="page-title">Evidence Repository</h1>
+          <p className="page-subtitle">Manage audit documentation and evidence</p>
+        </div>
+        <div className="badge-success">
+          {allEvidence.length} Records
+        </div>
       </div>
+
+      {/* Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="w-full pl-12 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search evidence..."
+            className="input-search w-full"
+          />
         </div>
         <div className="relative">
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="appearance-none px-4 py-2.5 pr-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Status</option><option value="draft">Draft</option><option value="review">Review</option><option value="final">Final</option>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="input appearance-none pr-10"
+          >
+            <option value="all">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="review">Review</option>
+            <option value="final">Final</option>
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel-500 pointer-events-none" />
         </div>
       </div>
+
+      {/* Evidence Table */}
       {allEvidence.length === 0 ? (
-        <Glass className="p-16 text-center"><FolderOpen className="w-16 h-16 text-slate-300 dark:text-white/20 mx-auto mb-4" /><h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Evidence Yet</h3><p className="text-slate-500 dark:text-white/60">Complete controls with "Yes" to generate evidence records</p></Glass>
+        <Card className="p-16 text-center">
+          <div className="w-16 h-16 bg-steel-800 flex items-center justify-center mx-auto mb-4">
+            <FolderOpen className="w-8 h-8 text-steel-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-steel-100 mb-2 tracking-tight">No Evidence Yet</h3>
+          <p className="text-steel-500">Complete controls with "Yes" to generate evidence records</p>
+        </Card>
       ) : filteredEvidence.length === 0 ? (
-        <Glass className="p-16 text-center"><Search className="w-12 h-12 text-slate-300 dark:text-white/20 mx-auto mb-4" /><p className="text-slate-500 dark:text-white/50">No evidence matches your search</p></Glass>
+        <Card className="p-16 text-center">
+          <div className="w-12 h-12 bg-steel-800 flex items-center justify-center mx-auto mb-4">
+            <Search className="w-6 h-6 text-steel-500" />
+          </div>
+          <p className="text-steel-500">No evidence matches your search</p>
+        </Card>
       ) : (
-        <Glass className="overflow-hidden">
+        <Card className="overflow-hidden">
           <table className="w-full">
-            <thead><tr className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Control</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Evidence ID</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase w-28">Status</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase">Notes</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-white/50 uppercase w-24">Actions</th>
-            </tr></thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+            <thead>
+              <tr className="border-b border-steel-800">
+                <th className="table-header">Control</th>
+                <th className="table-header">Evidence ID</th>
+                <th className="table-header w-28">Status</th>
+                <th className="table-header">Notes</th>
+                <th className="table-header w-32">Policy</th>
+                <th className="table-header w-24">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {filteredEvidence.map(entry => {
                 const control = getControlById(entry.controlId);
+                const policyUrl = entry.fileUrls && entry.fileUrls.length > 0 ? entry.fileUrls.find(url => url.includes('policy')) || entry.fileUrls[0] : null;
                 return (
-                  <tr key={entry.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
-                    <td className="px-5 py-4"><div className="flex items-center gap-2"><span className="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-white/10 rounded">{entry.controlId}</span><span className="text-sm text-slate-900 dark:text-white font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span></div></td>
-                    <td className="px-5 py-4"><span className="px-2 py-0.5 text-xs font-mono bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded">{entry.id.slice(0, 16)}...</span></td>
-                    <td className="px-5 py-4"><select value={entry.status} onChange={e => updateEvidence(entry.id, { status: e.target.value as 'draft' | 'review' | 'final' })} className="px-2 py-1 text-xs rounded-lg bg-transparent border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="draft">Draft</option><option value="review">Review</option><option value="final">Final</option></select></td>
-                    <td className="px-5 py-4"><input type="text" defaultValue={entry.notes} onChange={e => handleNotesChange(entry.id, e.target.value)} placeholder="Add notes..." className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-slate-200 dark:hover:border-white/10 focus:border-blue-500 rounded-lg focus:outline-none transition-colors" /></td>
-                    <td className="px-5 py-4"><button className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg" title="Upload file"><Upload className="w-4 h-4" /></button></td>
+                  <tr key={entry.id} className="table-row">
+                    <td className="table-cell">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 text-xs font-mono bg-steel-800 text-steel-400">{entry.controlId}</span>
+                        <span className="text-sm text-steel-200 font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <span className="px-2 py-0.5 text-xs font-mono bg-status-success/10 text-status-success">{entry.id.slice(0, 16)}...</span>
+                    </td>
+                    <td className="table-cell">
+                      <select
+                        value={entry.status}
+                        onChange={e => updateEvidence(entry.id, { status: e.target.value as 'draft' | 'review' | 'final' })}
+                        className="px-2 py-1 text-xs bg-transparent border border-steel-700 text-steel-300 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="review">Review</option>
+                        <option value="final">Final</option>
+                      </select>
+                    </td>
+                    <td className="table-cell">
+                      <input
+                        type="text"
+                        defaultValue={entry.notes}
+                        onChange={e => handleNotesChange(entry.id, e.target.value)}
+                        placeholder="Add notes..."
+                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-steel-700 focus:border-accent-500 text-steel-300 focus:outline-none transition-colors"
+                      />
+                    </td>
+                    <td className="table-cell">
+                      {policyUrl ? (
+                        <a
+                          href={policyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-500/10 text-accent-400 text-xs font-medium hover:bg-accent-500/20 transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          View PDF
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-steel-600">No policy</span>
+                      )}
+                    </td>
+                    <td className="table-cell">
+                      <button className="p-1.5 text-steel-500 hover:text-accent-400 hover:bg-accent-500/10 transition-colors" title="Upload file">
+                        <Upload className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </Glass>
+        </Card>
       )}
     </div>
   );
 };
 
-// Company Tab
+// ============================================================================
+// COMPANY TAB
+// ============================================================================
+
 const CompanyTab: React.FC = () => {
   const { customControls, addCustomControl, deleteCustomControl } = useComplianceContext();
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', question: '', riskLevel: 'medium' as 'low' | 'medium' | 'high' | 'critical' });
   const [selectedFrameworks, setSelectedFrameworks] = useState<FrameworkId[]>([]);
   const [clauseInputs, setClauseInputs] = useState<Record<FrameworkId, string>>({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '' });
+
   const toggleFramework = (fwId: FrameworkId) => setSelectedFrameworks(prev => prev.includes(fwId) ? prev.filter(f => f !== fwId) : [...prev, fwId]);
   const resetForm = () => { setForm({ title: '', description: '', question: '', riskLevel: 'medium' }); setSelectedFrameworks([]); setClauseInputs({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '' }); };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (form.title && form.description) {
@@ -561,57 +1053,189 @@ const CompanyTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-slate-900 dark:text-white">Company Controls</h1><p className="text-slate-500 dark:text-white/60">Custom controls appear in "Company Specific" domain</p></div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/25"><Plus className="w-4 h-4" />Create New Control</button>
+        <div>
+          <h1 className="page-title">Custom Controls</h1>
+          <p className="page-subtitle">Organization-specific compliance requirements</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="btn-primary"
+        >
+          <Plus className="w-4 h-4" />
+          Add Control
+        </button>
       </div>
+
+      {/* Controls Grid */}
       {customControls.length === 0 ? (
-        <Glass className="p-16 text-center"><Briefcase className="w-16 h-16 text-slate-300 dark:text-white/20 mx-auto mb-4" /><h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Custom Controls</h3><p className="text-slate-500 dark:text-white/60 mb-4">Create controls specific to your organization</p></Glass>
+        <Card className="p-16 text-center">
+          <div className="w-16 h-16 bg-steel-800 flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-steel-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-steel-100 mb-2 tracking-tight">No Custom Controls</h3>
+          <p className="text-steel-500 mb-4">Create controls specific to your organization</p>
+        </Card>
       ) : (
         <div className="grid gap-4">
           {customControls.map(c => (
-            <Glass key={c.id} className="p-5">
+            <Card key={c.id} className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2"><span className="px-2 py-0.5 text-xs font-mono bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded">{c.id}</span><span className="px-2 py-0.5 text-[10px] font-medium bg-violet-500/20 text-violet-500 rounded">CUSTOM</span></div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{c.title}</h3>
-                  <p className="text-sm text-slate-600 dark:text-white/70 mb-3">{c.description}</p>
-                  {c.frameworkMappings.length > 0 && <div className="flex flex-wrap gap-1">{c.frameworkMappings.map((m, i) => { const fw = FRAMEWORKS.find(f => f.id === m.frameworkId); return <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded border" style={{ borderColor: `${fw?.color}40`, color: fw?.color, backgroundColor: `${fw?.color}10` }}><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: fw?.color }} />{m.frameworkId} {m.clauseId}</span>; })}</div>}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 text-xs font-mono bg-accent-500/10 text-accent-400">{c.id}</span>
+                    <span className="badge-info">CUSTOM</span>
+                  </div>
+                  <h3 className="font-semibold text-steel-100 mb-1 tracking-tight">{c.title}</h3>
+                  <p className="text-sm text-steel-400 mb-3">{c.description}</p>
+                  {c.frameworkMappings.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {c.frameworkMappings.map((m, i) => {
+                        const color = FRAMEWORK_COLORS[m.frameworkId] || '#6366f1';
+                        return (
+                          <span
+                            key={i}
+                            className="pill"
+                            style={{ backgroundColor: `${color}20`, color, borderColor: `${color}30` }}
+                          >
+                            {m.frameworkId} {m.clauseId}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => deleteCustomControl(c.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><X className="w-4 h-4" /></button>
+                <button
+                  onClick={() => deleteCustomControl(c.id)}
+                  className="p-2 text-steel-500 hover:text-status-risk hover:bg-status-risk/10 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            </Glass>
+            </Card>
           ))}
         </div>
       )}
+
+      {/* Create Modal */}
       <AnimatePresence>
         {showModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => { setShowModal(false); resetForm(); }}>
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={e => e.stopPropagation()} className="w-full max-w-xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-              <div className="p-5 border-b border-slate-200 dark:border-white/10"><h2 className="text-lg font-bold text-slate-900 dark:text-white">Create New Control</h2><p className="text-sm text-slate-500 dark:text-white/60">This control will appear in "Company Specific" domain</p></div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-backdrop flex items-center justify-center p-4"
+            onClick={() => { setShowModal(false); resetForm(); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="modal-content w-full max-w-xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-5 border-b border-steel-700">
+                <h2 className="text-lg font-bold text-steel-100 tracking-tight">Create Custom Control</h2>
+                <p className="text-sm text-steel-500">Add organization-specific requirements</p>
+              </div>
               <form onSubmit={submit} className="p-5 space-y-4">
-                <div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Control Name *</label><input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500" placeholder="e.g., Weekly Security Standups" required /></div>
-                <div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Description *</label><textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-violet-500" rows={2} placeholder="Describe what this control does..." required /></div>
-                <div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Assessment Question</label><input type="text" value={form.question} onChange={e => setForm(p => ({ ...p, question: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500" placeholder="e.g., Are weekly security standups conducted?" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-1.5">Risk Level</label><select value={form.riskLevel} onChange={e => setForm(p => ({ ...p, riskLevel: e.target.value as typeof form.riskLevel }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div>
-                <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-white/80 mb-3">Framework Mapping (Multi-select)</label>
+                <div>
+                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Control Name *</label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                    className="input"
+                    placeholder="e.g., Weekly Security Standups"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Description *</label>
+                  <textarea
+                    value={form.description}
+                    onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                    className="input resize-none"
+                    rows={2}
+                    placeholder="Describe what this control does..."
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Assessment Question</label>
+                  <input
+                    type="text"
+                    value={form.question}
+                    onChange={e => setForm(p => ({ ...p, question: e.target.value }))}
+                    className="input"
+                    placeholder="e.g., Are weekly security standups conducted?"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-steel-300 mb-1.5">Risk Level</label>
+                  <select
+                    value={form.riskLevel}
+                    onChange={e => setForm(p => ({ ...p, riskLevel: e.target.value as typeof form.riskLevel }))}
+                    className="input"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div className="p-4 bg-midnight-900 border border-steel-800">
+                  <label className="block text-sm font-medium text-steel-300 mb-3">Framework Mapping</label>
                   <div className="space-y-3">
                     {FRAMEWORKS.map(fw => {
                       const isSelected = selectedFrameworks.includes(fw.id);
+                      const color = FRAMEWORK_COLORS[fw.id] || '#6366f1';
                       return (
                         <div key={fw.id} className="flex items-center gap-3">
-                          <button type="button" onClick={() => toggleFramework(fw.id)} className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${isSelected ? 'border-current bg-opacity-10' : 'border-slate-200 dark:border-white/10 hover:border-slate-300'}`} style={isSelected ? { borderColor: fw.color, backgroundColor: `${fw.color}10`, color: fw.color } : undefined}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${isSelected ? '' : 'border-slate-300 dark:border-white/30'}`} style={isSelected ? { borderColor: fw.color, backgroundColor: fw.color } : undefined}>{isSelected && <Check className="w-3 h-3 text-white" />}</div>
-                            <span className={`text-sm font-medium ${isSelected ? '' : 'text-slate-600 dark:text-white/70'}`}>{fw.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleFramework(fw.id)}
+                            className={`flex items-center gap-2 px-3 py-2 border transition-all ${isSelected ? '' : 'border-steel-700 hover:border-steel-600'}`}
+                            style={isSelected ? { borderColor: color, backgroundColor: `${color}10`, color } : undefined}
+                          >
+                            <div
+                              className={`w-4 h-4 border flex items-center justify-center ${isSelected ? '' : 'border-steel-600'}`}
+                              style={isSelected ? { borderColor: color, backgroundColor: color } : undefined}
+                            >
+                              {isSelected && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                            <span className={`text-sm font-medium ${isSelected ? '' : 'text-steel-400'}`}>{fw.name}</span>
                           </button>
-                          {isSelected && <input type="text" value={clauseInputs[fw.id]} onChange={e => setClauseInputs(p => ({ ...p, [fw.id]: e.target.value }))} placeholder={`${fw.id} Clause ID`} className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500" />}
+                          {isSelected && (
+                            <input
+                              type="text"
+                              value={clauseInputs[fw.id]}
+                              onChange={e => setClauseInputs(p => ({ ...p, [fw.id]: e.target.value }))}
+                              placeholder={`${fw.id} Clause ID`}
+                              className="input flex-1"
+                            />
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2 text-slate-600 dark:text-white/60">Cancel</button><button type="submit" className="px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium">Create Control</button></div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowModal(false); resetForm(); }}
+                    className="btn-ghost"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    Create Control
+                  </button>
+                </div>
               </form>
             </motion.div>
           </motion.div>
@@ -621,63 +1245,218 @@ const CompanyTab: React.FC = () => {
   );
 };
 
-// Main App
-const AppContent: React.FC = () => {
-  const compliance = useComplianceContext();
-  const ir = useIncidentResponse();
-  const { state, toggleDarkMode, syncNotifications, stats } = compliance;
-  const { darkMode } = state;
-  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
-  const handleNavigate = (tab: TabId, domain?: ComplianceDomainMeta) => { setActiveTab(tab); if (domain) setSelectedDomain(domain); };
+// ============================================================================
+// COMMAND CENTER SIDEBAR NAVIGATION
+// ============================================================================
+
+const CommandSidebar: React.FC<{
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
+  incidentCount: number;
+  syncCount: number;
+  onSyncClick: () => void;
+  expanded: boolean;
+  onToggle: () => void;
+}> = ({ activeTab, onTabChange, incidentCount, syncCount, onSyncClick, expanded, onToggle }) => {
   const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number }> = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-4 h-4" /> },
-    { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-4 h-4" />, badge: ir.stats.activeIncidents },
-    { id: 'reporting', label: 'Reporting', icon: <FileText className="w-4 h-4" /> },
-    { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-4 h-4" /> },
-    { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-4 h-4" /> },
-    { id: 'company', label: 'Company', icon: <Building2 className="w-4 h-4" /> },
+    { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-5 h-5" /> },
+    { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-5 h-5" />, badge: incidentCount },
+    { id: 'reporting', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
+    { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-5 h-5" /> },
+    { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-5 h-5" /> },
+    { id: 'certificate', label: 'Certificate', icon: <Award className="w-5 h-5" /> },
+    { id: 'verify', label: 'Verify', icon: <ShieldCheck className="w-5 h-5" /> },
+    { id: 'company', label: 'Company', icon: <Building2 className="w-5 h-5" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
-      <nav className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-b border-slate-200 dark:border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-violet-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20"><Shield className="w-5 h-5 text-white" /></div>
-              <div className="hidden sm:block"><span className="font-bold text-slate-900 dark:text-white">Compliance Engine</span><span className="text-xs text-slate-500 dark:text-white/50 ml-2">{stats.totalControls} Controls</span></div>
-            </div>
-            <div className="flex-1 flex items-center justify-center overflow-x-auto">
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1">
-                {tabs.map(tab => <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedIncident(null); }} className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'}`}>{tab.icon}<span className="hidden lg:inline">{tab.label}</span>{tab.badge !== undefined && tab.badge > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{tab.badge}</span>}</button>)}
+    <aside className={`glass-sidebar fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-16'}`}>
+      {/* Logo */}
+      <div className="flex items-center h-16 px-4 border-b border-steel-800">
+        <div className="w-8 h-8 bg-accent-500 flex items-center justify-center flex-shrink-0">
+          <Shield className="w-5 h-5 text-white" />
+        </div>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="ml-3 overflow-hidden"
+          >
+            <span className="font-bold text-steel-100 text-sm tracking-tight whitespace-nowrap">LYDELL</span>
+            <span className="text-xs text-steel-500 ml-1">GRC</span>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 py-4 overflow-y-auto">
+        <div className="space-y-1 px-2">
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <div key={tab.id} className="relative group">
+                <button
+                  onClick={() => onTabChange(tab.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 ${isActive
+                    ? 'bg-accent-500/10 text-accent-400 border-l-2 border-accent-500'
+                    : 'text-steel-400 hover:text-steel-200 hover:bg-steel-800/50 border-l-2 border-transparent'
+                  }`}
+                >
+                  <span className="flex-shrink-0">{tab.icon}</span>
+                  {expanded && (
+                    <span className="text-sm font-medium truncate">{tab.label}</span>
+                  )}
+                  {tab.badge !== undefined && tab.badge > 0 && (
+                    <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-status-risk text-white text-[10px] font-bold flex items-center justify-center`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+                {/* Tooltip */}
+                {!expanded && (
+                  <div className="nav-tooltip">
+                    {tab.label}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowSidebar(!showSidebar)} className={`relative p-2.5 rounded-xl transition-all ${showSidebar ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
-                <Zap className="w-5 h-5" />
-                {syncNotifications.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{Math.min(syncNotifications.length, 99)}</span>}
-              </button>
-              <button onClick={toggleDarkMode} className="p-2.5 rounded-xl text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">{darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AnimatePresence mode="wait">
-          {activeTab === 'dashboard' && <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><DashboardTab onNavigate={handleNavigate} /></motion.div>}
-          {activeTab === 'assessment' && <motion.div key="assessment" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><AssessmentTab initialDomain={selectedDomain} /></motion.div>}
-          {activeTab === 'incidents' && <motion.div key="incidents" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>{selectedIncident ? <IncidentDetail incident={selectedIncident} compliance={compliance} ir={ir} onBack={() => setSelectedIncident(null)} /> : <IncidentDashboard compliance={compliance} ir={ir} onSelectIncident={setSelectedIncident} />}</motion.div>}
-          {activeTab === 'reporting' && <motion.div key="reporting" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><ClientReporting compliance={compliance} ir={ir} /></motion.div>}
-          {activeTab === 'evidence' && <motion.div key="evidence" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><EvidenceTab /></motion.div>}
-          {activeTab === 'company' && <motion.div key="company" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CompanyTab /></motion.div>}
-          {activeTab === 'trust-center' && <motion.div key="trust-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><TrustCenter compliance={compliance} organizationName="LYDELL SECURITY" /></motion.div>}
-        </AnimatePresence>
+
+      {/* Bottom Actions */}
+      <div className="p-2 border-t border-steel-800 space-y-1">
+        {/* Sync Activity */}
+        <div className="relative group">
+          <button
+            onClick={onSyncClick}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 ${syncCount > 0
+              ? 'text-status-success bg-status-success/10'
+              : 'text-steel-400 hover:text-steel-200 hover:bg-steel-800/50'
+            }`}
+          >
+            <Activity className="w-5 h-5 flex-shrink-0" />
+            {expanded && <span className="text-sm font-medium">Sync Activity</span>}
+            {syncCount > 0 && (
+              <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-status-success text-white text-[10px] font-bold flex items-center justify-center`}>
+                {Math.min(syncCount, 99)}
+              </span>
+            )}
+          </button>
+          {!expanded && (
+            <div className="nav-tooltip">Sync Activity</div>
+          )}
+        </div>
+
+        {/* Toggle Expand */}
+        <button
+          onClick={onToggle}
+          className="w-full flex items-center gap-3 px-3 py-2.5 text-steel-400 hover:text-steel-200 hover:bg-steel-800/50 transition-all duration-200"
+        >
+          <Menu className="w-5 h-5 flex-shrink-0" />
+          {expanded && <span className="text-sm font-medium">Collapse</span>}
+        </button>
+      </div>
+    </aside>
+  );
+};
+
+// ============================================================================
+// MAIN APP
+// ============================================================================
+
+const AppContent: React.FC = () => {
+  const compliance = useComplianceContext();
+  const ir = useIncidentResponse();
+  const { syncNotifications } = compliance;
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+
+  const handleNavigate = (tab: TabId, domain?: ComplianceDomainMeta) => {
+    setActiveTab(tab);
+    if (domain) setSelectedDomain(domain);
+  };
+
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab);
+    setSelectedIncident(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-midnight-950">
+      {/* Command Center Sidebar */}
+      <CommandSidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        incidentCount={ir.stats.activeIncidents}
+        syncCount={syncNotifications.length}
+        onSyncClick={() => setShowSidebar(!showSidebar)}
+        expanded={sidebarExpanded}
+        onToggle={() => setSidebarExpanded(!sidebarExpanded)}
+      />
+
+      {/* Main Content */}
+      <main className={`transition-all duration-200 ${sidebarExpanded ? 'ml-56' : 'ml-16'}`}>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AnimatePresence mode="wait">
+            {activeTab === 'dashboard' && (
+              <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <DashboardTab onNavigate={handleNavigate} />
+              </motion.div>
+            )}
+            {activeTab === 'assessment' && (
+              <motion.div key="assessment" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <AssessmentTab initialDomain={selectedDomain} />
+              </motion.div>
+            )}
+            {activeTab === 'incidents' && (
+              <motion.div key="incidents" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                {selectedIncident ? <IncidentDetail incident={selectedIncident} compliance={compliance} ir={ir} onBack={() => setSelectedIncident(null)} /> : <IncidentDashboard compliance={compliance} ir={ir} onSelectIncident={setSelectedIncident} />}
+              </motion.div>
+            )}
+            {activeTab === 'reporting' && (
+              <motion.div key="reporting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <ClientReporting compliance={compliance} ir={ir} />
+              </motion.div>
+            )}
+            {activeTab === 'evidence' && (
+              <motion.div key="evidence" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <EvidenceTab />
+              </motion.div>
+            )}
+            {activeTab === 'company' && (
+              <motion.div key="company" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <CompanyTab />
+              </motion.div>
+            )}
+            {activeTab === 'trust-center' && (
+              <motion.div key="trust-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <TrustCenter compliance={compliance} organizationName="LYDELL SECURITY" />
+              </motion.div>
+            )}
+            {activeTab === 'certificate' && (
+              <motion.div key="certificate" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <CertificateGenerator compliance={compliance} organizationName="LYDELL SECURITY" />
+                <div className="mt-6">
+                  <AuditBundle compliance={compliance} />
+                </div>
+              </motion.div>
+            )}
+            {activeTab === 'verify' && (
+              <motion.div key="verify" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <AuditorVerification />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
-      <MappingSidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
+
+      {/* Sync Activity Sidebar */}
+      <SyncActivitySidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
     </div>
   );
 };
