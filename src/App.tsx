@@ -12,10 +12,14 @@ import {
   Download, AlertCircle, ChevronDown, Save, Briefcase,
 } from 'lucide-react';
 
-import { useCompliance, type UseComplianceReturn } from './hooks';
+import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
+import IncidentDashboard from './components/IncidentDashboard';
+import IncidentDetail from './components/IncidentDetail';
+import ClientReporting from './components/ClientReporting';
+import type { Incident } from './types/incident.types';
 
-type TabId = 'dashboard' | 'assessment' | 'evidence' | 'company';
+type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company';
 
 // Context
 const ComplianceContext = createContext<UseComplianceReturn | null>(null);
@@ -588,15 +592,20 @@ const CompanyTab: React.FC = () => {
 
 // Main App
 const AppContent: React.FC = () => {
-  const { state, toggleDarkMode, syncNotifications, stats } = useComplianceContext();
+  const compliance = useComplianceContext();
+  const ir = useIncidentResponse();
+  const { state, toggleDarkMode, syncNotifications, stats } = compliance;
   const { darkMode } = state;
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [showSidebar, setShowSidebar] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const handleNavigate = (tab: TabId, domain?: ComplianceDomainMeta) => { setActiveTab(tab); if (domain) setSelectedDomain(domain); };
-  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
+  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number }> = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-4 h-4" /> },
+    { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-4 h-4" />, badge: ir.stats.activeIncidents },
+    { id: 'reporting', label: 'Reporting', icon: <FileText className="w-4 h-4" /> },
     { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-4 h-4" /> },
     { id: 'company', label: 'Company', icon: <Building2 className="w-4 h-4" /> },
   ];
@@ -610,8 +619,8 @@ const AppContent: React.FC = () => {
               <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-violet-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20"><Shield className="w-5 h-5 text-white" /></div>
               <div className="hidden sm:block"><span className="font-bold text-slate-900 dark:text-white">Compliance Engine</span><span className="text-xs text-slate-500 dark:text-white/50 ml-2">{stats.totalControls} Controls</span></div>
             </div>
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1">
-              {tabs.map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'}`}>{tab.icon}<span className="hidden sm:inline">{tab.label}</span></button>)}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1 overflow-x-auto">
+              {tabs.map(tab => <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedIncident(null); }} className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'}`}>{tab.icon}<span className="hidden sm:inline">{tab.label}</span>{tab.badge !== undefined && tab.badge > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{tab.badge}</span>}</button>)}
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowSidebar(!showSidebar)} className={`relative p-2.5 rounded-xl transition-all ${showSidebar ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
@@ -627,6 +636,8 @@ const AppContent: React.FC = () => {
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><DashboardTab onNavigate={handleNavigate} /></motion.div>}
           {activeTab === 'assessment' && <motion.div key="assessment" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><AssessmentTab initialDomain={selectedDomain} /></motion.div>}
+          {activeTab === 'incidents' && <motion.div key="incidents" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>{selectedIncident ? <IncidentDetail incident={selectedIncident} compliance={compliance} ir={ir} onBack={() => setSelectedIncident(null)} /> : <IncidentDashboard compliance={compliance} ir={ir} onSelectIncident={setSelectedIncident} />}</motion.div>}
+          {activeTab === 'reporting' && <motion.div key="reporting" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><ClientReporting compliance={compliance} ir={ir} /></motion.div>}
           {activeTab === 'evidence' && <motion.div key="evidence" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><EvidenceTab /></motion.div>}
           {activeTab === 'company' && <motion.div key="company" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}><CompanyTab /></motion.div>}
         </AnimatePresence>
