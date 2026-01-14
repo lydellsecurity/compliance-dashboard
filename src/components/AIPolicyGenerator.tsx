@@ -890,7 +890,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
 
               {/* Footer */}
               <div className="flex items-center justify-between p-6 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800 flex-shrink-0">
-                <div className="text-sm text-steel-400">
+                <div className="text-sm text-slate-500 dark:text-steel-400">
                   {metadata && (
                     <span>Model: {metadata.model}</span>
                   )}

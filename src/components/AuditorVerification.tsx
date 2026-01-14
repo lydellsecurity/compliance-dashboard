@@ -175,7 +175,7 @@ const AuditorVerification: React.FC = () => {
                   maxLength={24}
                 />
               </div>
-              <p className="mt-2 text-xs text-steel-400">
+              <p className="mt-2 text-xs text-slate-500 dark:text-steel-400">
                 Policy documents use 16-character hashes. Certificates use 24-character hashes.
               </p>
             </div>
@@ -268,7 +268,7 @@ const AuditorVerification: React.FC = () => {
 
                       {result.jobTitle && (
                         <div className="flex items-center gap-3 pl-7">
-                          <span className="text-sm text-steel-400">{result.jobTitle}</span>
+                          <span className="text-sm text-slate-500 dark:text-steel-400">{result.jobTitle}</span>
                         </div>
                       )}
 
@@ -350,7 +350,7 @@ const AuditorVerification: React.FC = () => {
         <h4 className="text-sm font-semibold text-secondary mb-2">
           Where to find the document hash?
         </h4>
-        <p className="text-xs text-steel-400">
+        <p className="text-xs text-slate-500 dark:text-steel-400">
           The document hash is located at the bottom of signed policy documents and certificates.
           It's a unique identifier that ensures the document hasn't been modified.
         </p>

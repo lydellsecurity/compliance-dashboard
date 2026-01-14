@@ -348,7 +348,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
       value: 'na',
       label: 'N/A',
       activeClass: 'bg-steel-600 text-white border-steel-600',
-      defaultClass: 'border-steel-700 text-steel-400 hover:bg-steel-800'
+      defaultClass: 'border-slate-300 dark:border-steel-700 text-slate-500 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-800'
     },
   ];
 
@@ -590,12 +590,12 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
                     <span className={`status-dot ${control.riskLevel === 'critical' ? 'status-dot-risk' : 'status-dot-warning'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-mono text-steel-400">{control.id}</span>
+                        <span className="text-xs font-mono text-slate-500 dark:text-steel-400">{control.id}</span>
                         <span className={`badge ${control.riskLevel === 'critical' ? 'badge-risk' : 'badge-warning'}`}>
                           {control.riskLevel.toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-sm text-steel-200 truncate">{control.title}</p>
+                      <p className="text-sm text-slate-600 dark:text-steel-200 truncate">{control.title}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-steel-600 group-hover:text-status-risk transition-colors" />
                   </div>
@@ -1358,7 +1358,7 @@ const CommandSidebar: React.FC<{
         {/* Toggle Expand */}
         <button
           onClick={onToggle}
-          className="w-full flex items-center gap-3 px-3 py-2.5 text-steel-400 hover:text-steel-200 hover:bg-steel-800/50 transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200 hover:bg-slate-200/50 dark:hover:bg-steel-800/50 transition-all duration-200"
         >
           <Menu className="w-5 h-5 flex-shrink-0" />
           {expanded && <span className="text-sm font-medium">Collapse</span>}

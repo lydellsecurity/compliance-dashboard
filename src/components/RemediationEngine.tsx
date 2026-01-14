@@ -81,7 +81,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   return (
     <button
       onClick={handleCopy}
-      className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-steel-700 text-steel-400 hover:text-primary transition-colors"
+      className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-steel-700 text-slate-500 dark:text-steel-400 hover:text-primary transition-colors"
       title="Copy to clipboard"
     >
       {copied ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
@@ -263,7 +263,7 @@ const ImplementationSection: React.FC<{
       ) : (
         <div className="p-8 text-center">
           <Cloud className="w-12 h-12 text-steel-600 mx-auto mb-3" />
-          <p className="text-steel-400">No implementation guide available for this provider</p>
+          <p className="text-slate-500 dark:text-steel-400">No implementation guide available for this provider</p>
         </div>
       )}
     </div>
@@ -310,11 +310,11 @@ const VerificationSection: React.FC<{
 
                     {/* Examples */}
                     <div className="mb-3">
-                      <p className="text-xs font-semibold text-steel-400 uppercase mb-1.5">Examples</p>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase mb-1.5">Examples</p>
                       <ul className="space-y-1">
                         {req.examples.map((ex, i) => (
-                          <li key={i} className="text-sm text-steel-400 flex items-center gap-2">
-                            <span className="w-1 h-1 rounded-full bg-steel-500" />
+                          <li key={i} className="text-sm text-slate-500 dark:text-steel-400 flex items-center gap-2">
+                            <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-steel-500" />
                             {ex}
                           </li>
                         ))}
@@ -463,7 +463,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-steel-700 text-steel-400 hover:text-primary transition-colors"
+                className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-steel-700 text-slate-500 dark:text-steel-400 hover:text-primary transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -481,7 +481,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
                         flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative
                         ${activeTab === tab.id
                           ? 'text-accent-400'
-                          : 'text-steel-400 hover:text-secondary'
+                          : 'text-slate-500 dark:text-steel-400 hover:text-secondary'
                         }
                       `}
                     >
@@ -546,7 +546,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
                 {/* Footer with Resources */}
                 {guidance.resources.length > 0 && (
                   <div className="p-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800">
-                    <h4 className="text-xs font-semibold text-steel-400 uppercase mb-2">Resources</h4>
+                    <h4 className="text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase mb-2">Resources</h4>
                     <div className="flex flex-wrap gap-2">
                       {guidance.resources.map((resource, idx) => (
                         <a

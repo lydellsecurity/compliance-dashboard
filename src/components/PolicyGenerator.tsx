@@ -280,7 +280,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
                     Organization Name
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-400" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-steel-400" />
                     <input
                       type="text"
                       value={customOrgName}
@@ -300,7 +300,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
                       <Shield className="w-4 h-4 text-framework-hipaa mt-0.5 flex-shrink-0" />
                       <div>
                         <span className="font-medium text-secondary">Control:</span>
-                        <span className="text-steel-400 ml-2">{control.title}</span>
+                        <span className="text-slate-500 dark:text-steel-400 ml-2">{control.title}</span>
                       </div>
                     </div>
 
@@ -324,7 +324,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
                         <CheckCircle className="w-4 h-4 text-framework-hipaa mt-0.5 flex-shrink-0" />
                         <div>
                           <span className="font-medium text-secondary">Security Principle:</span>
-                          <span className="text-steel-400 ml-2">{guidance.strategy.principle}</span>
+                          <span className="text-slate-500 dark:text-steel-400 ml-2">{guidance.strategy.principle}</span>
                         </div>
                       </div>
                     )}

@@ -357,16 +357,16 @@ INCLUDED FILES
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-800 rounded-lg">
-              <File className="w-4 h-4 text-steel-400" />
+              <File className="w-4 h-4 text-slate-400 dark:text-steel-400" />
               <span className="text-sm text-secondary">MANIFEST.txt</span>
             </div>
             <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-800 rounded-lg">
-              <File className="w-4 h-4 text-steel-400" />
+              <File className="w-4 h-4 text-slate-400 dark:text-steel-400" />
               <span className="text-sm text-secondary">compliance_summary.json</span>
             </div>
             {bundleFiles.slice(0, 6).map((file, index) => (
               <div key={index} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-800 rounded-lg">
-                <File className="w-4 h-4 text-steel-400" />
+                <File className="w-4 h-4 text-slate-400 dark:text-steel-400" />
                 <span className="text-sm text-secondary truncate">
                   {file.name}
                 </span>

@@ -69,7 +69,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
             className={`px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? 'text-accent-400 border-b-2 border-accent-500 bg-accent-500/10'
-                : 'text-steel-400 hover:text-secondary'
+                : 'text-slate-500 dark:text-steel-400 hover:text-secondary'
             }`}
           >
             {tab.label}
@@ -84,7 +84,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
             {/* Current Version */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-3 h-3 rounded-full bg-steel-400" />
+                <div className="w-3 h-3 rounded-full bg-slate-400 dark:bg-steel-400" />
                 <span className="text-sm font-medium text-secondary">Current Version</span>
               </div>
               <div className="p-4 rounded-lg bg-slate-100 dark:bg-steel-800 font-mono text-sm leading-relaxed text-secondary">
@@ -112,7 +112,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
               <ul className="space-y-2">
                 {comparison.current.implementationGuidance.map((item, i) => (
                   <li key={i} className="text-sm text-secondary flex items-start gap-2">
-                    <span className="text-steel-400">•</span>{item}
+                    <span className="text-slate-400 dark:text-steel-400">•</span>{item}
                   </li>
                 ))}
               </ul>
@@ -124,7 +124,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
                   const isNew = !comparison.current.implementationGuidance.includes(item);
                   return (
                     <li key={i} className={`text-sm flex items-start gap-2 ${isNew ? 'text-status-success font-medium' : 'text-secondary'}`}>
-                      <span className={isNew ? 'text-status-success' : 'text-steel-400'}>{isNew ? '+' : '•'}</span>
+                      <span className={isNew ? 'text-status-success' : 'text-slate-400 dark:text-steel-400'}>{isNew ? '+' : '•'}</span>
                       {item}
                     </li>
                   );
@@ -173,7 +173,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
 
       {/* Action Buttons */}
       <div className="px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800 flex items-center justify-between">
-        <div className="text-sm text-steel-400">
+        <div className="text-sm text-slate-500 dark:text-steel-400">
           {comparison.affectedControls.length} control(s) will be flagged for review
         </div>
         <div className="flex items-center gap-3">
@@ -314,7 +314,7 @@ export const ComplianceDriftAlert: React.FC<ComplianceDriftAlertProps> = ({
                         <span className="text-sm text-secondary">{action.description}</span>
                       </div>
                       <span className={`px-2 py-0.5 text-xs rounded ${
-                        action.status === 'complete' ? 'bg-status-success/10 text-status-success' : 'bg-steel-700 text-steel-400'
+                        action.status === 'complete' ? 'bg-status-success/10 text-status-success' : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
                       }`}>
                         {action.status}
                       </span>
@@ -355,7 +355,7 @@ const VersionBadge: React.FC<{ version: string; label: string; variant: 'current
   <div className={`px-3 py-1.5 rounded-lg text-center ${
     variant === 'current' ? 'bg-slate-200 dark:bg-steel-700' : 'bg-status-success/10'
   }`}>
-    <div className={`text-xs ${variant === 'current' ? 'text-steel-400' : 'text-status-success'}`}>
+    <div className={`text-xs ${variant === 'current' ? 'text-slate-500 dark:text-steel-400' : 'text-status-success'}`}>
       {label}
     </div>
     <div className={`font-mono font-bold ${variant === 'current' ? 'text-secondary' : 'text-status-success'}`}>

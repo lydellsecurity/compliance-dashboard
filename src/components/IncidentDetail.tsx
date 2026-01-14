@@ -80,7 +80,7 @@ const StatusProgressBar: React.FC<{
                   ? 'bg-status-success text-white'
                   : isCurrent
                     ? 'bg-accent-500 text-white ring-4 ring-accent-500/30'
-                    : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
+                    : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-500'
               }`}
               title={STATUS_LABELS[status]}
             >
@@ -112,7 +112,7 @@ const TimelineEvent: React.FC<{
   return (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className={`w-3 h-3 rounded-full ${colors[event.eventType] || 'bg-steel-400'}`} />
+        <div className={`w-3 h-3 rounded-full ${colors[event.eventType] || 'bg-slate-400 dark:bg-steel-400'}`} />
         {!isLast && <div className="w-0.5 flex-1 bg-slate-200 dark:bg-steel-700" />}
       </div>
       <div className="flex-1 pb-6">
@@ -139,7 +139,7 @@ const AffectedControlCard: React.FC<{
     compliant: { icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-status-success', bg: 'bg-status-success/10', label: 'Compliant' },
     gap: { icon: <XCircle className="w-4 h-4" />, color: 'text-status-risk', bg: 'bg-status-risk/10', label: 'Gap' },
     partial: { icon: <AlertCircle className="w-4 h-4" />, color: 'text-status-warning', bg: 'bg-status-warning/10', label: 'Partial' },
-    unknown: { icon: <AlertTriangle className="w-4 h-4" />, color: 'text-steel-400', bg: 'bg-steel-500/10', label: 'Not Assessed' },
+    unknown: { icon: <AlertTriangle className="w-4 h-4" />, color: 'text-slate-500 dark:text-steel-400', bg: 'bg-slate-100 dark:bg-steel-500/10', label: 'Not Assessed' },
   };
 
   const status = statusConfig[complianceStatus];
@@ -149,8 +149,8 @@ const AffectedControlCard: React.FC<{
     verified: { color: 'text-status-success', label: 'Verified' },
     failed: { color: 'text-status-risk', label: 'Failed' },
     partially_failed: { color: 'text-status-warning', label: 'Partially Failed' },
-    not_tested: { color: 'text-steel-400', label: 'Not Tested' },
-    not_applicable: { color: 'text-steel-400', label: 'N/A' },
+    not_tested: { color: 'text-slate-500 dark:text-steel-400', label: 'Not Tested' },
+    not_applicable: { color: 'text-slate-500 dark:text-steel-400', label: 'N/A' },
   };
 
   return (
@@ -172,7 +172,7 @@ const AffectedControlCard: React.FC<{
           </div>
           <p className="font-medium text-primary truncate">{control.title}</p>
         </div>
-        <ChevronDown className={`w-5 h-5 text-steel-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-5 h-5 text-slate-400 dark:text-steel-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -338,7 +338,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
       <div className="flex items-start gap-4">
         <button
           onClick={onBack}
-          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800 text-steel-400"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800 text-slate-400 dark:text-steel-400"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -477,7 +477,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
                   <p className="text-xs text-status-warning">Partial</p>
                 </div>
                 <div className="p-4 rounded-lg bg-slate-100 dark:bg-steel-800 text-center">
-                  <p className="text-2xl font-bold text-steel-400">{complianceMetrics.unknown}</p>
+                  <p className="text-2xl font-bold text-slate-500 dark:text-steel-400">{complianceMetrics.unknown}</p>
                   <p className="text-xs text-secondary">Not Assessed</p>
                 </div>
               </div>

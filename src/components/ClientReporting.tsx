@@ -117,7 +117,7 @@ const EngagementCard: React.FC<{
   >
     <div className="flex items-start gap-3">
       <div className={`p-2 rounded-lg ${isSelected ? 'bg-accent-500/20' : 'bg-slate-100 dark:bg-steel-800'}`}>
-        <Building2 className={`w-5 h-5 ${isSelected ? 'text-accent-400' : 'text-steel-400'}`} />
+        <Building2 className={`w-5 h-5 ${isSelected ? 'text-accent-400' : 'text-slate-500 dark:text-steel-400'}`} />
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="font-semibold text-primary truncate">{engagement.clientName}</h4>
@@ -140,7 +140,7 @@ const EngagementCard: React.FC<{
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
         engagement.status === 'active'
           ? 'bg-status-success/10 text-status-success'
-          : 'bg-slate-100 dark:bg-steel-700 text-steel-400'
+          : 'bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
       }`}>
         {engagement.status}
       </span>
@@ -444,7 +444,7 @@ const ReportPreviewModal: React.FC<{
                 onClick={onClose}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-steel-400" />
+                <X className="w-5 h-5 text-slate-500 dark:text-steel-400" />
               </button>
             </div>
           </div>
@@ -849,7 +849,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                           : 'border-slate-200 dark:border-steel-700 hover:border-accent-500/30'
                       }`}
                     >
-                      <div className={`mb-2 ${selectedReportType === type.id ? 'text-accent-400' : 'text-steel-400'}`}>
+                      <div className={`mb-2 ${selectedReportType === type.id ? 'text-accent-400' : 'text-slate-500 dark:text-steel-400'}`}>
                         {type.icon}
                       </div>
                       <p className="font-medium text-primary text-sm">{type.label}</p>

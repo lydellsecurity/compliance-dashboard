@@ -110,7 +110,7 @@ const GenerateReportButton: React.FC<GenerateReportButtonProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="absolute -bottom-2 left-0 right-0 h-1 bg-steel-700 rounded-full overflow-hidden"
+          className="absolute -bottom-2 left-0 right-0 h-1 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden"
         >
           <motion.div
             initial={{ width: 0 }}
@@ -142,7 +142,7 @@ const GenerateReportButton: React.FC<GenerateReportButtonProps> = ({
                   </div>
                   <div>
                     <div className="text-sm font-medium text-primary">{report.label}</div>
-                    <div className="text-xs text-steel-400 mt-0.5">{report.description}</div>
+                    <div className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">{report.description}</div>
                   </div>
                 </button>
               ))}

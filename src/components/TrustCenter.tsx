@@ -118,7 +118,7 @@ const ComplianceGauge: React.FC<{
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-bold text-primary">{percentage}%</span>
-          <span className="text-[10px] font-semibold text-steel-400 uppercase tracking-wider">Compliant</span>
+          <span className="text-[10px] font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">Compliant</span>
         </div>
       </div>
       <div className="mt-3 text-center">
@@ -143,7 +143,7 @@ const FrameworkCard: React.FC<{
     if (pct >= 90) return { label: 'Excellent', bgClass: 'bg-status-success/10', textClass: 'text-status-success' };
     if (pct >= 80) return { label: 'Good', bgClass: 'bg-status-success/10', textClass: 'text-status-success' };
     if (pct >= 60) return { label: 'Moderate', bgClass: 'bg-status-warning/10', textClass: 'text-status-warning' };
-    return { label: 'In Progress', bgClass: 'bg-slate-100 dark:bg-steel-700', textClass: 'text-steel-400' };
+    return { label: 'In Progress', bgClass: 'bg-slate-100 dark:bg-steel-700', textClass: 'text-slate-500 dark:text-steel-400' };
   };
 
   const status = getStatusBadge(percentage);
@@ -194,7 +194,7 @@ const FrameworkCard: React.FC<{
           <span>{completed} / {total} controls</span>
         </div>
         {lastUpdated && (
-          <div className="flex items-center gap-1.5 text-steel-400">
+          <div className="flex items-center gap-1.5 text-slate-400 dark:text-steel-400">
             <Clock className="w-3.5 h-3.5" />
             <span className="text-xs">{lastUpdated.toLocaleDateString()}</span>
           </div>

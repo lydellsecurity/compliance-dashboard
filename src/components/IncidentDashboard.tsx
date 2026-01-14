@@ -31,7 +31,7 @@ const SEVERITY_CONFIG: Record<IncidentSeverity, { color: string; bg: string; bor
   critical: { color: 'text-status-risk', bg: 'bg-status-risk/10', border: 'border-status-risk/30', label: 'CRITICAL', dot: 'status-dot-risk' },
   high: { color: 'text-status-warning', bg: 'bg-status-warning/10', border: 'border-status-warning/30', label: 'HIGH', dot: 'status-dot-warning' },
   medium: { color: 'text-status-info', bg: 'bg-status-info/10', border: 'border-status-info/30', label: 'MEDIUM', dot: 'status-dot-neutral' },
-  low: { color: 'text-steel-400', bg: 'bg-steel-800', border: 'border-steel-700', label: 'LOW', dot: 'status-dot-neutral' },
+  low: { color: 'text-slate-500 dark:text-steel-400', bg: 'bg-slate-100 dark:bg-steel-800', border: 'border-slate-300 dark:border-steel-700', label: 'LOW', dot: 'status-dot-neutral' },
 };
 
 const STATUS_CONFIG: Record<IncidentStatus, { color: string; bg: string; label: string; icon: React.ReactNode }> = {
@@ -41,7 +41,7 @@ const STATUS_CONFIG: Record<IncidentStatus, { color: string; bg: string; label: 
   eradication: { color: 'text-accent-400', bg: 'bg-accent-500/20', label: 'Eradication', icon: <Zap className="w-3 h-3" /> },
   recovery: { color: 'text-status-success', bg: 'bg-status-success/20', label: 'Recovery', icon: <TrendingUp className="w-3 h-3" /> },
   lessons_learned: { color: 'text-framework-soc2', bg: 'bg-framework-soc2/20', label: 'Lessons Learned', icon: <FileText className="w-3 h-3" /> },
-  closed: { color: 'text-steel-400', bg: 'bg-steel-700/50', label: 'Closed', icon: <CheckCircle2 className="w-3 h-3" /> },
+  closed: { color: 'text-slate-500 dark:text-steel-400', bg: 'bg-slate-200/50 dark:bg-steel-700/50', label: 'Closed', icon: <CheckCircle2 className="w-3 h-3" /> },
 };
 
 const THREAT_LABELS: Record<ThreatCategory, string> = {
@@ -265,7 +265,7 @@ const CreateIncidentModal: React.FC<{
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-steel-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                 Incident Title *
               </label>
               <input
@@ -280,7 +280,7 @@ const CreateIncidentModal: React.FC<{
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-steel-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                 Description *
               </label>
               <textarea
@@ -296,7 +296,7 @@ const CreateIncidentModal: React.FC<{
             {/* Severity & Threat Category */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-steel-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                   Severity *
                 </label>
                 <select
@@ -312,7 +312,7 @@ const CreateIncidentModal: React.FC<{
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-steel-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                   Threat Category *
                 </label>
                 <select
@@ -329,7 +329,7 @@ const CreateIncidentModal: React.FC<{
 
             {/* Attack Vectors */}
             <div>
-              <label className="block text-sm font-medium text-steel-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                 Attack Vectors
               </label>
               <div className="flex flex-wrap gap-2">
@@ -346,7 +346,7 @@ const CreateIncidentModal: React.FC<{
                     className={`px-3 py-1.5 text-xs font-medium border transition-colors ${
                       formData.attackVectors.includes(key as AttackVector)
                         ? 'bg-accent-500 text-white border-accent-500'
-                        : 'bg-midnight-900 text-steel-400 border-steel-700 hover:border-accent-500/50'
+                        : 'bg-slate-100 dark:bg-midnight-900 text-slate-500 dark:text-steel-400 border-slate-300 dark:border-steel-700 hover:border-accent-500/50'
                     }`}
                   >
                     {label}
@@ -357,7 +357,7 @@ const CreateIncidentModal: React.FC<{
 
             {/* Affected Systems */}
             <div>
-              <label className="block text-sm font-medium text-steel-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                 Affected Systems
               </label>
               <div className="flex gap-2 mb-2">
@@ -399,9 +399,9 @@ const CreateIncidentModal: React.FC<{
                   type="checkbox"
                   checked={formData.dataExposed}
                   onChange={e => setFormData(prev => ({ ...prev, dataExposed: e.target.checked }))}
-                  className="w-4 h-4 border-steel-600 bg-midnight-900 text-accent-500 focus:ring-accent-500"
+                  className="w-4 h-4 border-slate-400 dark:border-steel-600 bg-white dark:bg-midnight-900 text-accent-500 focus:ring-accent-500"
                 />
-                <span className="text-sm text-steel-300">Data was exposed/exfiltrated</span>
+                <span className="text-sm text-slate-600 dark:text-steel-300">Data was exposed/exfiltrated</span>
               </label>
 
               <input
@@ -417,7 +417,7 @@ const CreateIncidentModal: React.FC<{
             {/* Incident Commander */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-steel-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                   Incident Commander *
                 </label>
                 <input
@@ -431,7 +431,7 @@ const CreateIncidentModal: React.FC<{
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-steel-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 dark:text-steel-300 mb-2">
                   Client Contact
                 </label>
                 <input
