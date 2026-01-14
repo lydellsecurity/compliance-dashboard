@@ -2,17 +2,11 @@
  * ============================================================================
  * USE COMPLIANCE HOOK (With Supabase Integration)
  * ============================================================================
- * 
- * Enhanced compliance hook that:
- * - Fetches controls from Supabase (or falls back to local data)
- * - Implements optimistic updates for instant UI feedback
- * - Syncs changes to database in background
- * - Maintains "Answer Once, Comply Everywhere" logic on client
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { complianceDb } from '../services/compliance-database.service';
-import type { CustomControl } from '../services/compliance-database.service';
+import type { CustomControl, SyncNotification as DbSyncNotification } from '../services/compliance-database.service';
 import { useAuth } from './useAuth';
 
 // ============================================================================
@@ -188,7 +182,8 @@ export function useComplianceWithSupabase(): UseComplianceWithSupabaseReturn {
 
       setCustomControls(customCtls);
 
-      const notifList: SyncNotification[] = notifications.map(n => ({
+      // Convert notifications with proper typing
+      const notifList: SyncNotification[] = notifications.map((n: DbSyncNotification) => ({
         id: n.id,
         controlId: n.control_id,
         controlTitle: n.control_title,
@@ -395,7 +390,9 @@ export function useComplianceWithSupabase(): UseComplianceWithSupabaseReturn {
       const evidenceData = localEvidence ? JSON.parse(localEvidence) : [];
       const customControlsData = localCustomControls ? JSON.parse(localCustomControls) : [];
 
-      const responsesMap = new Map<string, any>(Object.entries(responsesData));
+      const responsesMap = new Map<string, { answer?: string; notes?: string; remediationPlan?: string }>(
+        Object.entries(responsesData)
+      );
 
       await complianceDb.migrateFromLocalStorage({
         responses: responsesMap,

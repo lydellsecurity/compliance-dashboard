@@ -2,8 +2,6 @@
  * ============================================================================
  * COMPLIANCE DATABASE SERVICE
  * ============================================================================
- * 
- * Comprehensive Supabase integration for the Modular Compliance Engine.
  */
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -98,6 +96,16 @@ export interface CustomControl {
     clause_id: string;
     clause_title: string;
   }>;
+}
+
+export interface SyncNotification {
+  id: string;
+  control_id: string;
+  control_title: string;
+  framework_id: string;
+  clause_id: string;
+  clause_title: string;
+  created_at: string;
 }
 
 export interface SyncCallback {
@@ -315,7 +323,7 @@ class ComplianceDatabaseService {
 
       if (error) throw error;
 
-      await this.logAudit('upsert', 'user_response', fullResponse.control_id, null, fullResponse);
+      await this.logAudit('upsert', 'user_response', fullResponse.control_id);
 
       callbacks?.onSuccess?.();
       return fullResponse;
@@ -428,7 +436,7 @@ class ComplianceDatabaseService {
       return null;
     }
 
-    await this.logAudit('upsert', 'evidence_record', evidenceId, null, data);
+    await this.logAudit('upsert', 'evidence_record', evidenceId);
 
     return data;
   }
@@ -440,7 +448,7 @@ class ComplianceDatabaseService {
   ): Promise<boolean> {
     if (!supabase || !this.organizationId || !this.userId) return false;
 
-    const updates: Record<string, unknown> = { status };
+    const updates: Record<string, string> = { status };
     
     if (status === 'approved') {
       updates.approved_by = this.userId;
@@ -544,19 +552,21 @@ class ComplianceDatabaseService {
       return [];
     }
 
-    const controlsWithMappings = await Promise.all(
-      (controls || []).map(async (control) => {
-        const { data: mappings } = await supabase
-          .from('custom_control_mappings')
-          .select('*')
-          .eq('custom_control_id', control.id);
+    if (!controls || controls.length === 0) return [];
 
-        return {
-          ...control,
-          framework_mappings: mappings || []
-        };
-      })
-    );
+    const controlsWithMappings: CustomControl[] = [];
+    
+    for (const control of controls) {
+      const { data: mappings } = await supabase
+        .from('custom_control_mappings')
+        .select('*')
+        .eq('custom_control_id', control.id);
+
+      controlsWithMappings.push({
+        ...control,
+        framework_mappings: mappings || []
+      });
+    }
 
     return controlsWithMappings;
   }
@@ -612,7 +622,7 @@ class ComplianceDatabaseService {
         .insert(mappings);
     }
 
-    await this.logAudit('upsert', 'custom_control', controlId, null, data);
+    await this.logAudit('upsert', 'custom_control', controlId);
 
     return { ...data, framework_mappings: control.framework_mappings || [] };
   }
@@ -669,12 +679,12 @@ class ComplianceDatabaseService {
       });
   }
 
-  async getSyncNotifications(limit: number = 50): Promise<Record<string, unknown>[]> {
+  async getSyncNotifications(limit: number = 50): Promise<SyncNotification[]> {
     if (!supabase || !this.organizationId) return [];
 
     const { data, error } = await supabase
       .from('sync_notifications')
-      .select('*')
+      .select('id, control_id, control_title, framework_id, clause_id, clause_title, created_at')
       .eq('organization_id', this.organizationId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -684,7 +694,7 @@ class ComplianceDatabaseService {
       return [];
     }
 
-    return data || [];
+    return (data || []) as SyncNotification[];
   }
 
   async markNotificationsRead(notificationIds: string[]): Promise<void> {
@@ -703,9 +713,7 @@ class ComplianceDatabaseService {
   private async logAudit(
     action: string,
     entityType: string,
-    entityId?: string,
-    oldValue?: unknown,
-    newValue?: unknown
+    entityId?: string
   ): Promise<void> {
     if (!supabase || !this.organizationId) return;
 
@@ -718,15 +726,13 @@ class ComplianceDatabaseService {
           action,
           entity_type: entityType,
           entity_id: entityId,
-          old_value: oldValue,
-          new_value: newValue,
         });
     } catch (error) {
       console.error('Audit log error:', error);
     }
   }
 
-  async getAuditLog(limit: number = 100): Promise<Record<string, unknown>[]> {
+  async getAuditLog(limit: number = 100): Promise<Array<Record<string, unknown>>> {
     if (!supabase || !this.organizationId) return [];
 
     const { data, error } = await supabase
@@ -749,9 +755,9 @@ class ComplianceDatabaseService {
   // ---------------------------------------------------------------------------
 
   async migrateFromLocalStorage(localData: {
-    responses: Map<string, Record<string, unknown>>;
-    evidence: Record<string, unknown>[];
-    customControls: Record<string, unknown>[];
+    responses: Map<string, { answer?: string; notes?: string; remediationPlan?: string }>;
+    evidence: Array<{ id?: string; controlId?: string; notes?: string; status?: string }>;
+    customControls: Array<{ id?: string; title?: string; description?: string; question?: string; riskLevel?: string; frameworkMappings?: CustomControl['framework_mappings'] }>;
   }): Promise<{ responses: number; evidence: number; controls: number }> {
     let responsesCount = 0;
     let evidenceCount = 0;
@@ -761,8 +767,8 @@ class ComplianceDatabaseService {
       const responses = Array.from(localData.responses.entries()).map(([controlId, data]) => ({
         control_id: controlId,
         answer: data.answer as UserResponse['answer'],
-        evidence_note: (data.notes as string) || '',
-        remediation_plan: (data.remediationPlan as string) || '',
+        evidence_note: data.notes || '',
+        remediation_plan: data.remediationPlan || '',
       }));
 
       responsesCount = await this.bulkSaveResponses(responses);
@@ -770,9 +776,9 @@ class ComplianceDatabaseService {
 
     for (const ev of localData.evidence) {
       const result = await this.saveEvidenceRecord({
-        evidence_id: ev.id as string,
-        control_id: ev.controlId as string,
-        notes: ev.notes as string,
+        evidence_id: ev.id,
+        control_id: ev.controlId,
+        notes: ev.notes,
         status: ev.status as EvidenceRecord['status'],
       });
       if (result) evidenceCount++;
@@ -780,12 +786,12 @@ class ComplianceDatabaseService {
 
     for (const ctrl of localData.customControls) {
       const result = await this.saveCustomControl({
-        id: ctrl.id as string,
-        title: ctrl.title as string,
-        description: ctrl.description as string,
-        question: ctrl.question as string,
+        id: ctrl.id,
+        title: ctrl.title,
+        description: ctrl.description,
+        question: ctrl.question,
         risk_level: ctrl.riskLevel as CustomControl['risk_level'],
-        framework_mappings: ctrl.frameworkMappings as CustomControl['framework_mappings'],
+        framework_mappings: ctrl.frameworkMappings,
       });
       if (result) controlsCount++;
     }
@@ -797,10 +803,10 @@ class ComplianceDatabaseService {
   // REAL-TIME SUBSCRIPTIONS
   // ---------------------------------------------------------------------------
 
-  subscribeToResponses(callback: (payload: Record<string, unknown>) => void): () => void {
+  subscribeToResponses(callback: (payload: unknown) => void): () => void {
     if (!supabase || !this.organizationId) return () => {};
 
-    const subscription = supabase
+    const channel = supabase
       .channel('user_responses_changes')
       .on(
         'postgres_changes',
@@ -815,14 +821,14 @@ class ComplianceDatabaseService {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   }
 
-  subscribeToEvidence(callback: (payload: Record<string, unknown>) => void): () => void {
+  subscribeToEvidence(callback: (payload: unknown) => void): () => void {
     if (!supabase || !this.organizationId) return () => {};
 
-    const subscription = supabase
+    const channel = supabase
       .channel('evidence_changes')
       .on(
         'postgres_changes',
@@ -837,7 +843,7 @@ class ComplianceDatabaseService {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   }
 }
