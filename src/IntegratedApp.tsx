@@ -9,7 +9,7 @@ import React, { useState, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Shield,
-  AlertTriangle, FileText, Users, Moon, Sun, Zap,
+  AlertTriangle, FileText, Moon, Sun, Zap,
 } from 'lucide-react';
 
 import { useCompliance, useIncidentResponse } from './hooks';
@@ -53,7 +53,7 @@ interface NavProps {
 }
 
 const Navigation: React.FC<NavProps> = ({ activeTab, onTabChange, compliance, ir }) => {
-  const { state, toggleDarkMode, syncNotifications, stats } = compliance;
+  const { state, toggleDarkMode, syncNotifications } = compliance;
   const { darkMode } = state;
   const [showSidebar, setShowSidebar] = useState(false);
 

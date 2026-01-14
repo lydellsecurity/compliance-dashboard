@@ -11,9 +11,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Clock, Users, Shield, AlertTriangle, Target, FileText,
+  ArrowLeft, Clock, Shield, AlertTriangle, FileText,
   CheckCircle2, XCircle, AlertCircle, ChevronDown, ChevronRight, Plus,
-  Play, Check, X, ExternalLink, Calendar, Link2, Database, Eye, Save,
+  Check, Eye,
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../hooks/useCompliance';
 import type { UseIncidentResponseReturn } from '../hooks/useIncidentResponse';
