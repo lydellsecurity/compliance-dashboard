@@ -649,8 +649,8 @@ const AppContent: React.FC = () => {
               <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-violet-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/20"><Shield className="w-5 h-5 text-white" /></div>
               <div className="hidden sm:block"><span className="font-bold text-slate-900 dark:text-white">Compliance Engine</span><span className="text-xs text-slate-500 dark:text-white/50 ml-2">{stats.totalControls} Controls</span></div>
             </div>
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1 overflow-x-auto">
+            <div className="flex-1 flex items-center justify-center overflow-x-auto">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1">
                 {tabs.map(tab => <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedIncident(null); }} className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white'}`}>{tab.icon}<span className="hidden lg:inline">{tab.label}</span>{tab.badge !== undefined && tab.badge > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{tab.badge}</span>}</button>)}
               </div>
             </div>
