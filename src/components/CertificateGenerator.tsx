@@ -234,7 +234,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
           {/* Locked Overlay */}
           {!isEligible && (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800/95">
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800/95 z-20">
               <div className="text-center px-6">
                 <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
                   <Lock className="w-7 h-7 text-slate-400" />
