@@ -10,3 +10,6 @@ export type {
   DomainProgress,
   UseComplianceReturn,
 } from './useCompliance';
+
+export { useIncidentResponse } from './useIncidentResponse';
+export type { UseIncidentResponseReturn, CreateIncidentData } from './useIncidentResponse';

@@ -37,3 +37,6 @@ export {
 
 // Mapping Types (Crosswalk Layer)
 export * from './mapping.types';
+
+// Incident Response Types
+export * from './incident.types';
