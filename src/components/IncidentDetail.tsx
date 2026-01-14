@@ -80,14 +80,14 @@ const StatusProgressBar: React.FC<{
                   ? 'bg-status-success text-white'
                   : isCurrent
                     ? 'bg-accent-500 text-white ring-4 ring-accent-500/30'
-                    : 'bg-steel-700 dark:bg-steel-700 light:bg-slate-200 text-steel-400 dark:text-steel-400 light:text-slate-500'
+                    : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
               }`}
               title={STATUS_LABELS[status]}
             >
               {isComplete ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">{index + 1}</span>}
             </button>
             {index < STATUS_FLOW.length - 1 && (
-              <div className={`flex-1 h-1 rounded ${index < currentIndex ? 'bg-status-success' : 'bg-steel-700 dark:bg-steel-700 light:bg-slate-200'}`} />
+              <div className={`flex-1 h-1 rounded ${index < currentIndex ? 'bg-status-success' : 'bg-slate-200 dark:bg-steel-700'}`} />
             )}
           </React.Fragment>
         );
@@ -113,7 +113,7 @@ const TimelineEvent: React.FC<{
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
         <div className={`w-3 h-3 rounded-full ${colors[event.eventType] || 'bg-steel-400'}`} />
-        {!isLast && <div className="w-0.5 flex-1 bg-steel-700 dark:bg-steel-700 light:bg-slate-200" />}
+        {!isLast && <div className="w-0.5 flex-1 bg-slate-200 dark:bg-steel-700" />}
       </div>
       <div className="flex-1 pb-6">
         <div className="flex items-start justify-between gap-2 mb-1">
@@ -121,7 +121,7 @@ const TimelineEvent: React.FC<{
           <span className="text-xs text-secondary">{new Date(event.timestamp).toLocaleString()}</span>
         </div>
         <p className="text-sm text-secondary">{event.description}</p>
-        <p className="text-xs text-steel-500 dark:text-steel-500 light:text-slate-400 mt-1">by {event.actor}</p>
+        <p className="text-xs text-slate-400 dark:text-steel-500 mt-1">by {event.actor}</p>
       </div>
     </div>
   );
@@ -154,7 +154,7 @@ const AffectedControlCard: React.FC<{
   };
 
   return (
-    <div className={`rounded-lg border ${status.bg} border-steel-700 dark:border-steel-700 light:border-slate-200 overflow-hidden`}>
+    <div className={`rounded-lg border ${status.bg} border-slate-200 dark:border-steel-700 overflow-hidden`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full p-4 text-left flex items-center gap-3"
@@ -165,7 +165,7 @@ const AffectedControlCard: React.FC<{
             <span className="text-xs font-mono text-secondary">{control.id}</span>
             <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${status.bg} ${status.color}`}>{status.label}</span>
             {postIncidentStatus && postIncidentStatus !== 'not_tested' && (
-              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded bg-steel-800 dark:bg-steel-700 light:bg-slate-100 ${postStatusConfig[postIncidentStatus]?.color}`}>
+              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded bg-slate-100 dark:bg-steel-700 ${postStatusConfig[postIncidentStatus]?.color}`}>
                 Post-IR: {postStatusConfig[postIncidentStatus]?.label}
               </span>
             )}
@@ -181,7 +181,7 @@ const AffectedControlCard: React.FC<{
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-steel-700 dark:border-steel-700 light:border-slate-200"
+            className="border-t border-slate-200 dark:border-steel-700"
           >
             <div className="p-4 space-y-4">
               <p className="text-sm text-secondary">{control.description}</p>
@@ -208,7 +208,7 @@ const AffectedControlCard: React.FC<{
 
               {/* Post-Incident Assessment */}
               {onAssess && (
-                <div className="pt-3 border-t border-steel-700 dark:border-steel-700 light:border-slate-200">
+                <div className="pt-3 border-t border-slate-200 dark:border-steel-700">
                   <p className="text-xs font-medium text-secondary mb-3">Post-Incident Assessment</p>
                   <div className="flex flex-wrap gap-2">
                     {(['verified', 'failed', 'partially_failed', 'not_applicable'] as const).map(assessStatus => (
@@ -218,7 +218,7 @@ const AffectedControlCard: React.FC<{
                         className={`px-3 py-1.5 text-xs font-medium rounded border transition-colors ${
                           assessmentResult?.postIncidentStatus === assessStatus
                             ? 'bg-accent-500 text-white border-accent-500'
-                            : 'border-steel-700 dark:border-steel-600 light:border-slate-200 hover:border-accent-500'
+                            : 'border-slate-200 dark:border-steel-600 hover:border-accent-500'
                         }`}
                       >
                         {postStatusConfig[assessStatus]?.label}
@@ -338,13 +338,13 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
       <div className="flex items-start gap-4">
         <button
           onClick={onBack}
-          className="p-2 rounded-lg hover:bg-steel-800 dark:hover:bg-steel-800 light:hover:bg-slate-100 text-steel-400"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800 text-steel-400"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <span className="px-2 py-1 text-xs font-mono bg-steel-800 dark:bg-steel-700 light:bg-slate-100 text-secondary rounded">
+            <span className="px-2 py-1 text-xs font-mono bg-slate-100 dark:bg-steel-700 text-secondary rounded">
               {incident.incidentNumber}
             </span>
             <span className={`px-2 py-1 text-xs font-bold rounded ${
@@ -373,14 +373,14 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
       </Card>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-steel-800 dark:bg-steel-800 light:bg-slate-100 rounded-lg">
+      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-steel-800 rounded-lg">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'bg-midnight-900 dark:bg-steel-700 light:bg-white text-primary shadow-sm'
+                ? 'bg-white dark:bg-steel-700 text-primary shadow-sm'
                 : 'text-secondary hover:text-primary'
             }`}
           >
@@ -443,8 +443,8 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
                   </div>
                 </div>
                 {incident.responders.map((responder, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
-                    <div className="w-10 h-10 rounded-full bg-steel-700 dark:bg-steel-700 light:bg-slate-200 flex items-center justify-center text-steel-400 dark:text-steel-400 light:text-slate-600 font-bold">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-steel-800">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-steel-700 flex items-center justify-center text-slate-600 dark:text-steel-400 font-bold">
                       {responder.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -460,7 +460,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
             <Card className="p-5 lg:col-span-2">
               <h3 className="font-semibold text-primary mb-4">Compliance Impact Summary</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="p-4 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-50 text-center">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-steel-800 text-center">
                   <p className="text-2xl font-bold text-primary">{complianceMetrics.total}</p>
                   <p className="text-xs text-secondary">Affected Controls</p>
                 </div>
@@ -476,7 +476,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
                   <p className="text-2xl font-bold text-status-warning">{complianceMetrics.partial}</p>
                   <p className="text-xs text-status-warning">Partial</p>
                 </div>
-                <div className="p-4 rounded-lg bg-steel-700/50 dark:bg-steel-800 light:bg-slate-100 text-center">
+                <div className="p-4 rounded-lg bg-slate-100 dark:bg-steel-800 text-center">
                   <p className="text-2xl font-bold text-steel-400">{complianceMetrics.unknown}</p>
                   <p className="text-xs text-secondary">Not Assessed</p>
                 </div>
@@ -708,7 +708,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incident, compliance, i
                   </div>
 
                   {assessment.status !== 'complete' && (
-                    <div className="mt-6 pt-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200">
+                    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-steel-700">
                       <button
                         onClick={() => ir.completeAssessment(assessment.id)}
                         className="w-full py-3 bg-status-success hover:bg-status-success/90 text-white rounded-lg font-medium transition-colors"

@@ -98,7 +98,7 @@ const ComplianceGauge: React.FC<{
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-steel-700 dark:text-steel-700 light:text-slate-200"
+            className="text-slate-200 dark:text-steel-700"
           />
         </svg>
         <svg className="absolute inset-0 -rotate-90" width={size} height={size}>
@@ -143,7 +143,7 @@ const FrameworkCard: React.FC<{
     if (pct >= 90) return { label: 'Excellent', bgClass: 'bg-status-success/10', textClass: 'text-status-success' };
     if (pct >= 80) return { label: 'Good', bgClass: 'bg-status-success/10', textClass: 'text-status-success' };
     if (pct >= 60) return { label: 'Moderate', bgClass: 'bg-status-warning/10', textClass: 'text-status-warning' };
-    return { label: 'In Progress', bgClass: 'bg-steel-700 dark:bg-steel-700 light:bg-slate-100', textClass: 'text-steel-400' };
+    return { label: 'In Progress', bgClass: 'bg-slate-100 dark:bg-steel-700', textClass: 'text-steel-400' };
   };
 
   const status = getStatusBadge(percentage);
@@ -177,7 +177,7 @@ const FrameworkCard: React.FC<{
           <span className="font-medium text-secondary">Progress</span>
           <span className="font-bold" style={{ color: details.color }}>{percentage}%</span>
         </div>
-        <div className="h-2 bg-steel-700 dark:bg-steel-700 light:bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-2 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: details.color }}
@@ -208,7 +208,7 @@ const FrameworkCard: React.FC<{
 const SecurityItem: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({
   icon, title, description,
 }) => (
-  <div className="flex items-start gap-4 p-4 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-50 border border-steel-700 dark:border-steel-700 light:border-slate-200">
+  <div className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 dark:bg-steel-800 border border-slate-200 dark:border-steel-700">
     <div className="w-10 h-10 rounded-lg bg-accent-500/10 flex items-center justify-center text-accent-400 flex-shrink-0">
       {icon}
     </div>

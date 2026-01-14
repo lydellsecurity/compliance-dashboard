@@ -302,7 +302,7 @@ const AuditorVerification: React.FC = () => {
                         </a>
                         <button
                           onClick={() => handleCopy(result.documentUrl!)}
-                          className="flex items-center gap-2 px-4 py-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-100 text-secondary rounded-lg text-sm font-medium hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200 transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-steel-800 text-secondary rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-steel-700 transition-colors"
                         >
                           {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                           {copied ? 'Copied!' : 'Copy URL'}

@@ -306,7 +306,7 @@ INCLUDED FILES
       {/* Bundle Preview Card */}
       <div className="card overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-steel-700 dark:border-steel-700 light:border-slate-200 bg-gradient-to-r from-framework-hipaa to-purple-600">
+        <div className="p-6 border-b border-slate-200 dark:border-steel-700 bg-gradient-to-r from-framework-hipaa to-purple-600">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
               <Archive className="w-7 h-7 text-white" />
@@ -326,22 +326,22 @@ INCLUDED FILES
 
         {/* Content Summary */}
         <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+          <div className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl">
             <FileText className="w-6 h-6 text-framework-hipaa mb-2" />
             <div className="text-2xl font-bold text-primary">{policyCount}</div>
             <div className="text-sm text-secondary">Policies</div>
           </div>
-          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+          <div className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl">
             <FolderOpen className="w-6 h-6 text-status-success mb-2" />
             <div className="text-2xl font-bold text-primary">{evidenceCount}</div>
             <div className="text-sm text-secondary">Evidence Files</div>
           </div>
-          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+          <div className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl">
             <Shield className="w-6 h-6 text-accent-400 mb-2" />
             <div className="text-2xl font-bold text-primary">{stats.totalControls}</div>
             <div className="text-sm text-secondary">Controls</div>
           </div>
-          <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl">
+          <div className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl">
             <CheckCircle className="w-6 h-6 text-status-warning mb-2" />
             <div className="text-2xl font-bold text-primary">
               {Math.round((stats.compliantControls / stats.totalControls) * 100)}%
@@ -356,16 +356,16 @@ INCLUDED FILES
             Bundle Contents
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-            <div className="flex items-center gap-2 p-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-800 rounded-lg">
               <File className="w-4 h-4 text-steel-400" />
               <span className="text-sm text-secondary">MANIFEST.txt</span>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-800 rounded-lg">
               <File className="w-4 h-4 text-steel-400" />
               <span className="text-sm text-secondary">compliance_summary.json</span>
             </div>
             {bundleFiles.slice(0, 6).map((file, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
+              <div key={index} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-800 rounded-lg">
                 <File className="w-4 h-4 text-steel-400" />
                 <span className="text-sm text-secondary truncate">
                   {file.name}
@@ -390,7 +390,7 @@ INCLUDED FILES
                   {progress.current} / {progress.total}
                 </span>
               </div>
-              <div className="w-full h-2 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{
@@ -416,7 +416,7 @@ INCLUDED FILES
         )}
 
         {/* Action Button */}
-        <div className="p-6 bg-steel-900 dark:bg-steel-900/50 light:bg-slate-50 border-t border-steel-700 dark:border-steel-700 light:border-slate-200">
+        <div className="p-6 bg-slate-50 dark:bg-steel-900/50 border-t border-slate-200 dark:border-steel-700">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-secondary">
               <Clock className="w-4 h-4" />

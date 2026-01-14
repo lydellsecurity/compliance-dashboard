@@ -98,7 +98,7 @@ const CircularGauge: React.FC<{
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-steel-800 dark:text-steel-800 light:text-slate-200"
+            className="text-slate-200 dark:text-steel-800"
           />
           <motion.circle
             cx={size/2}
@@ -253,7 +253,7 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
             <div className="flex-1 overflow-y-auto p-4">
               {syncNotifications.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                  <div className="w-12 h-12 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mb-4">
                     <Activity className="w-6 h-6 text-steel-500" />
                   </div>
                   <p className="text-sm text-steel-500">Complete controls to see framework sync activity</p>
@@ -268,7 +268,7 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.02 }}
-                        className="p-3 bg-steel-800 dark:bg-midnight-800 light:bg-slate-100 border border-steel-700 dark:border-steel-800 light:border-slate-200 rounded-lg"
+                        className="p-3 bg-slate-100 dark:bg-midnight-800 border border-slate-200 dark:border-steel-800 rounded-lg"
                         style={{ borderLeftColor: color, borderLeftWidth: '2px' }}
                       >
                         <div className="flex items-start gap-2.5">
@@ -369,7 +369,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-steel-800 dark:bg-steel-800 light:bg-slate-200 text-secondary rounded">
+            <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-slate-200 dark:bg-steel-800 text-secondary rounded">
               {control.id}
             </span>
             {evidence && (
@@ -389,7 +389,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
         </div>
         <button
           onClick={() => setShowInfo(!showInfo)}
-          className={`p-2 transition-colors flex-shrink-0 rounded-lg ${showInfo ? 'bg-accent-500 text-white' : 'bg-steel-800 dark:bg-steel-800 light:bg-slate-200 text-secondary hover:text-accent-400'}`}
+          className={`p-2 transition-colors flex-shrink-0 rounded-lg ${showInfo ? 'bg-accent-500 text-white' : 'bg-slate-200 dark:bg-steel-800 text-secondary hover:text-accent-400'}`}
         >
           <Info className="w-4 h-4" />
         </button>
@@ -649,7 +649,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
                 onClick={() => domainMeta && onNavigate('assessment', domainMeta)}
                 className={`p-4 text-left transition-all duration-200 border rounded-lg ${complete
                   ? 'bg-status-success/5 border-status-success/30'
-                  : 'bg-steel-800 dark:bg-midnight-800 light:bg-slate-50 border-steel-700 dark:border-steel-800 light:border-slate-200 hover:border-accent-500/30'
+                  : 'bg-slate-50 dark:bg-midnight-800 border-slate-200 dark:border-steel-800 hover:border-accent-500/30'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-3">
@@ -667,7 +667,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
                 </div>
                 <div className="font-medium text-sm text-primary mb-2 truncate tracking-tight">{domain.title}</div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${domain.percentage}%` }}
@@ -831,7 +831,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         <div className="space-y-3">
           {controls.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-12 h-12 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Search className="w-6 h-6 text-secondary" />
               </div>
               <p className="text-secondary">
@@ -936,7 +936,7 @@ const EvidenceTab: React.FC = () => {
       {/* Evidence Table */}
       {allEvidence.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
             <FolderOpen className="w-8 h-8 text-secondary" />
           </div>
           <h3 className="text-lg font-semibold text-primary mb-2 tracking-tight">No Evidence Yet</h3>
@@ -944,7 +944,7 @@ const EvidenceTab: React.FC = () => {
         </Card>
       ) : filteredEvidence.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-12 h-12 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Search className="w-6 h-6 text-secondary" />
           </div>
           <p className="text-secondary">No evidence matches your search</p>
@@ -970,7 +970,7 @@ const EvidenceTab: React.FC = () => {
                   <tr key={entry.id} className="table-row">
                     <td className="table-cell">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-xs font-mono bg-steel-800 dark:bg-steel-800 light:bg-slate-200 text-secondary rounded">{entry.controlId}</span>
+                        <span className="px-2 py-0.5 text-xs font-mono bg-slate-200 dark:bg-steel-800 text-secondary rounded">{entry.controlId}</span>
                         <span className="text-sm text-primary font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
                       </div>
                     </td>
@@ -981,7 +981,7 @@ const EvidenceTab: React.FC = () => {
                       <select
                         value={entry.status}
                         onChange={e => updateEvidence(entry.id, { status: e.target.value as 'draft' | 'review' | 'final' })}
-                        className="px-2 py-1 text-xs bg-transparent border border-steel-700 dark:border-steel-700 light:border-slate-300 text-secondary rounded focus:outline-none focus:ring-1 focus:ring-accent-500"
+                        className="px-2 py-1 text-xs bg-transparent border border-slate-300 dark:border-steel-700 text-secondary rounded focus:outline-none focus:ring-1 focus:ring-accent-500"
                       >
                         <option value="draft">Draft</option>
                         <option value="review">Review</option>
@@ -994,7 +994,7 @@ const EvidenceTab: React.FC = () => {
                         defaultValue={entry.notes}
                         onChange={e => handleNotesChange(entry.id, e.target.value)}
                         placeholder="Add notes..."
-                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-steel-700 dark:hover:border-steel-700 light:hover:border-slate-300 focus:border-accent-500 text-secondary focus:outline-none transition-colors rounded"
+                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-steel-700 focus:border-accent-500 text-secondary focus:outline-none transition-colors rounded"
                       />
                     </td>
                     <td className="table-cell">
@@ -1072,7 +1072,7 @@ const CompanyTab: React.FC = () => {
       {/* Controls Grid */}
       {customControls.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-steel-800 dark:bg-steel-800 light:bg-slate-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Briefcase className="w-8 h-8 text-secondary" />
           </div>
           <h3 className="text-lg font-semibold text-primary mb-2 tracking-tight">No Custom Controls</h3>
@@ -1136,7 +1136,7 @@ const CompanyTab: React.FC = () => {
               onClick={e => e.stopPropagation()}
               className="modal-content w-full max-w-xl max-h-[90vh] overflow-y-auto"
             >
-              <div className="p-5 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+              <div className="p-5 border-b border-slate-200 dark:border-steel-700">
                 <h2 className="text-lg font-bold text-primary tracking-tight">Create Custom Control</h2>
                 <p className="text-sm text-secondary">Add organization-specific requirements</p>
               </div>
@@ -1186,7 +1186,7 @@ const CompanyTab: React.FC = () => {
                     <option value="critical">Critical</option>
                   </select>
                 </div>
-                <div className="p-4 bg-steel-900 dark:bg-midnight-900 light:bg-slate-100 border border-steel-700 dark:border-steel-800 light:border-slate-200 rounded-lg">
+                <div className="p-4 bg-slate-100 dark:bg-midnight-900 border border-slate-200 dark:border-steel-800 rounded-lg">
                   <label className="block text-sm font-medium text-secondary mb-3">Framework Mapping</label>
                   <div className="space-y-3">
                     {FRAMEWORKS.map(fw => {
@@ -1197,11 +1197,11 @@ const CompanyTab: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => toggleFramework(fw.id)}
-                            className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-all ${isSelected ? '' : 'border-steel-700 dark:border-steel-700 light:border-slate-300 hover:border-steel-600 dark:hover:border-steel-600 light:hover:border-slate-400'}`}
+                            className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-all ${isSelected ? '' : 'border-slate-300 dark:border-steel-700 hover:border-slate-400 dark:hover:border-steel-600'}`}
                             style={isSelected ? { borderColor: color, backgroundColor: `${color}10`, color } : undefined}
                           >
                             <div
-                              className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? '' : 'border-steel-600 dark:border-steel-600 light:border-slate-400'}`}
+                              className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? '' : 'border-slate-400 dark:border-steel-600'}`}
                               style={isSelected ? { borderColor: color, backgroundColor: color } : undefined}
                             >
                               {isSelected && <Check className="w-3 h-3 text-white" />}

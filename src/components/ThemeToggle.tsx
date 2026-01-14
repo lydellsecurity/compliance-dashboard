@@ -55,7 +55,7 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
         relative flex items-center gap-3 w-full px-3 py-2.5
         text-sm transition-all duration-200 cursor-pointer
         text-steel-400 hover:text-steel-200
-        dark:hover:bg-steel-800/50 light:hover:bg-slate-200/50
+        hover:bg-slate-200/50 dark:hover:bg-steel-800/50
         hover:bg-steel-800/50
         ${collapsed ? 'justify-center' : ''}
       `}
@@ -97,14 +97,14 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-steel-400 dark:text-steel-400 light:text-slate-600"
+          className="text-slate-600 dark:text-steel-400"
         >
           {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
         </motion.span>
       )}
 
       {collapsed && (
-        <div className="absolute left-full ml-2 px-2 py-1 text-xs font-medium text-steel-200 bg-midnight-800 dark:bg-midnight-800 light:bg-white light:text-slate-700 border border-steel-700 dark:border-steel-700 light:border-slate-200 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-lg">
+        <div className="absolute left-full ml-2 px-2 py-1 text-xs font-medium text-slate-700 dark:text-steel-200 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-700 whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-lg">
           {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
         </div>
       )}

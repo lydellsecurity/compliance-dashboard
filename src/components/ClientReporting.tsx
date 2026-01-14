@@ -78,7 +78,7 @@ const ScoreGauge: React.FC<{ score: number; size?: number }> = ({ score, size = 
           fill="none"
           stroke="currentColor"
           strokeWidth={8}
-          className="text-steel-700 dark:text-steel-700 light:text-slate-200"
+          className="text-slate-200 dark:text-steel-700"
         />
         <motion.circle
           cx={size / 2}
@@ -112,11 +112,11 @@ const EngagementCard: React.FC<{
     className={`w-full text-left p-4 rounded-xl border transition-all ${
       isSelected
         ? 'bg-accent-500/10 border-accent-500/30 ring-2 ring-accent-500/20'
-        : 'card-bg border-steel-700 dark:border-steel-700 light:border-slate-200 hover:border-accent-500/30'
+        : 'card-bg border-slate-200 dark:border-steel-700 hover:border-accent-500/30'
     }`}
   >
     <div className="flex items-start gap-3">
-      <div className={`p-2 rounded-lg ${isSelected ? 'bg-accent-500/20' : 'bg-steel-800 dark:bg-steel-800 light:bg-slate-100'}`}>
+      <div className={`p-2 rounded-lg ${isSelected ? 'bg-accent-500/20' : 'bg-slate-100 dark:bg-steel-800'}`}>
         <Building2 className={`w-5 h-5 ${isSelected ? 'text-accent-400' : 'text-steel-400'}`} />
       </div>
       <div className="flex-1 min-w-0">
@@ -140,7 +140,7 @@ const EngagementCard: React.FC<{
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
         engagement.status === 'active'
           ? 'bg-status-success/10 text-status-success'
-          : 'bg-steel-800 dark:bg-steel-700 light:bg-slate-100 text-steel-400'
+          : 'bg-slate-100 dark:bg-steel-700 text-steel-400'
       }`}>
         {engagement.status}
       </span>
@@ -153,7 +153,7 @@ const ReportCard: React.FC<{
   onView: () => void;
   onDownload: () => void;
 }> = ({ report, onView, onDownload }) => (
-  <div className="p-4 rounded-xl bg-steel-800 dark:bg-steel-800 light:bg-slate-50 border border-steel-700 dark:border-steel-700 light:border-slate-200">
+  <div className="p-4 rounded-xl bg-slate-50 dark:bg-steel-800 border border-slate-200 dark:border-steel-700">
     <div className="flex items-start justify-between gap-3 mb-3">
       <div>
         <h4 className="font-medium text-primary">{report.title}</h4>
@@ -249,7 +249,7 @@ const CreateEngagementModal: React.FC<{
           onClick={e => e.stopPropagation()}
           className="modal-content w-full max-w-lg"
         >
-          <div className="p-6 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+          <div className="p-6 border-b border-slate-200 dark:border-steel-700">
             <h2 className="text-xl font-bold text-primary">New Client Engagement</h2>
             <p className="text-sm text-secondary">Set up a new compliance engagement</p>
           </div>
@@ -323,7 +323,7 @@ const CreateEngagementModal: React.FC<{
                     className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
                       formData.frameworksInScope.includes(fw)
                         ? 'text-white border-transparent'
-                        : 'border-steel-700 dark:border-steel-700 light:border-slate-200 hover:border-accent-500'
+                        : 'border-slate-200 dark:border-steel-700 hover:border-accent-500'
                     }`}
                     style={{
                       backgroundColor: formData.frameworksInScope.includes(fw)
@@ -367,7 +367,7 @@ const CreateEngagementModal: React.FC<{
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200">
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-steel-700">
               <button
                 type="button"
                 onClick={onClose}
@@ -423,7 +423,7 @@ const ReportPreviewModal: React.FC<{
           className="modal-content w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Modal Header */}
-          <div className="p-6 border-b border-steel-700 dark:border-steel-700 light:border-slate-200 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-200 dark:border-steel-700 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-primary">{report.title}</h2>
               <p className="text-sm text-secondary">
@@ -442,7 +442,7 @@ const ReportPreviewModal: React.FC<{
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-steel-800 dark:hover:bg-steel-800 light:hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-steel-400" />
               </button>
@@ -471,7 +471,7 @@ const ReportPreviewModal: React.FC<{
             </div>
 
             {/* Framework Scores */}
-            <div className="bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl p-5">
+            <div className="bg-slate-50 dark:bg-steel-800 rounded-xl p-5">
               <h3 className="font-semibold text-primary mb-4">Framework Compliance</h3>
               <div className="overflow-x-auto">
                 <table className="data-table w-full">
@@ -484,7 +484,7 @@ const ReportPreviewModal: React.FC<{
                       <th className="pb-3 text-center">Gaps</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-steel-700 dark:divide-steel-700 light:divide-slate-200">
+                  <tbody className="divide-y divide-slate-200 dark:divide-steel-700">
                     {report.frameworkScores.map(fs => (
                       <tr key={fs.frameworkId}>
                         <td className="py-3">
@@ -533,7 +533,7 @@ const ReportPreviewModal: React.FC<{
                   {report.criticalFindings.map((finding, index) => (
                     <li
                       key={index}
-                      className="text-sm text-status-risk bg-midnight-900 dark:bg-status-risk/5 light:bg-white rounded-lg px-4 py-2"
+                      className="text-sm text-status-risk bg-white dark:bg-status-risk/5 rounded-lg px-4 py-2"
                     >
                       {finding}
                     </li>
@@ -553,7 +553,7 @@ const ReportPreviewModal: React.FC<{
                   {report.recommendations.map((rec, index) => (
                     <li
                       key={index}
-                      className="text-sm text-status-success bg-midnight-900 dark:bg-status-success/5 light:bg-white rounded-lg px-4 py-2"
+                      className="text-sm text-status-success bg-white dark:bg-status-success/5 rounded-lg px-4 py-2"
                     >
                       {rec}
                     </li>
@@ -563,7 +563,7 @@ const ReportPreviewModal: React.FC<{
             )}
 
             {/* Report Metadata */}
-            <div className="bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl p-5">
+            <div className="bg-slate-50 dark:bg-steel-800 rounded-xl p-5">
               <h3 className="font-semibold text-primary mb-3">Report Details</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
@@ -846,7 +846,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                       className={`p-4 rounded-xl border text-left transition-all ${
                         selectedReportType === type.id
                           ? 'bg-accent-500/10 border-accent-500/30 ring-2 ring-accent-500/20'
-                          : 'border-steel-700 dark:border-steel-700 light:border-slate-200 hover:border-accent-500/30'
+                          : 'border-slate-200 dark:border-steel-700 hover:border-accent-500/30'
                       }`}
                     >
                       <div className={`mb-2 ${selectedReportType === type.id ? 'text-accent-400' : 'text-steel-400'}`}>

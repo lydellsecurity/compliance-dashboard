@@ -35,7 +35,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
   return (
     <div className="card rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
+      <div className="px-6 py-4 border-b border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+      <div className="flex border-b border-slate-200 dark:border-steel-700">
         {[
           { id: 'text', label: 'Requirement Text' },
           { id: 'guidance', label: 'Implementation Guidance' },
@@ -87,7 +87,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
                 <div className="w-3 h-3 rounded-full bg-steel-400" />
                 <span className="text-sm font-medium text-secondary">Current Version</span>
               </div>
-              <div className="p-4 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-100 font-mono text-sm leading-relaxed text-secondary">
+              <div className="p-4 rounded-lg bg-slate-100 dark:bg-steel-800 font-mono text-sm leading-relaxed text-secondary">
                 {comparison.current.requirementText}
               </div>
             </div>
@@ -156,7 +156,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
               </h4>
               <div className="space-y-2">
                 {comparison.affectedControls.map((control) => (
-                  <div key={control.controlId} className="p-3 rounded-lg bg-steel-800 dark:bg-steel-800 light:bg-slate-50 flex items-center justify-between">
+                  <div key={control.controlId} className="p-3 rounded-lg bg-slate-50 dark:bg-steel-800 flex items-center justify-between">
                     <div>
                       <span className="font-mono text-sm text-secondary">{control.controlId}</span>
                       <span className="mx-2 text-steel-500">|</span>
@@ -172,7 +172,7 @@ export const RequirementComparisonViewer: React.FC<RequirementComparisonViewerPr
       </div>
 
       {/* Action Buttons */}
-      <div className="px-6 py-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 flex items-center justify-between">
+      <div className="px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800 flex items-center justify-between">
         <div className="text-sm text-steel-400">
           {comparison.affectedControls.length} control(s) will be flagged for review
         </div>
@@ -328,7 +328,7 @@ export const ComplianceDriftAlert: React.FC<ComplianceDriftAlertProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 py-3 card border-t border-steel-700 dark:border-steel-700 light:border-slate-200 flex justify-end gap-2">
+      <div className="px-4 py-3 card border-t border-slate-200 dark:border-steel-700 flex justify-end gap-2">
         {drift.status === 'detected' && (
           <button onClick={() => onAcknowledge(drift.id)} className="px-3 py-1.5 text-sm text-secondary">
             Acknowledge
@@ -353,7 +353,7 @@ const VersionBadge: React.FC<{ version: string; label: string; variant: 'current
   variant,
 }) => (
   <div className={`px-3 py-1.5 rounded-lg text-center ${
-    variant === 'current' ? 'bg-steel-700 dark:bg-steel-700 light:bg-slate-200' : 'bg-status-success/10'
+    variant === 'current' ? 'bg-slate-200 dark:bg-steel-700' : 'bg-status-success/10'
   }`}>
     <div className={`text-xs ${variant === 'current' ? 'text-steel-400' : 'text-status-success'}`}>
       {label}

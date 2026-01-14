@@ -128,14 +128,14 @@ const GenerateReportButton: React.FC<GenerateReportButtonProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-72 bg-steel-800 dark:bg-steel-800 light:bg-white backdrop-blur-xl rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200 shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-72 bg-white dark:bg-steel-800 backdrop-blur-xl rounded-xl border border-slate-200 dark:border-steel-700 shadow-xl z-50 overflow-hidden"
           >
             <div className="p-2">
               {reportTypes.map((report) => (
                 <button
                   key={report.type}
                   onClick={() => handleGenerate(report.type)}
-                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-100 transition-colors text-left"
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-700 transition-colors text-left"
                 >
                   <div className="p-2 bg-framework-hipaa/20 rounded-lg">
                     <Download className="w-4 h-4 text-framework-hipaa" />

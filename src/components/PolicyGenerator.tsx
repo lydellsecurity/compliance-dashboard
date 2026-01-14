@@ -292,7 +292,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
                 </div>
 
                 {/* Preview Section */}
-                <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200">
+                <div className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700">
                   <h3 className="font-semibold text-primary mb-3">Document Preview</h3>
 
                   <div className="space-y-3 text-sm">
@@ -338,7 +338,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
                             {control.frameworkMappings.map((m, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded text-xs text-secondary"
+                                className="px-2 py-0.5 bg-slate-200 dark:bg-steel-700 rounded text-xs text-secondary"
                               >
                                 {m.frameworkId} {m.clauseId}
                               </span>
@@ -390,7 +390,7 @@ export const PolicyGeneratorModal: React.FC<PolicyGeneratorModalProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800">
                 <button
                   onClick={handleClose}
                   className="px-4 py-2.5 text-secondary hover:text-primary font-medium transition-colors"

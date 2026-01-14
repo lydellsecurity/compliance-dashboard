@@ -81,7 +81,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   return (
     <button
       onClick={handleCopy}
-      className="p-1.5 rounded-lg hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200 text-steel-400 hover:text-primary transition-colors"
+      className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-steel-700 text-steel-400 hover:text-primary transition-colors"
       title="Copy to clipboard"
     >
       {copied ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
@@ -170,8 +170,8 @@ const ImplementationSection: React.FC<{
                 ${isActive
                   ? 'text-white shadow-lg'
                   : hasImpl
-                    ? 'bg-steel-800 dark:bg-steel-800 light:bg-slate-100 text-secondary hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200'
-                    : 'bg-steel-900 dark:bg-steel-900 light:bg-slate-50 text-steel-600 cursor-not-allowed'
+                    ? 'bg-slate-100 dark:bg-steel-800 text-secondary hover:bg-slate-200 dark:hover:bg-steel-700'
+                    : 'bg-slate-50 dark:bg-steel-900 text-steel-600 cursor-not-allowed'
                 }
               `}
               style={isActive ? { backgroundColor: provider.color } : undefined}
@@ -193,8 +193,8 @@ const ImplementationSection: React.FC<{
             </h4>
             <div className="space-y-2">
               {currentImpl.steps.map((step, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-lg">
-                  <span className="w-6 h-6 rounded-full bg-steel-700 dark:bg-steel-700 light:bg-slate-200 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
+                <div key={idx} className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-steel-800 rounded-lg">
+                  <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-steel-700 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0">
                     {idx + 1}
                   </span>
                   <span className="text-sm text-secondary">{step}</span>
@@ -354,7 +354,7 @@ const VerificationSection: React.FC<{
     </div>
 
     {/* Auditor Notes */}
-    <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-100 rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200">
+    <div className="p-4 bg-slate-100 dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700">
       <h4 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
         <BookOpen className="w-4 h-4" />
         Auditor Notes
@@ -431,7 +431,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             className="fixed right-0 top-0 h-full w-full max-w-3xl modal-content z-50 shadow-2xl flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-steel-700">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
@@ -463,7 +463,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-steel-700 dark:hover:bg-steel-700 light:hover:bg-slate-200 text-steel-400 hover:text-primary transition-colors"
+                className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-steel-700 text-steel-400 hover:text-primary transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -472,7 +472,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             {guidance ? (
               <>
                 {/* Tabs */}
-                <div className="flex border-b border-steel-700 dark:border-steel-700 light:border-slate-200">
+                <div className="flex border-b border-slate-200 dark:border-steel-700">
                   {tabs.map(tab => (
                     <button
                       key={tab.id}
@@ -545,7 +545,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
 
                 {/* Footer with Resources */}
                 {guidance.resources.length > 0 && (
-                  <div className="p-4 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50">
+                  <div className="p-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800">
                     <h4 className="text-xs font-semibold text-steel-400 uppercase mb-2">Resources</h4>
                     <div className="flex flex-wrap gap-2">
                       {guidance.resources.map((resource, idx) => (
@@ -567,7 +567,7 @@ export const RemediationEngine: React.FC<RemediationEngineProps> = ({
             ) : (
               /* No Guidance Available */
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-steel-800 dark:bg-steel-800 light:bg-slate-100 flex items-center justify-center mb-4">
+                <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-steel-800 flex items-center justify-center mb-4">
                   <BookOpen className="w-10 h-10 text-steel-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-primary mb-2">

@@ -247,22 +247,22 @@ function markdownToHtml(markdown: string): string {
     .replace(/>/g, '&gt;')
     // Headers
     .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-primary mt-6 mb-2">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-primary mt-8 mb-3 pb-2 border-b border-steel-700 dark:border-steel-700 light:border-slate-200">$1</h2>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-primary mt-8 mb-3 pb-2 border-b border-slate-200 dark:border-steel-700">$1</h2>')
     .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-primary mb-4">$1</h1>')
     // Bold and italic
     .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     // Code blocks
-    .replace(/```([\s\S]*?)```/g, '<pre class="bg-steel-800 dark:bg-steel-800 light:bg-slate-100 p-4 rounded-lg overflow-x-auto my-4 text-sm"><code>$1</code></pre>')
-    .replace(/`(.*?)`/g, '<code class="bg-steel-800 dark:bg-steel-800 light:bg-slate-100 px-1.5 py-0.5 rounded text-sm">$1</code>')
+    .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-100 dark:bg-steel-800 p-4 rounded-lg overflow-x-auto my-4 text-sm"><code>$1</code></pre>')
+    .replace(/`(.*?)`/g, '<code class="bg-slate-100 dark:bg-steel-800 px-1.5 py-0.5 rounded text-sm">$1</code>')
     // Lists
     .replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 text-secondary">$1</li>')
     .replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 text-secondary list-decimal">$2</li>')
     // Blockquotes
     .replace(/^>\s+(.*$)/gim, '<blockquote class="border-l-4 border-accent-500 pl-4 py-2 my-4 bg-accent-500/10 text-secondary">$1</blockquote>')
     // Horizontal rules
-    .replace(/^---$/gim, '<hr class="my-6 border-steel-700 dark:border-steel-700 light:border-slate-200" />')
+    .replace(/^---$/gim, '<hr class="my-6 border-slate-200 dark:border-steel-700" />')
     // Paragraphs
     .replace(/\n\n/g, '</p><p class="text-secondary my-3 leading-relaxed">')
     // Line breaks
@@ -654,7 +654,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                 {status === 'idle' && (
                   <div className="space-y-6">
                     {/* Control Info */}
-                    <div className="p-4 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 rounded-xl border border-steel-700 dark:border-steel-700 light:border-slate-200">
+                    <div className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700">
                       <h3 className="font-semibold text-primary mb-3">Control Information</h3>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
@@ -682,7 +682,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
                             {control.frameworkMappings.map((m, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 bg-steel-700 dark:bg-steel-700 light:bg-slate-200 rounded text-xs text-secondary"
+                                className="px-2 py-0.5 bg-slate-200 dark:bg-steel-700 rounded text-xs text-secondary"
                               >
                                 {m.frameworkId} {m.clauseId}
                               </span>
@@ -889,7 +889,7 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between p-6 border-t border-steel-700 dark:border-steel-700 light:border-slate-200 bg-steel-800 dark:bg-steel-800 light:bg-slate-50 flex-shrink-0">
+              <div className="flex items-center justify-between p-6 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800 flex-shrink-0">
                 <div className="text-sm text-steel-400">
                   {metadata && (
                     <span>Model: {metadata.model}</span>
