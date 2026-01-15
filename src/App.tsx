@@ -32,6 +32,7 @@ import MonitoringDashboard from './components/MonitoringDashboard';
 import AlertConfiguration from './components/AlertConfiguration';
 import CloudVerification from './components/CloudVerification';
 import RemediationChat from './components/RemediationChat';
+import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify' | 'settings';
@@ -1413,12 +1414,19 @@ const AppContent: React.FC = () => {
   const [showCloudVerification, setShowCloudVerification] = useState(false);
 
   // Get alert counts from monitoring service
-  const alertCounts = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { monitoringService } = require('./services/continuous-monitoring.service');
-    const counts = monitoringService.getAlertCounts() as Record<string, number>;
-    return Object.values(counts).reduce((a, b) => a + b, 0);
-  }, [activeTab]); // Re-check when tab changes
+  const [alertCounts, setAlertCounts] = useState(0);
+
+  // Update alert counts when tab changes or when monitoring service updates
+  useEffect(() => {
+    const updateAlertCounts = () => {
+      const counts = monitoringService.getAlertCounts();
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      setAlertCounts(total);
+    };
+
+    updateAlertCounts();
+    return monitoringService.subscribe(updateAlertCounts);
+  }, []);
 
   // Prepare data for monitoring dashboard
   const currentScore = stats.assessmentPercentage;
