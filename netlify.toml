@@ -18,13 +18,29 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# Headers for security
+# Security Headers - Industry Best Practices
 [[headers]]
   for = "/*"
   [headers.values]
+    # Prevent clickjacking
     X-Frame-Options = "DENY"
+    # Prevent MIME type sniffing
     X-Content-Type-Options = "nosniff"
+    # Enable XSS protection
+    X-XSS-Protection = "1; mode=block"
+    # Control referrer information
     Referrer-Policy = "strict-origin-when-cross-origin"
+    # Permissions policy (restrict sensitive APIs)
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), usb=(), payment=()"
+    # Content Security Policy
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    # HTTP Strict Transport Security (HSTS)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    # Prevent DNS prefetching
+    X-DNS-Prefetch-Control = "off"
+    # Cross-Origin policies
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
 
 # Cache static assets
 [[headers]]

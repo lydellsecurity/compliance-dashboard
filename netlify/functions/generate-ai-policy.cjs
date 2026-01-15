@@ -1,7 +1,17 @@
-// netlify/functions/generate-ai-policy.js
+// netlify/functions/generate-ai-policy.cjs
 // AI-Powered Policy Document Generator using Claude API with Streaming
+// Security: Uses origin-validated CORS and input sanitization
 
 const Anthropic = require('@anthropic-ai/sdk');
+const {
+  getCorsHeaders,
+  handleCorsPreflght,
+  sanitizeString,
+  parseJsonBody,
+  errorResponse,
+  successResponse,
+  checkRateLimit,
+} = require('./utils/security.cjs');
 
 // GRC Auditor System Prompt
 const GRC_SYSTEM_PROMPT = `You are a Senior GRC (Governance, Risk, and Compliance) Auditor. Your goal is to generate formal, legally-defensible security policies.
@@ -62,63 +72,53 @@ function validatePayload(payload) {
   return errors;
 }
 
-function sanitizeString(str, maxLength = 2000) {
-  if (!str || typeof str !== 'string') return '';
-  return str.replace(/[\x00-\x1F\x7F]/g, '').substring(0, maxLength).trim();
-}
-
 exports.handler = async (event, context) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
+  const origin = event.headers.origin || event.headers.Origin;
+  const corsHeaders = getCorsHeaders(origin);
 
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: '',
-    };
+    return handleCorsPreflght(event);
   }
 
   if (event.httpMethod !== 'POST') {
+    return errorResponse(405, 'Method not allowed', origin);
+  }
+
+  // Rate limiting by IP
+  const clientIp = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
+  const rateLimit = checkRateLimit(`ai-policy:${clientIp}`);
+  if (!rateLimit.allowed) {
     return {
-      statusCode: 405,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Method not allowed' }),
+      statusCode: 429,
+      headers: {
+        ...corsHeaders,
+        'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+        'X-RateLimit-Remaining': '0',
+      },
+      body: JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
     };
   }
 
   // Check for API key
   const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicApiKey) {
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Anthropic API key not configured' }),
-    };
+    return errorResponse(500, 'Anthropic API key not configured', origin);
   }
 
   try {
-    // Parse and validate payload
-    let payload;
-    try {
-      payload = JSON.parse(event.body || '{}');
-    } catch (e) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Invalid JSON payload' }),
-      };
+    // Parse and validate payload with sanitization
+    const parseResult = parseJsonBody(event.body);
+    if (!parseResult.valid) {
+      return errorResponse(400, parseResult.error, origin);
     }
+    const payload = parseResult.data;
 
     const validationErrors = validatePayload(payload);
     if (validationErrors.length > 0) {
       return {
         statusCode: 400,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Validation failed', details: validationErrors }),
       };
     }
@@ -274,28 +274,14 @@ Generate the policy now.`;
 
     // Handle specific Anthropic API errors
     if (error.status === 401) {
-      return {
-        statusCode: 401,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Invalid Anthropic API key' }),
-      };
+      return errorResponse(401, 'Invalid Anthropic API key', origin);
     }
 
     if (error.status === 429) {
-      return {
-        statusCode: 429,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-      };
+      return errorResponse(429, 'Rate limit exceeded. Please try again later.', origin);
     }
 
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        error: 'Failed to generate AI policy',
-        message: error.message,
-      }),
-    };
+    // Don't expose internal error details in production
+    return errorResponse(500, 'Failed to generate AI policy', origin);
   }
 };
