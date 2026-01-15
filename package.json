@@ -13,6 +13,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@supabase/supabase-js": "^2.90.1",
+    "aws-sdk": "^2.1693.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
