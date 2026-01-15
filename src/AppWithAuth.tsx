@@ -2,19 +2,53 @@
  * ============================================================================
  * APP WITH AUTH WRAPPER
  * ============================================================================
- * 
+ *
  * Wraps the main App component with authentication.
- * Shows login screen if not authenticated, otherwise shows the app.
+ * Shows landing page by default, login screen on demand, or the app if authenticated.
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import App from './App';
 import AuthScreen from './components/AuthScreen';
+import LandingPage from './components/LandingPage';
 import { Shield, Loader2 } from 'lucide-react';
+
+// Check for URL hash to determine initial view
+const getInitialView = (): 'landing' | 'auth' | 'app' => {
+  const hash = window.location.hash;
+  if (hash === '#login' || hash === '#signup') return 'auth';
+  if (hash === '#app') return 'app';
+  return 'landing';
+};
 
 const AppWithAuth: React.FC = () => {
   const { user, loading } = useAuth();
+  const [view, setView] = useState<'landing' | 'auth' | 'app'>(getInitialView());
+
+  // Listen for hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#login' || hash === '#signup') {
+        setView('auth');
+      } else if (hash === '#app') {
+        setView('app');
+      } else if (hash === '' || hash === '#') {
+        setView('landing');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // If user is authenticated, always show app
+  useEffect(() => {
+    if (user && !loading) {
+      setView('app');
+    }
+  }, [user, loading]);
 
   // Loading state
   if (loading) {
@@ -33,7 +67,17 @@ const AppWithAuth: React.FC = () => {
     );
   }
 
-  // Not authenticated - show login
+  // Show landing page
+  if (view === 'landing' && !user) {
+    return <LandingPage />;
+  }
+
+  // Show auth screen
+  if (view === 'auth' && !user) {
+    return <AuthScreen />;
+  }
+
+  // Not authenticated but trying to access app - show auth
   if (!user) {
     return <AuthScreen />;
   }
