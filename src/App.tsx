@@ -9,9 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
   Info, AlertTriangle, Shield, Upload, FileText, Lock, Users,
-  Server, Database, Eye, Settings, RefreshCw, CheckCircle2, Target, Activity,
+  Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe, ExternalLink,
-  Award, ShieldCheck, ChevronRight, Menu,
+  Award, ShieldCheck, ChevronRight, Menu, Sparkles,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -27,9 +27,14 @@ import AuditBundle from './components/AuditBundle';
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
 import { ThemeToggle } from './components/ThemeToggle';
+import Settings from './components/Settings';
+import MonitoringDashboard from './components/MonitoringDashboard';
+import AlertConfiguration from './components/AlertConfiguration';
+import CloudVerification from './components/CloudVerification';
+import RemediationChat from './components/RemediationChat';
 import type { Incident } from './types/incident.types';
 
-type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify';
+type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify' | 'settings';
 
 // ============================================================================
 // CONTEXT
@@ -133,7 +138,7 @@ const DomainIcon: React.FC<{ domainId: string; className?: string }> = ({ domain
     asset_management: <Database className={className} />,
     audit_logging: <FileText className={className} />,
     business_continuity: <RefreshCw className={className} />,
-    change_management: <Settings className={className} />,
+    change_management: <SettingsIcon className={className} />,
     cryptography: <Shield className={className} />,
     data_privacy: <Eye className={className} />,
     hr_security: <Users className={className} />,
@@ -307,6 +312,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
   const { answerControl, getResponse, updateRemediation, getEvidenceByControlId } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
   const [localRemediation, setLocalRemediation] = useState('');
+  const [showAIChat, setShowAIChat] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const response = getResponse(control.id);
   const evidence = getEvidenceByControlId(control.id);
@@ -478,15 +484,24 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
                   <p className="text-sm text-secondary">{control.remediationTip}</p>
                 </div>
               </div>
-              {onOpenRemediation && (
+              <div className="flex gap-2">
+                {onOpenRemediation && (
+                  <button
+                    onClick={() => onOpenRemediation(control.id, control.title)}
+                    className="btn-secondary flex-1"
+                  >
+                    <Wrench className="w-4 h-4" />
+                    Remediation Guide
+                  </button>
+                )}
                 <button
-                  onClick={() => onOpenRemediation(control.id, control.title)}
-                  className="btn-primary w-full"
+                  onClick={() => setShowAIChat(true)}
+                  className="btn-primary flex-1"
                 >
-                  <Wrench className="w-4 h-4" />
-                  View Remediation Guide
+                  <Sparkles className="w-4 h-4" />
+                  AI Assistant
                 </button>
-              )}
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-status-risk uppercase tracking-wide mb-2">Remediation Plan</label>
                 <textarea
@@ -504,6 +519,14 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Remediation Chat */}
+      <RemediationChat
+        isOpen={showAIChat}
+        onClose={() => setShowAIChat(false)}
+        control={control}
+        userAnswer={response?.answer || 'no'}
+      />
     </motion.div>
   );
 };
@@ -1254,11 +1277,12 @@ const CommandSidebar: React.FC<{
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   incidentCount: number;
+  alertCount: number;
   syncCount: number;
   onSyncClick: () => void;
   expanded: boolean;
   onToggle: () => void;
-}> = ({ activeTab, onTabChange, incidentCount, syncCount, onSyncClick, expanded, onToggle }) => {
+}> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle }) => {
   const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number }> = [
     { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-5 h-5" /> },
@@ -1269,6 +1293,7 @@ const CommandSidebar: React.FC<{
     { id: 'certificate', label: 'Certificate', icon: <Award className="w-5 h-5" /> },
     { id: 'verify', label: 'Verify', icon: <ShieldCheck className="w-5 h-5" /> },
     { id: 'company', label: 'Company', icon: <Building2 className="w-5 h-5" /> },
+    { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-5 h-5" />, badge: alertCount > 0 ? alertCount : undefined },
   ];
 
   return (
@@ -1375,12 +1400,41 @@ const CommandSidebar: React.FC<{
 const AppContent: React.FC = () => {
   const compliance = useComplianceContext();
   const ir = useIncidentResponse();
-  const { syncNotifications } = compliance;
+  const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress } = compliance;
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+
+  // Modal states for new features
+  const [showMonitoringDashboard, setShowMonitoringDashboard] = useState(false);
+  const [showAlertConfiguration, setShowAlertConfiguration] = useState(false);
+  const [showCloudVerification, setShowCloudVerification] = useState(false);
+
+  // Get alert counts from monitoring service
+  const alertCounts = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { monitoringService } = require('./services/continuous-monitoring.service');
+    const counts = monitoringService.getAlertCounts() as Record<string, number>;
+    return Object.values(counts).reduce((a, b) => a + b, 0);
+  }, [activeTab]); // Re-check when tab changes
+
+  // Prepare data for monitoring dashboard
+  const currentScore = stats.assessmentPercentage;
+  const frameworkScores = useMemo(() => {
+    const scores: Record<string, number> = {};
+    frameworkProgress.forEach(fw => { scores[fw.id] = fw.percentage; });
+    return scores;
+  }, [frameworkProgress]);
+
+  const domainScores = useMemo(() => {
+    const scores: Record<string, number> = {};
+    domainProgress.forEach(d => { scores[d.id] = d.percentage; });
+    return scores;
+  }, [domainProgress]);
+
+  const criticalGapIds = useMemo(() => criticalGaps.map(g => g.id), [criticalGaps]);
 
   const handleNavigate = (tab: TabId, domain?: ComplianceDomainMeta) => {
     setActiveTab(tab);
@@ -1399,6 +1453,7 @@ const AppContent: React.FC = () => {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         incidentCount={ir.stats.activeIncidents}
+        alertCount={alertCounts}
         syncCount={syncNotifications.length}
         onSyncClick={() => setShowSidebar(!showSidebar)}
         expanded={sidebarExpanded}
@@ -1457,12 +1512,47 @@ const AppContent: React.FC = () => {
                 <AuditorVerification />
               </motion.div>
             )}
+            {activeTab === 'settings' && (
+              <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <Settings
+                  onOpenMonitoringDashboard={() => setShowMonitoringDashboard(true)}
+                  onOpenAlertConfiguration={() => setShowAlertConfiguration(true)}
+                  onOpenCloudVerification={() => setShowCloudVerification(true)}
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>
 
       {/* Sync Activity Sidebar */}
       <SyncActivitySidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
+
+      {/* Monitoring Dashboard Modal */}
+      <MonitoringDashboard
+        isOpen={showMonitoringDashboard}
+        onClose={() => setShowMonitoringDashboard(false)}
+        currentScore={currentScore}
+        frameworkScores={frameworkScores}
+        domainScores={domainScores}
+        criticalGaps={criticalGapIds}
+        onOpenSettings={() => {
+          setShowMonitoringDashboard(false);
+          setShowAlertConfiguration(true);
+        }}
+      />
+
+      {/* Alert Configuration Modal */}
+      <AlertConfiguration
+        isOpen={showAlertConfiguration}
+        onClose={() => setShowAlertConfiguration(false)}
+      />
+
+      {/* Cloud Verification Modal */}
+      <CloudVerification
+        isOpen={showCloudVerification}
+        onClose={() => setShowCloudVerification(false)}
+      />
     </div>
   );
 };
