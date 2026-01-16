@@ -196,12 +196,12 @@ const InviteAcceptPage: React.FC = () => {
   // Loading state
   if (authLoading || status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <div className="flex items-center gap-2 text-white">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-white">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Validating invite...</span>
           </div>
@@ -213,11 +213,11 @@ const InviteAcceptPage: React.FC = () => {
   // Error states
   if (status === 'invalid' || status === 'expired' || status === 'used' || status === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl p-8 text-center"
+          className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-xl"
         >
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <XCircle className="w-8 h-8 text-red-500" />
@@ -244,12 +244,12 @@ const InviteAcceptPage: React.FC = () => {
   // Accepting state
   if (status === 'accepting') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
-          <p className="text-white">Joining {invite?.organizationName}...</p>
+          <p className="text-slate-700 dark:text-white">Joining {invite?.organizationName}...</p>
         </div>
       </div>
     );
@@ -258,11 +258,11 @@ const InviteAcceptPage: React.FC = () => {
   // Accepted state
   if (status === 'accepted') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl p-8 text-center"
+          className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl p-8 text-center shadow-xl"
         >
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-green-500" />
@@ -283,11 +283,11 @@ const InviteAcceptPage: React.FC = () => {
 
   // Valid invite - show accept options
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl p-8"
+        className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl"
       >
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4">

@@ -150,9 +150,9 @@ const AccessDenied: React.FC<{
   message?: string;
   contactEmail?: string;
 }> = ({ organizationName, message, contactEmail }) => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
     <div className="max-w-md w-full">
-      <Card className="p-8 text-center">
+      <Card className="p-8 text-center shadow-xl">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           <Lock className="w-8 h-8 text-red-500" />
         </div>
@@ -181,12 +181,12 @@ const AccessDenied: React.FC<{
 
 // Loading screen
 const LoadingScreen: React.FC = () => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
     <div className="text-center">
       <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
         <Shield className="w-8 h-8 text-white" />
       </div>
-      <p className="text-white">Loading Trust Center...</p>
+      <p className="text-slate-700 dark:text-white">Loading Trust Center...</p>
     </div>
   </div>
 );
