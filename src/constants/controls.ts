@@ -11,7 +11,7 @@
 // TYPES
 // ============================================================================
 
-export type FrameworkId = 'SOC2' | 'ISO27001' | 'HIPAA' | 'NIST';
+export type FrameworkId = 'SOC2' | 'ISO27001' | 'HIPAA' | 'NIST' | 'PCIDSS' | 'GDPR';
 
 export type ControlStatus = 'not_started' | 'in_progress' | 'implemented' | 'not_applicable';
 
@@ -135,6 +135,20 @@ export const FRAMEWORKS: FrameworkMeta[] = [
     color: '#F59E0B',
     icon: '🔒',
   },
+  {
+    id: 'PCIDSS',
+    name: 'PCI DSS',
+    fullName: 'PCI DSS v4.0',
+    color: '#DC2626',
+    icon: '💳',
+  },
+  {
+    id: 'GDPR',
+    name: 'GDPR',
+    fullName: 'EU General Data Protection Regulation',
+    color: '#2563EB',
+    icon: '🇪🇺',
+  },
 ];
 
 // ============================================================================
@@ -255,6 +269,8 @@ export const MASTER_CONTROLS: MasterControl[] = [
       { frameworkId: 'ISO27001', clauseId: 'A.9.4.2', clauseTitle: 'Secure log-on procedures' },
       { frameworkId: 'HIPAA', clauseId: '164.312(d)', clauseTitle: 'Person or Entity Authentication' },
       { frameworkId: 'NIST', clauseId: 'PR.AC-7', clauseTitle: 'Authentication' },
+      { frameworkId: 'PCIDSS', clauseId: '8.3.1', clauseTitle: 'MFA for administrative access' },
+      { frameworkId: 'GDPR', clauseId: 'Art.32(1)(b)', clauseTitle: 'Security of processing - access controls' },
     ],
     keywords: ['MFA', 'authentication', '2FA', 'multi-factor', 'login'],
   },
@@ -277,6 +293,8 @@ export const MASTER_CONTROLS: MasterControl[] = [
       { frameworkId: 'ISO27001', clauseId: 'A.9.2.1', clauseTitle: 'User registration and de-registration' },
       { frameworkId: 'HIPAA', clauseId: '164.312(a)(2)(i)', clauseTitle: 'Unique User Identification' },
       { frameworkId: 'NIST', clauseId: 'PR.AC-1', clauseTitle: 'Identity Management' },
+      { frameworkId: 'PCIDSS', clauseId: '8.2.1', clauseTitle: 'Unique user IDs' },
+      { frameworkId: 'GDPR', clauseId: 'Art.5(1)(f)', clauseTitle: 'Integrity and confidentiality' },
     ],
     keywords: ['unique', 'identifier', 'username', 'account', 'shared'],
   },
@@ -1433,6 +1451,8 @@ export const MASTER_CONTROLS: MasterControl[] = [
       { frameworkId: 'ISO27001', clauseId: 'A.12.4.1', clauseTitle: 'Event logging' },
       { frameworkId: 'HIPAA', clauseId: '164.312(b)', clauseTitle: 'Audit Controls' },
       { frameworkId: 'NIST', clauseId: 'DE.CM', clauseTitle: 'Security Continuous Monitoring' },
+      { frameworkId: 'PCIDSS', clauseId: '10.2', clauseTitle: 'Audit trail implementation' },
+      { frameworkId: 'GDPR', clauseId: 'Art.30', clauseTitle: 'Records of processing activities' },
     ],
     keywords: ['SIEM', 'monitoring', 'logging', 'alerts', 'SOC'],
   },
@@ -1877,6 +1897,8 @@ export const MASTER_CONTROLS: MasterControl[] = [
       { frameworkId: 'ISO27001', clauseId: 'A.5.24', clauseTitle: 'Information security incident management' },
       { frameworkId: 'HIPAA', clauseId: '164.308(a)(6)', clauseTitle: 'Security Incident Procedures' },
       { frameworkId: 'NIST', clauseId: 'RS.RP-1', clauseTitle: 'Response Planning' },
+      { frameworkId: 'PCIDSS', clauseId: '12.10.1', clauseTitle: 'Incident response plan' },
+      { frameworkId: 'GDPR', clauseId: 'Art.33', clauseTitle: 'Notification of personal data breach' },
     ],
     keywords: ['incident response', 'IRP', 'playbook', 'breach', 'escalation'],
   },
@@ -2703,6 +2725,8 @@ export const MASTER_CONTROLS: MasterControl[] = [
       { frameworkId: 'ISO27001', clauseId: 'A.8.24', clauseTitle: 'Use of cryptography' },
       { frameworkId: 'HIPAA', clauseId: '164.312(a)(2)(iv)', clauseTitle: 'Encryption' },
       { frameworkId: 'NIST', clauseId: 'PR.DS-1', clauseTitle: 'Data-at-Rest Protection' },
+      { frameworkId: 'PCIDSS', clauseId: '3.5.1', clauseTitle: 'Protect stored cardholder data' },
+      { frameworkId: 'GDPR', clauseId: 'Art.32(1)(a)', clauseTitle: 'Encryption of personal data' },
     ],
     keywords: ['encryption', 'AES', 'at rest', 'KMS', 'cryptography'],
   },
@@ -2725,6 +2749,8 @@ export const MASTER_CONTROLS: MasterControl[] = [
       { frameworkId: 'ISO27001', clauseId: 'A.8.24', clauseTitle: 'Use of cryptography' },
       { frameworkId: 'HIPAA', clauseId: '164.312(e)(2)(ii)', clauseTitle: 'Encryption' },
       { frameworkId: 'NIST', clauseId: 'PR.DS-2', clauseTitle: 'Data-in-Transit Protection' },
+      { frameworkId: 'PCIDSS', clauseId: '4.2.1', clauseTitle: 'Strong cryptography for transmission' },
+      { frameworkId: 'GDPR', clauseId: 'Art.32(1)(a)', clauseTitle: 'Encryption of personal data' },
     ],
     keywords: ['TLS', 'HTTPS', 'transit', 'SSL', 'transport'],
   },

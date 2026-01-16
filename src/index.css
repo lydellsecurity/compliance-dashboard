@@ -42,6 +42,8 @@
   --framework-iso: #10b981;
   --framework-hipaa: #ec4899;
   --framework-nist: #f59e0b;
+  --framework-pcidss: #dc2626;
+  --framework-gdpr: #2563eb;
 
   /* Glows */
   --glow-accent: rgba(99, 102, 241, 0.4);
