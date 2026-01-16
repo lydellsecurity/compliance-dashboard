@@ -49,50 +49,21 @@
   --glow-warning: rgba(245, 158, 11, 0.4);
   --glow-risk: rgba(244, 63, 94, 0.4);
 
-  /* Semantic Theme Variables - Dark Mode Defaults */
-  --bg-primary: #020617;
-  --bg-secondary: #070D1A;
-  --bg-card: #0B1120;
-  --bg-sidebar: rgba(7, 13, 26, 0.9);
-  --bg-hover: rgba(51, 65, 85, 0.5);
-  --bg-active: rgba(99, 102, 241, 0.1);
-
-  --border-primary: #334155;
-  --border-secondary: rgba(51, 65, 85, 0.5);
-
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-elevated: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-/* ============================================================================
-   LIGHT MODE - Premium Corporate "Soft Paper" Theme
-   ============================================================================ */
-
-html.light {
-  color-scheme: light;
-
-  /* Soft Paper Palette */
-  --bg-primary: #F8F9FA;       /* Soft paper background */
-  --bg-secondary: #FFFFFF;      /* Pure white surfaces */
-  --bg-card: #FFFFFF;           /* Card backgrounds */
-  --bg-sidebar: #FFFFFF;        /* Sidebar - clean white */
+  /* Semantic Theme Variables - Light Mode Defaults */
+  --bg-primary: #F8F9FA;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
   --bg-hover: rgba(241, 245, 249, 0.6);
   --bg-active: rgba(99, 102, 241, 0.06);
 
-  /* Razor-thin borders - Slate-200 */
   --border-primary: #E2E8F0;
   --border-secondary: #E2E8F0;
 
-  /* Typography - Slate-900 primary, Slate-500 secondary */
-  --text-primary: #0F172A;      /* Slate-900 */
-  --text-secondary: #64748B;    /* Slate-500 */
-  --text-muted: #94A3B8;        /* Slate-400 */
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
 
-  /* Subtle soft shadows */
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.06);
 
@@ -104,15 +75,47 @@ html.light {
 }
 
 /* ============================================================================
-   BASE STYLES - Theme Aware
+   DARK MODE - Midnight & Steel Theme
+   ============================================================================ */
+
+html.dark {
+  color-scheme: dark;
+
+  /* Midnight Background Scale */
+  --bg-primary: #020617;
+  --bg-secondary: #070D1A;
+  --bg-card: #0B1120;
+  --bg-sidebar: rgba(7, 13, 26, 0.9);
+  --bg-hover: rgba(51, 65, 85, 0.5);
+  --bg-active: rgba(99, 102, 241, 0.1);
+
+  /* Steel Borders */
+  --border-primary: #334155;
+  --border-secondary: rgba(51, 65, 85, 0.5);
+
+  /* Typography - Steel Scale */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Dark shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-elevated: 0 10px 40px rgba(0, 0, 0, 0.5);
+
+  /* Glows for dark mode */
+  --glow-accent: rgba(99, 102, 241, 0.4);
+  --glow-success: rgba(16, 185, 129, 0.4);
+  --glow-warning: rgba(245, 158, 11, 0.4);
+  --glow-risk: rgba(244, 63, 94, 0.4);
+}
+
+/* ============================================================================
+   BASE STYLES - Theme Aware (Light Mode Primary)
    ============================================================================ */
 
 html {
   scroll-behavior: smooth;
-}
-
-html.dark {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html.light {
@@ -127,18 +130,6 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-secondary);
   line-height: 1.6;
-}
-
-/* Dark mode body specifics */
-html.dark body {
-  background-color: var(--midnight-950);
-  color: var(--steel-200);
-}
-
-/* Light mode body specifics */
-html.light body {
-  background-color: #F8F9FA;
-  color: #475569;
 }
 
 /* ============================================================================
