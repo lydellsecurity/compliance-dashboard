@@ -11,7 +11,7 @@ import {
   Info, AlertTriangle, Shield, Upload, FileText, Lock, Users,
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe, ExternalLink,
-  Award, ShieldCheck, ChevronRight, Menu, Sparkles,
+  Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -32,11 +32,15 @@ import MonitoringDashboard from './components/MonitoringDashboard';
 import AlertConfiguration from './components/AlertConfiguration';
 import CloudVerification from './components/CloudVerification';
 import RemediationChat from './components/RemediationChat';
+import EvidenceRepository from './components/EvidenceRepository';
+import IntegrationHub from './components/IntegrationHub';
+import TenantAdmin from './components/TenantAdmin';
+import VendorRiskManagement from './components/VendorRiskManagement';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
 
-type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify' | 'settings';
+type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'trust-center' | 'certificate' | 'verify' | 'company' | 'admin' | 'settings';
 
 // ============================================================================
 // CONTEXT
@@ -1472,10 +1476,13 @@ const CommandSidebar: React.FC<{
     { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-5 h-5" />, badge: incidentCount },
     { id: 'reporting', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
     { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-5 h-5" /> },
+    { id: 'integrations', label: 'Integrations', icon: <Plug className="w-5 h-5" /> },
+    { id: 'vendors', label: 'Vendors', icon: <ShoppingBag className="w-5 h-5" /> },
     { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-5 h-5" /> },
     { id: 'certificate', label: 'Certificate', icon: <Award className="w-5 h-5" /> },
     { id: 'verify', label: 'Verify', icon: <ShieldCheck className="w-5 h-5" /> },
     { id: 'company', label: 'Company', icon: <Building2 className="w-5 h-5" /> },
+    { id: 'admin', label: 'Admin', icon: <Crown className="w-5 h-5" /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-5 h-5" />, badge: alertCount > 0 ? alertCount : undefined },
   ];
 
@@ -1694,6 +1701,31 @@ const AppContent: React.FC = () => {
             {activeTab === 'evidence' && (
               <motion.div key="evidence" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <EvidenceTab />
+              </motion.div>
+            )}
+            {activeTab === 'integrations' && (
+              <motion.div key="integrations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <IntegrationHub
+                  organizationId={currentOrg?.id || 'default-org'}
+                  userId="current-user"
+                />
+              </motion.div>
+            )}
+            {activeTab === 'vendors' && (
+              <motion.div key="vendors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <VendorRiskManagement
+                  organizationId={currentOrg?.id || 'default-org'}
+                  userId="current-user"
+                />
+              </motion.div>
+            )}
+            {activeTab === 'admin' && (
+              <motion.div key="admin" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <TenantAdmin
+                  tenantId={currentOrg?.id || 'default-org'}
+                  userId="current-user"
+                  userRole="admin"
+                />
               </motion.div>
             )}
             {activeTab === 'company' && (
