@@ -1,5 +1,8 @@
 /**
- * Lydell Security Landing Page
+ * AttestAI Landing Page
+ *
+ * Product: AttestAI - AI-Powered Compliance Platform
+ * Parent Company: Lydell Security
  *
  * High-converting, enterprise-grade landing page with:
  * - Hero section with outcome-focused headline
@@ -35,7 +38,7 @@ interface FeatureCardProps {
 interface ComparisonRow {
   feature: string;
   legacy: string;
-  lydell: string;
+  attestai: string;
   legacyBad?: boolean;
 }
 
@@ -77,12 +80,12 @@ const frameworks = [
 // ============================================================================
 
 const comparisonData: ComparisonRow[] = [
-  { feature: 'Time to Compliance', legacy: '6-12 months', lydell: '2-4 weeks', legacyBad: true },
-  { feature: 'Policy Generation', legacy: 'Manual writing', lydell: 'AI-generated in seconds', legacyBad: true },
-  { feature: 'Evidence Collection', legacy: 'Screenshots & emails', lydell: 'Automated integrations', legacyBad: true },
-  { feature: 'Auditor Access', legacy: 'Shared folders', lydell: 'Dedicated verification portal', legacyBad: true },
-  { feature: 'Control Monitoring', legacy: 'Quarterly reviews', lydell: 'Real-time continuous', legacyBad: true },
-  { feature: 'Cost', legacy: '$50K-150K+ consultants', lydell: 'Fraction of the cost', legacyBad: true },
+  { feature: 'Time to Compliance', legacy: '6-12 months', attestai: '2-4 weeks', legacyBad: true },
+  { feature: 'Policy Generation', legacy: 'Manual writing', attestai: 'AI-generated in seconds', legacyBad: true },
+  { feature: 'Evidence Collection', legacy: 'Screenshots & emails', attestai: 'Automated integrations', legacyBad: true },
+  { feature: 'Auditor Access', legacy: 'Shared folders', attestai: 'Dedicated verification portal', legacyBad: true },
+  { feature: 'Control Monitoring', legacy: 'Quarterly reviews', attestai: 'Real-time continuous', legacyBad: true },
+  { feature: 'Cost', legacy: '$50K-150K+ consultants', attestai: 'Fraction of the cost', legacyBad: true },
 ];
 
 // ============================================================================
@@ -235,7 +238,7 @@ const LandingPage: React.FC = () => {
             <div className="w-10 h-10 bg-accent-500 flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-primary">Lydell Security</span>
+            <span className="text-xl font-bold text-primary">AttestAI</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-secondary hover:text-primary transition-colors">Features</a>
@@ -300,7 +303,7 @@ const LandingPage: React.FC = () => {
               className="text-lg md:text-xl text-secondary mb-10 max-w-3xl mx-auto leading-relaxed"
             >
               Stop wasting <span className="text-status-risk font-semibold">400+ hours</span> on manual evidence.
-              Lydell Security uses Claude-powered AI to bridge your audit gaps, generate binding policies,
+              AttestAI uses Claude-powered AI to bridge your audit gaps, generate binding policies,
               and verify your <span className="text-accent-400 font-semibold">236 controls</span> in days, not months.
             </motion.p>
 
@@ -516,7 +519,7 @@ const LandingPage: React.FC = () => {
                 <span className="text-sm font-medium text-status-risk">Stop Wasting Time</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-bold text-primary mb-4">
-                Lydell vs. Legacy Compliance
+                AttestAI vs. Legacy Compliance
               </h2>
               <p className="text-lg text-secondary max-w-2xl mx-auto">
                 See why forward-thinking companies are abandoning spreadsheets and
@@ -536,7 +539,7 @@ const LandingPage: React.FC = () => {
                   Legacy / Spreadsheets
                 </div>
                 <div className="p-4 font-semibold text-emerald-400 text-center">
-                  Lydell Security
+                  AttestAI
                 </div>
               </div>
 
@@ -562,7 +565,7 @@ const LandingPage: React.FC = () => {
                   <div className="p-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <CheckCheck className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400">{row.lydell}</span>
+                      <span className="text-emerald-400">{row.attestai}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -582,7 +585,7 @@ const LandingPage: React.FC = () => {
                 <span className="text-sm font-medium text-emerald-400">Trusted Worldwide</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-bold text-primary mb-4">
-                Companies Trust Lydell Security
+                Companies Trust AttestAI
               </h2>
             </div>
           </ScrollReveal>
@@ -643,7 +646,7 @@ const LandingPage: React.FC = () => {
                 <div>
                   <h3 className="text-xl font-bold text-primary mb-2">Verified & Legally Binding</h3>
                   <p className="text-secondary mb-4">
-                    Every policy, certificate, and compliance document generated by Lydell Security
+                    Every policy, certificate, and compliance document generated by AttestAI
                     is cryptographically signed and timestamped. Auditors can independently verify
                     the authenticity of your compliance documentation through our public verification portal.
                   </p>
@@ -707,7 +710,8 @@ const LandingPage: React.FC = () => {
               <div className="w-8 h-8 bg-accent-500 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-primary">Lydell Security</span>
+              <span className="font-bold text-primary">AttestAI</span>
+              <span className="text-xs text-secondary">by Lydell Security</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-secondary">
               <a href="#" className="hover:text-primary transition-colors">Privacy</a>
@@ -716,7 +720,7 @@ const LandingPage: React.FC = () => {
               <a href="#" className="hover:text-primary transition-colors">Contact</a>
             </div>
             <p className="text-sm text-secondary">
-              © 2024 Lydell Security. All rights reserved.
+              © 2025 Lydell Security. All rights reserved.
             </p>
           </div>
         </div>

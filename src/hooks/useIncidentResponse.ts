@@ -1,16 +1,16 @@
 /**
  * useIncidentResponse Hook
- * 
+ *
  * Incident Response state management that integrates with useCompliance.
  * Provides post-breach compliance assessment, threat mapping, and client reporting.
- * 
- * Designed for Lydell Security's IR workflow.
+ *
+ * Part of the AttestAI platform by Lydell Security.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { 
-  Incident, 
-  IncidentSeverity, 
+import type {
+  Incident,
+  IncidentSeverity,
   IncidentStatus,
   ThreatCategory,
   AttackVector,
@@ -26,6 +26,7 @@ import type {
 import { THREAT_CONTROL_MAPPINGS, getControlsForThreat } from '../types/incident.types';
 import type { UseComplianceReturn } from './useCompliance';
 import type { FrameworkId, MasterControl } from '../constants/controls';
+import { getOrgStorageKey } from '../utils/storageMigration';
 
 // ============================================================================
 // UUID GENERATOR
@@ -47,13 +48,28 @@ const generateIncidentNumber = (year: number, sequence: number): string => {
 // LOCAL STORAGE KEYS
 // ============================================================================
 
-const STORAGE_KEYS = {
-  INCIDENTS: 'lydell-ir-incidents',
-  ASSESSMENTS: 'lydell-ir-assessments',
-  ENGAGEMENTS: 'lydell-ir-engagements',
-  REPORTS: 'lydell-ir-reports',
-  INCIDENT_SEQUENCE: 'lydell-ir-sequence',
+// Legacy storage keys (for backwards compatibility)
+const LEGACY_STORAGE_KEYS = {
+  INCIDENTS: 'attestai-ir-incidents',
+  ASSESSMENTS: 'attestai-ir-assessments',
+  ENGAGEMENTS: 'attestai-ir-engagements',
+  REPORTS: 'attestai-ir-reports',
+  INCIDENT_SEQUENCE: 'attestai-ir-sequence',
 } as const;
+
+// Get storage keys for an organization (or use legacy keys if no org)
+function getStorageKeys(organizationId?: string | null) {
+  if (organizationId) {
+    return {
+      INCIDENTS: getOrgStorageKey(organizationId, 'ir-incidents'),
+      ASSESSMENTS: getOrgStorageKey(organizationId, 'ir-assessments'),
+      ENGAGEMENTS: getOrgStorageKey(organizationId, 'ir-engagements'),
+      REPORTS: getOrgStorageKey(organizationId, 'ir-reports'),
+      INCIDENT_SEQUENCE: getOrgStorageKey(organizationId, 'ir-sequence'),
+    };
+  }
+  return LEGACY_STORAGE_KEYS;
+}
 
 function loadFromStorage<T>(key: string, defaultValue: T): T {
   try {
@@ -148,37 +164,61 @@ export interface CreateIncidentData {
 }
 
 // ============================================================================
+// HOOK OPTIONS
+// ============================================================================
+
+export interface UseIncidentResponseOptions {
+  organizationId?: string | null;
+}
+
+// ============================================================================
 // HOOK IMPLEMENTATION
 // ============================================================================
 
-export function useIncidentResponse(): UseIncidentResponseReturn {
+export function useIncidentResponse(options: UseIncidentResponseOptions = {}): UseIncidentResponseReturn {
+  const { organizationId } = options;
+
+  // Get storage keys based on organization
+  const storageKeys = useMemo(() => getStorageKeys(organizationId), [organizationId]);
+
   // State
-  const [incidents, setIncidents] = useState<Incident[]>(() => 
-    loadFromStorage(STORAGE_KEYS.INCIDENTS, [])
-  );
-  
-  const [assessments, setAssessments] = useState<PostIncidentAssessment[]>(() => 
-    loadFromStorage(STORAGE_KEYS.ASSESSMENTS, [])
-  );
-  
-  const [engagements, setEngagements] = useState<ClientEngagement[]>(() => 
-    loadFromStorage(STORAGE_KEYS.ENGAGEMENTS, [])
-  );
-  
-  const [reports, setReports] = useState<ComplianceReport[]>(() => 
-    loadFromStorage(STORAGE_KEYS.REPORTS, [])
-  );
-  
-  const [incidentSequence, setIncidentSequence] = useState<number>(() => 
-    loadFromStorage(STORAGE_KEYS.INCIDENT_SEQUENCE, 0)
+  const [incidents, setIncidents] = useState<Incident[]>(() =>
+    loadFromStorage(storageKeys.INCIDENTS, [])
   );
 
+  const [assessments, setAssessments] = useState<PostIncidentAssessment[]>(() =>
+    loadFromStorage(storageKeys.ASSESSMENTS, [])
+  );
+
+  const [engagements, setEngagements] = useState<ClientEngagement[]>(() =>
+    loadFromStorage(storageKeys.ENGAGEMENTS, [])
+  );
+
+  const [reports, setReports] = useState<ComplianceReport[]>(() =>
+    loadFromStorage(storageKeys.REPORTS, [])
+  );
+
+  const [incidentSequence, setIncidentSequence] = useState<number>(() =>
+    loadFromStorage(storageKeys.INCIDENT_SEQUENCE, 0)
+  );
+
+  // Reload data when organization changes
+  useEffect(() => {
+    if (organizationId) {
+      setIncidents(loadFromStorage(storageKeys.INCIDENTS, []));
+      setAssessments(loadFromStorage(storageKeys.ASSESSMENTS, []));
+      setEngagements(loadFromStorage(storageKeys.ENGAGEMENTS, []));
+      setReports(loadFromStorage(storageKeys.REPORTS, []));
+      setIncidentSequence(loadFromStorage(storageKeys.INCIDENT_SEQUENCE, 0));
+    }
+  }, [organizationId, storageKeys]);
+
   // Persistence
-  useEffect(() => { saveToStorage(STORAGE_KEYS.INCIDENTS, incidents); }, [incidents]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.ASSESSMENTS, assessments); }, [assessments]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.ENGAGEMENTS, engagements); }, [engagements]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.REPORTS, reports); }, [reports]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.INCIDENT_SEQUENCE, incidentSequence); }, [incidentSequence]);
+  useEffect(() => { saveToStorage(storageKeys.INCIDENTS, incidents); }, [incidents, storageKeys.INCIDENTS]);
+  useEffect(() => { saveToStorage(storageKeys.ASSESSMENTS, assessments); }, [assessments, storageKeys.ASSESSMENTS]);
+  useEffect(() => { saveToStorage(storageKeys.ENGAGEMENTS, engagements); }, [engagements, storageKeys.ENGAGEMENTS]);
+  useEffect(() => { saveToStorage(storageKeys.REPORTS, reports); }, [reports, storageKeys.REPORTS]);
+  useEffect(() => { saveToStorage(storageKeys.INCIDENT_SEQUENCE, incidentSequence); }, [incidentSequence, storageKeys.INCIDENT_SEQUENCE]);
 
   // ============================================================================
   // INCIDENT MANAGEMENT

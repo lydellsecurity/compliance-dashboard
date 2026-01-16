@@ -61,10 +61,10 @@ async function generateCertificatePDF(data) {
         margins: { top: 40, bottom: 40, left: 50, right: 50 },
         info: {
           Title: `Compliance Certificate - ${organizationName}`,
-          Author: 'LYDELL SECURITY',
+          Author: 'AttestAI by Lydell Security',
           Subject: 'Compliance Completion Certificate',
-          Creator: 'Lydell Security GRC Platform',
-          Keywords: 'Compliance, Certificate, SOC2, ISO27001, HIPAA, NIST',
+          Creator: 'AttestAI GRC Platform',
+          Keywords: 'Compliance, Certificate, SOC2, ISO27001, HIPAA, NIST, AttestAI',
         },
         // Read-only permissions
         pdfVersion: '1.7',
@@ -269,7 +269,7 @@ async function generateCertificatePDF(data) {
         .text(`Verification Hash: ${certificateHash}`, 0, yPos, { align: 'center', width: pageWidth });
 
       yPos += 12;
-      doc.text('Verify this certificate at verify.lydellsecurity.com', 0, yPos, { align: 'center', width: pageWidth });
+      doc.text('Verify this certificate at verify.attestai.com', 0, yPos, { align: 'center', width: pageWidth });
 
       doc.end();
     } catch (error) {

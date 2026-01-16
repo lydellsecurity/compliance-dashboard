@@ -21,6 +21,10 @@ import type { FrameworkId } from '../constants/controls';
 interface TrustCenterProps {
   compliance: UseComplianceReturn;
   organizationName?: string;
+  organizationLogo?: string | null;
+  primaryColor?: string;
+  contactEmail?: string | null;
+  isPublic?: boolean; // True when viewed via public Trust Center URL
 }
 
 // ============================================================================
@@ -226,6 +230,10 @@ const SecurityItem: React.FC<{ icon: React.ReactNode; title: string; description
 const TrustCenter: React.FC<TrustCenterProps> = ({
   compliance,
   organizationName = 'LYDELL SECURITY',
+  organizationLogo,
+  primaryColor = '#6366f1',
+  contactEmail,
+  isPublic: _isPublic = false,
 }) => {
   const { frameworkProgress, stats } = compliance;
 
@@ -236,6 +244,7 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
   }, [frameworkProgress]);
 
   const lastUpdated = new Date();
+  const effectiveContactEmail = contactEmail || 'security@example.com';
 
   return (
     <div className="space-y-8">
@@ -251,7 +260,11 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
         <div className="relative flex flex-col lg:flex-row items-center gap-8">
           <div className="flex-1 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900/10 dark:bg-white/10 rounded-full text-slate-700 dark:text-white/80 text-sm font-medium mb-4">
-              <Shield className="w-4 h-4" />
+              {organizationLogo ? (
+                <img src={organizationLogo} alt={organizationName} className="w-4 h-4 object-contain" />
+              ) : (
+                <Shield className="w-4 h-4" style={{ color: primaryColor }} />
+              )}
               {organizationName}
             </div>
             <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-3">
@@ -273,7 +286,7 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
                 percentage={overallScore}
                 size={110}
                 strokeWidth={6}
-                color="#0066FF"
+                color={primaryColor}
                 label="Overall"
                 sublabel={`${stats.totalControls} controls`}
               />
@@ -391,8 +404,9 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
             <p className="text-sm text-secondary">Our security team is ready to assist.</p>
           </div>
           <a
-            href="mailto:security@lydellsecurity.com"
+            href={`mailto:${effectiveContactEmail}`}
             className="btn-primary"
+            style={{ backgroundColor: primaryColor }}
           >
             Contact Security Team
             <ChevronRight className="w-4 h-4" />

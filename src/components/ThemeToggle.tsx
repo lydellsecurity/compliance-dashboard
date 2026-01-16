@@ -16,12 +16,9 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(THEME_KEY) as Theme | null;
       if (stored) return stored;
-      // Check system preference
-      if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light';
-      }
     }
-    return 'dark';
+    // Default to light mode for premium corporate GRC look
+    return 'light';
   });
 
   useEffect(() => {
@@ -118,7 +115,8 @@ export function useTheme() {
       const stored = localStorage.getItem(THEME_KEY) as Theme | null;
       if (stored) return stored;
     }
-    return 'dark';
+    // Default to light mode for premium corporate GRC look
+    return 'light';
   });
 
   useEffect(() => {

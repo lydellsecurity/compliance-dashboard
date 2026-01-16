@@ -22,6 +22,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { complianceDb } from '../services/compliance-database.service';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {
+  getOrgStorageKeys,
+  migrateLocalStorage,
+  needsMigration,
+  hasLegacyData,
+} from '../utils/storageMigration';
+import {
   MASTER_CONTROLS,
   COMPLIANCE_DOMAINS,
   FRAMEWORKS,
@@ -180,13 +186,37 @@ export interface DomainProgress {
 // LOCAL STORAGE HELPERS
 // ============================================================================
 
-const STORAGE_KEYS = {
-  RESPONSES: 'ce4-responses',
-  EVIDENCE: 'ce4-evidence',
-  CUSTOM_CONTROLS: 'ce4-custom-controls',
-  DARK_MODE: 'ce4-dark-mode',
-  LAST_SYNCED: 'ce4-last-synced',
+// Legacy storage keys (for backwards compatibility during migration)
+const LEGACY_STORAGE_KEYS = {
+  RESPONSES: 'attestai-responses',
+  EVIDENCE: 'attestai-evidence',
+  CUSTOM_CONTROLS: 'attestai-custom-controls',
+  DARK_MODE: 'attestai-dark-mode',
+  LAST_SYNCED: 'attestai-last-synced',
 } as const;
+
+// Get storage keys for an organization (or use legacy keys if no org)
+function getStorageKeys(organizationId?: string | null) {
+  if (organizationId) {
+    return getOrgStorageKeys(organizationId);
+  }
+  // Fallback to legacy keys
+  return {
+    RESPONSES: LEGACY_STORAGE_KEYS.RESPONSES,
+    EVIDENCE: LEGACY_STORAGE_KEYS.EVIDENCE,
+    CUSTOM_CONTROLS: LEGACY_STORAGE_KEYS.CUSTOM_CONTROLS,
+    ATTESTATIONS: 'attestai-attestations',
+    IR_INCIDENTS: 'attestai-ir-incidents',
+    IR_ESCALATION_PATHS: 'attestai-ir-escalation-paths',
+    IR_PLAYBOOKS: 'attestai-ir-playbooks',
+    IR_CONTACTS: 'attestai-ir-contacts',
+    IR_COMMUNICATION_LOG: 'attestai-ir-communication-log',
+    VENDORS: 'attestai-vendors',
+    SETTINGS: 'attestai-settings',
+    LAST_REPORT: 'attestai-last-report',
+    LAST_SYNCED: 'attestai-last-synced',
+  };
+}
 
 function loadFromStorage<T>(key: string, defaultValue: T): T {
   try {
@@ -278,32 +308,44 @@ export interface UseComplianceReturn {
   loadFromDatabase: () => Promise<void>;
 }
 
-export function useCompliance(): UseComplianceReturn {
+export interface UseComplianceOptions {
+  organizationId?: string | null;
+}
+
+export function useCompliance(options: UseComplianceOptions = {}): UseComplianceReturn {
+  const { organizationId } = options;
+
+  // Get storage keys based on organization
+  const storageKeys = useMemo(() => getStorageKeys(organizationId), [organizationId]);
+
   // ============================================================================
   // STATE INITIALIZATION
   // ============================================================================
 
   const [responsesObj, setResponsesObj] = useState<Record<string, ControlResponse>>(() =>
-    loadFromStorage(STORAGE_KEYS.RESPONSES, {})
+    loadFromStorage(storageKeys.RESPONSES, {})
   );
 
   const [evidenceObj, setEvidenceObj] = useState<Record<string, EvidenceRecord>>(() =>
-    loadFromStorage(STORAGE_KEYS.EVIDENCE, {})
+    loadFromStorage(storageKeys.EVIDENCE, {})
   );
 
   const [customControls, setCustomControls] = useState<CustomControl[]>(() =>
-    loadFromStorage(STORAGE_KEYS.CUSTOM_CONTROLS, [])
+    loadFromStorage(storageKeys.CUSTOM_CONTROLS, [])
   );
 
   const [darkMode, setDarkMode] = useState<boolean>(() =>
-    loadFromStorage(STORAGE_KEYS.DARK_MODE, true)
+    loadFromStorage(LEGACY_STORAGE_KEYS.DARK_MODE, true) // Dark mode is global, not org-specific
   );
 
   const [syncNotifications, setSyncNotifications] = useState<SyncNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() =>
-    loadFromStorage(STORAGE_KEYS.LAST_SYNCED, null)
+    loadFromStorage(LEGACY_STORAGE_KEYS.LAST_SYNCED, null)
   );
+
+  // Track if migration has been attempted
+  const [migrationAttempted, setMigrationAttempted] = useState(false);
 
   // Supabase integration state
   const [supabaseUser, setSupabaseUser] = useState<{ id: string; organization_id?: string } | null>(null);
@@ -503,23 +545,58 @@ export function useCompliance(): UseComplianceReturn {
   }, []);
 
   // ============================================================================
+  // MIGRATION EFFECT
+  // ============================================================================
+
+  // Migrate legacy data to org-specific keys when organizationId is available
+  useEffect(() => {
+    if (!organizationId || migrationAttempted) return;
+
+    const runMigration = async () => {
+      if (needsMigration(organizationId) && hasLegacyData()) {
+        console.log('Migrating legacy storage data to org-specific keys...');
+        const result = await migrateLocalStorage(organizationId);
+        if (result.success && result.migratedKeys.length > 0) {
+          console.log(`Migrated ${result.migratedKeys.length} storage keys`);
+          // Reload data from new keys
+          setResponsesObj(loadFromStorage(storageKeys.RESPONSES, {}));
+          setEvidenceObj(loadFromStorage(storageKeys.EVIDENCE, {}));
+          setCustomControls(loadFromStorage(storageKeys.CUSTOM_CONTROLS, []));
+        }
+      }
+      setMigrationAttempted(true);
+    };
+
+    runMigration();
+  }, [organizationId, migrationAttempted, storageKeys]);
+
+  // Reload data when organization changes
+  useEffect(() => {
+    if (organizationId && migrationAttempted) {
+      setResponsesObj(loadFromStorage(storageKeys.RESPONSES, {}));
+      setEvidenceObj(loadFromStorage(storageKeys.EVIDENCE, {}));
+      setCustomControls(loadFromStorage(storageKeys.CUSTOM_CONTROLS, []));
+    }
+  }, [organizationId, storageKeys, migrationAttempted]);
+
+  // ============================================================================
   // PERSISTENCE EFFECTS
   // ============================================================================
-  
+
   useEffect(() => {
-    saveToStorage(STORAGE_KEYS.RESPONSES, responsesObj);
-  }, [responsesObj]);
-  
+    saveToStorage(storageKeys.RESPONSES, responsesObj);
+  }, [responsesObj, storageKeys.RESPONSES]);
+
   useEffect(() => {
-    saveToStorage(STORAGE_KEYS.EVIDENCE, evidenceObj);
-  }, [evidenceObj]);
-  
+    saveToStorage(storageKeys.EVIDENCE, evidenceObj);
+  }, [evidenceObj, storageKeys.EVIDENCE]);
+
   useEffect(() => {
-    saveToStorage(STORAGE_KEYS.CUSTOM_CONTROLS, customControls);
-  }, [customControls]);
-  
+    saveToStorage(storageKeys.CUSTOM_CONTROLS, customControls);
+  }, [customControls, storageKeys.CUSTOM_CONTROLS]);
+
   useEffect(() => {
-    saveToStorage(STORAGE_KEYS.DARK_MODE, darkMode);
+    saveToStorage(LEGACY_STORAGE_KEYS.DARK_MODE, darkMode); // Dark mode is global
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
@@ -982,7 +1059,7 @@ export function useCompliance(): UseComplianceReturn {
 
       const now = new Date().toISOString();
       setLastSyncedAt(now);
-      saveToStorage(STORAGE_KEYS.LAST_SYNCED, now);
+      saveToStorage(storageKeys.LAST_SYNCED, now);
 
       console.log('Successfully synced to Supabase database');
     } catch (error) {

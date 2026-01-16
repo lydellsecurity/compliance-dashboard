@@ -17,11 +17,14 @@ import type { UseComplianceReturn } from '../hooks/useCompliance';
 interface CertificateGeneratorProps {
   compliance: UseComplianceReturn;
   organizationName?: string;
+  organizationLogo?: string | null;
 }
 
 const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   compliance,
   organizationName = 'LYDELL SECURITY',
+  // organizationLogo will be used for future certificate branding
+  organizationLogo: _organizationLogo,
 }) => {
   const { frameworkProgress, stats } = compliance;
   const [isGenerating, setIsGenerating] = useState(false);

@@ -34,6 +34,7 @@ import CloudVerification from './components/CloudVerification';
 import RemediationChat from './components/RemediationChat';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
+import { useOrganization } from './contexts/OrganizationContext';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'company' | 'trust-center' | 'certificate' | 'verify' | 'settings';
 
@@ -77,7 +78,81 @@ const Card: React.FC<{ children: React.ReactNode; className?: string; onClick?: 
   </div>
 );
 
-// Radial Glow Gauge Component
+// Slide-Over Drawer - Premium Corporate Side Panel
+interface SlideOverDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  width?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+const SlideOverDrawer: React.FC<SlideOverDrawerProps> = ({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  children,
+  width = 'md'
+}) => {
+  const widthClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-slate-900/20 dark:bg-black/40 backdrop-blur-sm z-50"
+            onClick={onClose}
+          />
+
+          {/* Drawer Panel */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className={`fixed right-0 top-0 h-full ${widthClasses[width]} w-full bg-white dark:bg-midnight-900 shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-steel-800`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-800 bg-slate-50 dark:bg-midnight-800">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-steel-100">{title}</h2>
+                {subtitle && (
+                  <p className="text-sm text-slate-500 dark:text-steel-400 mt-0.5">{subtitle}</p>
+                )}
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {children}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Thin Radial Progress Ring - Premium Corporate Style
 const CircularGauge: React.FC<{
   percentage: number;
   size?: number;
@@ -86,17 +161,20 @@ const CircularGauge: React.FC<{
   label: string;
   count: string;
   showGlow?: boolean;
-}> = ({ percentage, size = 100, strokeWidth = 4, color, label, count, showGlow = true }) => {
+  variant?: 'default' | 'compact';
+}> = ({ percentage, size = 120, strokeWidth = 3, color, label, count, showGlow: _showGlow = false, variant = 'default' }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
 
-  const glowClass = percentage >= 80 ? 'gauge-glow-success' : percentage >= 50 ? 'gauge-glow-warning' : 'gauge-glow';
+  // Use Indigo-600 as primary accent
+  const ringColor = color || '#4f46e5';
 
   return (
     <div className="flex flex-col items-center">
-      <div className={`relative ${showGlow ? glowClass : ''}`} style={{ width: size, height: size }}>
+      <div className="relative" style={{ width: size, height: size }}>
         <svg className="-rotate-90" width={size} height={size}>
+          {/* Background track - very subtle */}
           <circle
             cx={size/2}
             cy={size/2}
@@ -104,30 +182,39 @@ const CircularGauge: React.FC<{
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-slate-200 dark:text-steel-800"
+            className="text-slate-100 dark:text-steel-800/50"
           />
+          {/* Progress ring - thin and elegant */}
           <motion.circle
             cx={size/2}
             cy={size/2}
             r={radius}
             fill="none"
-            stroke={color}
+            stroke={ringColor}
             strokeWidth={strokeWidth}
-            strokeLinecap="square"
+            strokeLinecap="round"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1, ease: 'easeOut' }}
-            className="gauge-ring"
+            transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold tracking-tight dark:text-steel-100 text-slate-900">{percentage}%</span>
+          <span className={`font-semibold tracking-tight text-slate-900 dark:text-steel-100 ${variant === 'compact' ? 'text-lg' : 'text-2xl'}`}>
+            {percentage}%
+          </span>
+          {variant === 'default' && (
+            <span className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">{count}</span>
+          )}
         </div>
       </div>
-      <div className="mt-3 text-center">
-        <div className="font-semibold text-sm tracking-tight dark:text-steel-200 text-slate-700">{label}</div>
-        <div className="text-xs dark:text-steel-500 text-slate-500">{count}</div>
+      <div className={`text-center ${variant === 'compact' ? 'mt-2' : 'mt-3'}`}>
+        <div className={`font-medium tracking-tight text-slate-700 dark:text-steel-200 ${variant === 'compact' ? 'text-xs' : 'text-sm'}`}>
+          {label}
+        </div>
+        {variant === 'compact' && (
+          <div className="text-xs text-slate-500 dark:text-steel-500 mt-0.5">{count}</div>
+        )}
       </div>
     </div>
   );
@@ -209,7 +296,7 @@ ${frameworks.map(fw => `<div class="framework-card"><div class="percentage" styl
 ${gaps.length > 0 ? `<div class="section"><h2>Action Required - Critical Gaps</h2><table class="gaps-table"><thead><tr><th>Control ID</th><th>Title</th><th>Priority</th></tr></thead><tbody>
 ${gaps.map(g => `<tr><td><strong>${g.id}</strong></td><td>${g.title}</td><td><span class="severity severity-${g.riskLevel}">${g.riskLevel.toUpperCase()}</span></td></tr>`).join('')}
 </tbody></table></div>` : ''}
-<div class="footer"><p>Lydell Security Compliance Engine | Confidential</p></div>
+<div class="footer"><p>AttestAI by Lydell Security | Confidential</p></div>
 <script>window.onload=()=>window.print();</script></body></html>`);
   printWindow.document.close();
 };
@@ -332,30 +419,31 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
     answerControl(control.id, answer);
   };
 
+  // Premium Soft-Tint button styles
   const buttons: Array<{ value: 'yes' | 'no' | 'partial' | 'na'; label: string; activeClass: string; defaultClass: string }> = [
     {
       value: 'yes',
       label: 'Yes',
-      activeClass: 'bg-status-success text-white border-status-success shadow-glow-success',
-      defaultClass: 'border-status-success/30 text-status-success hover:bg-status-success/10'
+      activeClass: 'bg-emerald-600 text-white border-emerald-600',
+      defaultClass: 'border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
     },
     {
       value: 'no',
       label: 'No',
-      activeClass: 'bg-status-risk text-white border-status-risk shadow-glow-risk',
-      defaultClass: 'border-status-risk/30 text-status-risk hover:bg-status-risk/10'
+      activeClass: 'bg-rose-600 text-white border-rose-600',
+      defaultClass: 'border-rose-200 dark:border-rose-800/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
     },
     {
       value: 'partial',
       label: 'Partial',
-      activeClass: 'bg-status-warning text-white border-status-warning shadow-glow-warning',
-      defaultClass: 'border-status-warning/30 text-status-warning hover:bg-status-warning/10'
+      activeClass: 'bg-amber-500 text-white border-amber-500',
+      defaultClass: 'border-amber-200 dark:border-amber-800/50 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
     },
     {
       value: 'na',
       label: 'N/A',
-      activeClass: 'bg-steel-600 text-white border-steel-600',
-      defaultClass: 'border-slate-300 dark:border-steel-700 text-slate-500 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-800'
+      activeClass: 'bg-slate-600 text-white border-slate-600 dark:bg-steel-600 dark:border-steel-600',
+      defaultClass: 'border-slate-200 dark:border-steel-700 text-slate-500 dark:text-steel-400 hover:bg-slate-50 dark:hover:bg-steel-800'
     },
   ];
 
@@ -426,7 +514,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
             <button
               key={btn.value}
               onClick={() => handleAnswer(btn.value)}
-              className={`flex-1 py-2 px-3 text-sm font-medium border transition-all duration-200 ${selected ? btn.activeClass : btn.defaultClass}`}
+              className={`flex-1 py-2.5 px-3 text-sm font-medium border rounded-lg transition-all duration-200 ${selected ? btn.activeClass : btn.defaultClass}`}
             >
               {btn.label}
             </button>
@@ -435,7 +523,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
       </div>
 
       {/* Policy Generator Buttons */}
-      <div className="mt-4 pt-4 border-t border-steel-800 flex flex-wrap gap-2">
+      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-steel-800 flex flex-wrap gap-2">
         <PolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" />
         <AIPolicyGeneratorButton control={control} organizationName="LYDELL SECURITY" controlResponse={response?.answer} />
       </div>
@@ -446,19 +534,19 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-steel-800 mt-4"
+            className="border-t border-slate-100 dark:border-steel-800 mt-4"
           >
             <div className="pt-4 space-y-4">
-              <div className="p-3 bg-accent-500/10 border border-accent-500/20">
-                <h4 className="text-xs font-semibold text-accent-400 uppercase tracking-wider mb-1">Why This Matters</h4>
-                <p className="text-sm text-secondary">{control.guidance}</p>
+              <div className="p-4 bg-indigo-50 dark:bg-accent-500/10 rounded-lg border border-indigo-100 dark:border-accent-500/20">
+                <h4 className="text-xs font-semibold text-indigo-600 dark:text-accent-400 uppercase tracking-wider mb-1.5">Why This Matters</h4>
+                <p className="text-sm text-slate-600 dark:text-steel-300">{control.guidance}</p>
               </div>
               <div>
-                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Evidence Examples</h4>
-                <ul className="space-y-1.5">
+                <h4 className="text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider mb-3">Evidence Examples</h4>
+                <ul className="space-y-2">
                   {control.evidenceExamples.map((ex, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-secondary">
-                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-steel-300">
+                      <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                       {ex}
                     </li>
                   ))}
@@ -475,14 +563,14 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-status-risk/30 mt-4"
+            className="border-t border-rose-100 dark:border-status-risk/30 mt-4"
           >
-            <div className="pt-4 space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-status-risk/10 border border-status-risk/20">
-                <AlertTriangle className="w-5 h-5 text-status-risk flex-shrink-0" />
+            <div className="pt-4 space-y-4">
+              <div className="flex items-start gap-3 p-4 bg-rose-50 dark:bg-status-risk/10 rounded-lg border border-rose-100 dark:border-status-risk/20">
+                <AlertTriangle className="w-5 h-5 text-rose-500 dark:text-status-risk flex-shrink-0" />
                 <div className="flex-1">
-                  <div className="text-xs font-bold text-status-risk uppercase tracking-wide mb-1">Gap Identified</div>
-                  <p className="text-sm text-secondary">{control.remediationTip}</p>
+                  <div className="text-xs font-semibold text-rose-600 dark:text-status-risk uppercase tracking-wide mb-1">Gap Identified</div>
+                  <p className="text-sm text-rose-700 dark:text-rose-200">{control.remediationTip}</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -504,15 +592,15 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
                 </button>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-status-risk uppercase tracking-wide mb-2">Remediation Plan</label>
+                <label className="block text-xs font-semibold text-rose-600 dark:text-status-risk uppercase tracking-wide mb-2">Remediation Plan</label>
                 <textarea
                   value={localRemediation}
                   onChange={e => setLocalRemediation(e.target.value)}
                   placeholder="Document your remediation plan..."
-                  className="input border-status-risk/30 focus:border-status-risk resize-none"
+                  className="input border-rose-200 dark:border-status-risk/30 focus:border-rose-400 dark:focus:border-status-risk resize-none"
                   rows={3}
                 />
-                <div className="flex items-center gap-1 mt-1.5 text-xs text-steel-500">
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-400 dark:text-steel-500">
                   <Save className="w-3 h-3" /> Auto-saves
                 </div>
               </div>
@@ -533,19 +621,24 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
 };
 
 // ============================================================================
-// DASHBOARD TAB - Bento Grid Layout
+// DASHBOARD TAB - Premium Bento Grid Layout
 // ============================================================================
 
 const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomainMeta) => void }> = ({ onNavigate }) => {
   const { frameworkProgress, stats, criticalGaps, domainProgress, allDomains } = useComplianceContext();
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="page-title">Command Center</h1>
-          <p className="page-subtitle">{stats.totalControls} controls across 4 frameworks</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-steel-100">Dashboard</h1>
+          <p className="text-slate-500 dark:text-steel-400 mt-1">{stats.totalControls} controls across 4 frameworks</p>
         </div>
         <button
           onClick={() => generatePDF(frameworkProgress, stats, criticalGaps)}
@@ -556,158 +649,218 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
         </button>
       </div>
 
-      {/* Bento Grid - Top Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Overall Compliance Gauge - Top Left */}
-        <Card className="p-6 lg:row-span-2">
-          <h2 className="section-title mb-6">Overall Compliance</h2>
-          <div className="flex justify-center">
-            <CircularGauge
-              percentage={stats.assessmentPercentage}
-              size={160}
-              strokeWidth={6}
-              color="#6366f1"
-              label="Assessed"
-              count={`${stats.answeredControls}/${stats.totalControls} controls`}
-              showGlow
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <div className="bento-stat">
-              <div className="stat-value text-status-success">{stats.compliantControls}</div>
-              <div className="stat-label">Compliant</div>
+      {/* Bento Grid - Premium Layout */}
+      <div className="grid grid-cols-12 gap-5">
+        {/* Overall Compliance Score - Large Card */}
+        <motion.div
+          className="col-span-12 lg:col-span-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.05 }}
+        >
+          <Card className="p-6 h-full">
+            <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-6">Overall Compliance</h2>
+            <div className="flex justify-center mb-6">
+              <CircularGauge
+                percentage={stats.assessmentPercentage}
+                size={140}
+                strokeWidth={4}
+                color="#4f46e5"
+                label="Assessed"
+                count={`${stats.answeredControls}/${stats.totalControls} controls`}
+              />
             </div>
-            <div className="bento-stat">
-              <div className="stat-value text-status-warning">{stats.remainingControls}</div>
-              <div className="stat-label">Remaining</div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Active Gaps - Top Right */}
-        <Card className="p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-status-risk" />
-              Active Gaps
-            </h3>
-            <span className="badge-risk">{stats.gapControls}</span>
-          </div>
-          {criticalGaps.length === 0 ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-status-success/10 flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle2 className="w-6 h-6 text-status-success" />
-                </div>
-                <p className="text-sm text-steel-500">No critical gaps identified</p>
+            <div className="grid grid-cols-2 gap-4 mt-auto">
+              <div className="p-4 bg-emerald-50 dark:bg-status-success/10 rounded-lg">
+                <div className="text-2xl font-semibold text-emerald-600 dark:text-status-success tracking-tight">{stats.compliantControls}</div>
+                <div className="text-xs font-medium text-emerald-600/70 dark:text-status-success/70 uppercase tracking-wide mt-1">Compliant</div>
+              </div>
+              <div className="p-4 bg-amber-50 dark:bg-status-warning/10 rounded-lg">
+                <div className="text-2xl font-semibold text-amber-600 dark:text-status-warning tracking-tight">{stats.remainingControls}</div>
+                <div className="text-xs font-medium text-amber-600/70 dark:text-status-warning/70 uppercase tracking-wide mt-1">Remaining</div>
               </div>
             </div>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {criticalGaps.slice(0, 5).map(control => (
-                <button
-                  key={control.id}
-                  onClick={() => { const d = allDomains.find(x => (x.id as string) === (control.domain as string)); if (d) onNavigate('assessment', d); }}
-                  className="w-full p-3 bg-status-risk/5 border border-status-risk/20 text-left hover:bg-status-risk/10 transition-colors group"
+          </Card>
+        </motion.div>
+
+        {/* Framework Progress - Side by Side Cards */}
+        <motion.div
+          className="col-span-12 lg:col-span-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.1 }}
+        >
+          <Card className="p-6 h-full">
+            <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-6">Framework Progress</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {frameworkProgress.map((fw, i) => (
+                <motion.div
+                  key={fw.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.15 + i * 0.05, duration: 0.2 }}
+                  className="flex flex-col items-center"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={`status-dot ${control.riskLevel === 'critical' ? 'status-dot-risk' : 'status-dot-warning'}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-mono text-slate-500 dark:text-steel-400">{control.id}</span>
-                        <span className={`badge ${control.riskLevel === 'critical' ? 'badge-risk' : 'badge-warning'}`}>
-                          {control.riskLevel.toUpperCase()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-steel-200 truncate">{control.title}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-steel-600 group-hover:text-status-risk transition-colors" />
-                  </div>
-                </button>
+                  <CircularGauge
+                    percentage={fw.percentage}
+                    size={88}
+                    strokeWidth={3}
+                    color={FRAMEWORK_COLORS[fw.id] || fw.color}
+                    label={fw.name}
+                    count={`${fw.completed}/${fw.total}`}
+                    variant="compact"
+                  />
+                </motion.div>
               ))}
             </div>
-          )}
-        </Card>
+          </Card>
+        </motion.div>
 
-        {/* Framework Progress Crosswalk - Bottom */}
-        <Card className="p-6 lg:col-span-2">
-          <h2 className="section-title mb-6">Framework Progress Crosswalk</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {frameworkProgress.map((fw, i) => (
-              <motion.div
-                key={fw.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <CircularGauge
-                  percentage={fw.percentage}
-                  size={80}
-                  strokeWidth={4}
-                  color={FRAMEWORK_COLORS[fw.id] || fw.color}
-                  label={fw.name}
-                  count={`${fw.completed}/${fw.total}`}
-                  showGlow={false}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </Card>
+        {/* Active Gaps - Attention Card */}
+        <motion.div
+          className="col-span-12 lg:col-span-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.15 }}
+        >
+          <Card className="p-6 h-full">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-500" />
+                Active Gaps
+              </h2>
+              <span className="badge-risk">{stats.gapControls}</span>
+            </div>
+            {criticalGaps.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-emerald-50 dark:bg-status-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-status-success" />
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-steel-400">No critical gaps identified</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                {criticalGaps.slice(0, 5).map((control, i) => (
+                  <motion.button
+                    key={control.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + i * 0.05, duration: 0.2 }}
+                    onClick={() => { const d = allDomains.find(x => (x.id as string) === (control.domain as string)); if (d) onNavigate('assessment', d); }}
+                    className="w-full p-4 bg-rose-50 dark:bg-status-risk/5 border border-rose-100 dark:border-status-risk/20 rounded-lg text-left hover:border-rose-200 dark:hover:bg-status-risk/10 transition-all duration-200 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${control.riskLevel === 'critical' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-mono text-slate-400 dark:text-steel-500">{control.id}</span>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${control.riskLevel === 'critical' ? 'bg-rose-100 text-rose-700 dark:bg-status-risk/20 dark:text-status-risk' : 'bg-amber-100 text-amber-700 dark:bg-status-warning/20 dark:text-status-warning'}`}>
+                            {control.riskLevel.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700 dark:text-steel-200 truncate">{control.title}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 dark:text-steel-500 group-hover:text-rose-500 dark:group-hover:text-status-risk transition-colors" />
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            )}
+          </Card>
+        </motion.div>
+
+        {/* Quick Stats - Compact Cards */}
+        <motion.div
+          className="col-span-12 lg:col-span-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.2 }}
+        >
+          <Card className="p-6 h-full">
+            <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-5">Quick Stats</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 dark:bg-midnight-800 rounded-lg border border-slate-100 dark:border-steel-800">
+                <div className="text-3xl font-semibold text-slate-900 dark:text-steel-100 tracking-tight">{stats.totalControls}</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mt-1">Total Controls</div>
+              </div>
+              <div className="p-4 bg-slate-50 dark:bg-midnight-800 rounded-lg border border-slate-100 dark:border-steel-800">
+                <div className="text-3xl font-semibold text-slate-900 dark:text-steel-100 tracking-tight">{stats.answeredControls}</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mt-1">Assessed</div>
+              </div>
+              <div className="p-4 bg-indigo-50 dark:bg-accent-500/10 rounded-lg border border-indigo-100 dark:border-accent-500/20">
+                <div className="text-3xl font-semibold text-indigo-600 dark:text-accent-400 tracking-tight">{frameworkProgress.length}</div>
+                <div className="text-xs font-medium text-indigo-600/70 dark:text-accent-400/70 uppercase tracking-wide mt-1">Frameworks</div>
+              </div>
+              <div className="p-4 bg-violet-50 dark:bg-framework-soc2/10 rounded-lg border border-violet-100 dark:border-framework-soc2/20">
+                <div className="text-3xl font-semibold text-violet-600 dark:text-framework-soc2 tracking-tight">{domainProgress.length}</div>
+                <div className="text-xs font-medium text-violet-600/70 dark:text-framework-soc2/70 uppercase tracking-wide mt-1">Domains</div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
-      {/* Domain Progress */}
-      <Card className="p-6">
-        <h2 className="section-title mb-4">Domain Progress</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {domainProgress.map((domain, i) => {
-            const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
-            const complete = domain.percentage === 100 && domain.total > 0;
-            const color = FRAMEWORK_COLORS.SOC2;
+      {/* Domain Progress - Full Width */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.25 }}
+      >
+        <Card className="p-6">
+          <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-5">Domain Progress</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {domainProgress.map((domain, i) => {
+              const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
+              const complete = domain.percentage === 100 && domain.total > 0;
+              const color = FRAMEWORK_COLORS.SOC2;
 
-            return (
-              <motion.button
-                key={domain.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + i * 0.02 }}
-                onClick={() => domainMeta && onNavigate('assessment', domainMeta)}
-                className={`p-4 text-left transition-all duration-200 border rounded-lg ${complete
-                  ? 'bg-status-success/5 border-status-success/30'
-                  : 'bg-slate-50 dark:bg-midnight-800 border-slate-200 dark:border-steel-800 hover:border-accent-500/30'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <div
-                    className="w-8 h-8 flex items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `${color}15` }}
-                  >
-                    <div style={{ color }}><DomainIcon domainId={domain.id} /></div>
-                  </div>
-                  {complete && (
-                    <div className="w-5 h-5 bg-status-success flex items-center justify-center rounded">
-                      <Check className="w-3 h-3 text-white" />
+              return (
+                <motion.button
+                  key={domain.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.02, duration: 0.2 }}
+                  onClick={() => domainMeta && onNavigate('assessment', domainMeta)}
+                  className={`p-4 text-left transition-all duration-200 border rounded-lg group ${complete
+                    ? 'bg-emerald-50 dark:bg-status-success/5 border-emerald-200 dark:border-status-success/30'
+                    : 'bg-white dark:bg-midnight-800 border-slate-200 dark:border-steel-800 hover:border-indigo-200 dark:hover:border-accent-500/30 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div
+                      className="w-9 h-9 flex items-center justify-center rounded-lg"
+                      style={{ backgroundColor: complete ? 'rgb(236 253 245)' : `${color}10` }}
+                    >
+                      <div style={{ color: complete ? '#10b981' : color }}><DomainIcon domainId={domain.id} /></div>
                     </div>
-                  )}
-                </div>
-                <div className="font-medium text-sm text-primary mb-2 truncate tracking-tight">{domain.title}</div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${domain.percentage}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: complete ? '#10b981' : color }}
-                    />
+                    {complete && (
+                      <div className="w-5 h-5 bg-emerald-500 flex items-center justify-center rounded-full ml-auto">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                   </div>
-                  <span className="text-xs text-secondary font-medium">{domain.answered}/{domain.total}</span>
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-      </Card>
-    </div>
+                  <div className="font-medium text-sm text-slate-700 dark:text-steel-200 mb-2 line-clamp-2 tracking-tight min-h-[40px]">{domain.title}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${domain.percentage}%` }}
+                        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: complete ? '#10b981' : color }}
+                      />
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-steel-400 font-medium tabular-nums">{domain.answered}/{domain.total}</span>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 };
 
@@ -740,57 +893,69 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   };
 
   return (
-    <div className="flex gap-6">
-      {/* Domain Sidebar */}
+    <motion.div
+      className="flex gap-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* Domain Sidebar - Compliance Journey */}
       <div className="w-64 flex-shrink-0 hidden lg:block">
-        <Card className="p-3 sticky top-4">
-          <div className="stat-label px-3 mb-3">
-            Compliance Domains
+        <Card className="p-4 sticky top-4">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-steel-400">
+              Compliance Journey
+            </span>
           </div>
           <div className="space-y-1 max-h-[calc(100vh-180px)] overflow-y-auto">
-            {domainProgress.map(domain => {
+            {domainProgress.map((domain, idx) => {
               const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
               const isActive = (activeDomain.id as string) === domain.id && !search;
               const complete = domain.percentage === 100 && domain.total > 0;
-              const color = FRAMEWORK_COLORS.SOC2;
 
               return (
                 <button
                   key={domain.id}
                   onClick={() => { if (domainMeta) setActiveDomain(domainMeta); setSearch(''); }}
-                  className={`w-full text-left px-3 py-2.5 transition-all ${isActive
-                    ? 'nav-item-active'
-                    : 'nav-item'
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${isActive
+                    ? 'bg-indigo-50 dark:bg-accent-500/10 border border-indigo-200 dark:border-accent-500/30'
+                    : 'hover:bg-slate-50 dark:hover:bg-steel-800/50 border border-transparent'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    {/* Step Number / Completion Indicator */}
                     <div
-                      className="w-7 h-7 flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${color}10` }}
+                      className={`w-7 h-7 flex items-center justify-center flex-shrink-0 rounded-lg text-xs font-semibold ${
+                        complete
+                          ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          : isActive
+                            ? 'bg-indigo-100 dark:bg-accent-500/20 text-indigo-600 dark:text-accent-400'
+                            : 'bg-slate-100 dark:bg-steel-800 text-slate-500 dark:text-steel-400'
+                      }`}
                     >
-                      <div style={{ color }}><DomainIcon domainId={domain.id} /></div>
+                      {complete ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium truncate ${isActive ? 'text-accent-400' : 'text-steel-300'}`}>
+                        <span className={`text-sm font-medium truncate ${
+                          isActive
+                            ? 'text-indigo-700 dark:text-accent-400'
+                            : 'text-slate-700 dark:text-steel-300'
+                        }`}>
                           {domain.title}
                         </span>
-                        <span className="text-xs font-medium text-steel-500 ml-2">{domain.answered}/{domain.total}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1.5">
-                        <div className="flex-1 progress-bar">
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
                           <div
-                            className="progress-fill"
-                            style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10b981' : color }}
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10b981' : '#4f46e5' }}
                           />
                         </div>
+                        <span className="text-xs text-slate-500 dark:text-steel-500">{domain.answered}/{domain.total}</span>
                       </div>
                     </div>
-                    {complete && (
-                      <div className="w-5 h-5 bg-status-success flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
                   </div>
                 </button>
               );
@@ -803,7 +968,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
       <div className="flex-1 min-w-0 space-y-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-steel-500" />
           <input
             type="text"
             value={search}
@@ -812,7 +977,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             className="input-search w-full"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-primary">
+            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-300">
               <X className="w-5 h-5" />
             </button>
           )}
@@ -822,21 +987,18 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         {!search && currentDomainProgress && (
           <Card className="p-5">
             <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 flex items-center justify-center"
-                style={{ backgroundColor: `${FRAMEWORK_COLORS.SOC2}10` }}
-              >
-                <div style={{ color: FRAMEWORK_COLORS.SOC2 }} className="scale-125">
+              <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 dark:bg-accent-500/10">
+                <div className="text-indigo-600 dark:text-accent-400 scale-125">
                   <DomainIcon domainId={currentDomainProgress.id} />
                 </div>
               </div>
               <div className="flex-1">
-                <h2 className="page-title">{currentDomainProgress.title}</h2>
-                <p className="page-subtitle">{activeDomain.description}</p>
+                <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-steel-100">{currentDomainProgress.title}</h2>
+                <p className="text-sm text-slate-500 dark:text-steel-400 mt-0.5">{activeDomain.description}</p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-accent-400">{currentDomainProgress.answered}/{currentDomainProgress.total}</div>
-                <div className="text-xs text-steel-500">Completed</div>
+                <div className="text-2xl font-bold text-indigo-600 dark:text-accent-400">{currentDomainProgress.answered}/{currentDomainProgress.total}</div>
+                <div className="text-xs text-slate-500 dark:text-steel-500">Completed</div>
               </div>
             </div>
           </Card>
@@ -844,8 +1006,8 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
 
         {/* Search Results Info */}
         {search && (
-          <div className="p-4 bg-accent-500/10 border border-accent-500/20">
-            <p className="text-accent-400">
+          <div className="p-4 bg-indigo-50 dark:bg-accent-500/10 border border-indigo-200 dark:border-accent-500/20 rounded-lg">
+            <p className="text-indigo-700 dark:text-accent-400">
               Found <strong>{controls.length}</strong> controls matching "{search}"
             </p>
           </div>
@@ -854,14 +1016,14 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         {/* Controls List */}
         <div className="space-y-3">
           {controls.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-12 h-12 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Search className="w-6 h-6 text-secondary" />
+            <Card className="p-16 text-center">
+              <div className="w-12 h-12 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Search className="w-6 h-6 text-slate-400 dark:text-steel-500" />
               </div>
-              <p className="text-secondary">
+              <p className="text-slate-500 dark:text-steel-400">
                 {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
               </p>
-            </div>
+            </Card>
           ) : (
             controls.map((control, i) => (
               <motion.div
@@ -884,7 +1046,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         isOpen={remediationControl !== null}
         onClose={() => setRemediationControl(null)}
       />
-    </div>
+    </motion.div>
   );
 };
 
@@ -918,12 +1080,17 @@ const EvidenceTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="page-title">Evidence Repository</h1>
-          <p className="page-subtitle">Manage audit documentation and evidence</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-steel-100">Evidence Repository</h1>
+          <p className="text-slate-500 dark:text-steel-400 mt-1">Manage audit documentation and evidence</p>
         </div>
         <div className="badge-success">
           {allEvidence.length} Records
@@ -933,7 +1100,7 @@ const EvidenceTab: React.FC = () => {
       {/* Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-steel-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-steel-500" />
           <input
             type="text"
             value={search}
@@ -953,31 +1120,31 @@ const EvidenceTab: React.FC = () => {
             <option value="review">Review</option>
             <option value="final">Final</option>
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel-500 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-steel-500 pointer-events-none" />
         </div>
       </div>
 
       {/* Evidence Table */}
       {allEvidence.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <FolderOpen className="w-8 h-8 text-secondary" />
+          <div className="w-16 h-16 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <FolderOpen className="w-8 h-8 text-slate-400 dark:text-steel-500" />
           </div>
-          <h3 className="text-lg font-semibold text-primary mb-2 tracking-tight">No Evidence Yet</h3>
-          <p className="text-secondary">Complete controls with "Yes" to generate evidence records</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-2 tracking-tight">No Evidence Yet</h3>
+          <p className="text-slate-500 dark:text-steel-400">Complete controls with "Yes" to generate evidence records</p>
         </Card>
       ) : filteredEvidence.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-12 h-12 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Search className="w-6 h-6 text-secondary" />
+          <div className="w-12 h-12 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Search className="w-6 h-6 text-slate-400 dark:text-steel-500" />
           </div>
-          <p className="text-secondary">No evidence matches your search</p>
+          <p className="text-slate-500 dark:text-steel-400">No evidence matches your search</p>
         </Card>
       ) : (
         <Card className="overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-steel-800">
+              <tr className="border-b border-slate-200 dark:border-steel-800">
                 <th className="table-header">Control</th>
                 <th className="table-header">Evidence ID</th>
                 <th className="table-header w-28">Status</th>
@@ -994,18 +1161,18 @@ const EvidenceTab: React.FC = () => {
                   <tr key={entry.id} className="table-row">
                     <td className="table-cell">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-xs font-mono bg-slate-200 dark:bg-steel-800 text-secondary rounded">{entry.controlId}</span>
-                        <span className="text-sm text-primary font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
+                        <span className="px-2 py-1 text-xs font-mono bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-300 rounded-md">{entry.controlId}</span>
+                        <span className="text-sm text-slate-700 dark:text-steel-200 font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
                       </div>
                     </td>
                     <td className="table-cell">
-                      <span className="px-2 py-0.5 text-xs font-mono bg-status-success/10 text-status-success">{entry.id.slice(0, 16)}...</span>
+                      <span className="px-2 py-1 text-xs font-mono bg-emerald-50 dark:bg-status-success/10 text-emerald-600 dark:text-status-success rounded-md">{entry.id.slice(0, 16)}...</span>
                     </td>
                     <td className="table-cell">
                       <select
                         value={entry.status}
                         onChange={e => updateEvidence(entry.id, { status: e.target.value as 'draft' | 'review' | 'final' })}
-                        className="px-2 py-1 text-xs bg-transparent border border-slate-300 dark:border-steel-700 text-secondary rounded focus:outline-none focus:ring-1 focus:ring-accent-500"
+                        className="px-2.5 py-1.5 text-xs bg-white dark:bg-transparent border border-slate-200 dark:border-steel-700 text-slate-600 dark:text-steel-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       >
                         <option value="draft">Draft</option>
                         <option value="review">Review</option>
@@ -1018,7 +1185,7 @@ const EvidenceTab: React.FC = () => {
                         defaultValue={entry.notes}
                         onChange={e => handleNotesChange(entry.id, e.target.value)}
                         placeholder="Add notes..."
-                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-steel-700 focus:border-accent-500 text-secondary focus:outline-none transition-colors rounded"
+                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-slate-200 dark:hover:border-steel-700 focus:border-indigo-500 text-slate-600 dark:text-steel-300 focus:outline-none transition-colors rounded-lg"
                       />
                     </td>
                     <td className="table-cell">
@@ -1027,18 +1194,18 @@ const EvidenceTab: React.FC = () => {
                           href={policyUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-500/10 text-accent-400 text-xs font-medium hover:bg-accent-500/20 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 text-xs font-medium rounded-md hover:bg-indigo-100 dark:hover:bg-accent-500/20 transition-colors"
                         >
                           <FileText className="w-3.5 h-3.5" />
                           View PDF
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       ) : (
-                        <span className="text-xs text-steel-600">No policy</span>
+                        <span className="text-xs text-slate-400 dark:text-steel-600">No policy</span>
                       )}
                     </td>
                     <td className="table-cell">
-                      <button className="p-1.5 text-steel-500 hover:text-accent-400 hover:bg-accent-500/10 transition-colors" title="Upload file">
+                      <button className="p-2 text-slate-400 dark:text-steel-500 hover:text-indigo-600 dark:hover:text-accent-400 hover:bg-indigo-50 dark:hover:bg-accent-500/10 rounded-lg transition-colors" title="Upload file">
                         <Upload className="w-4 h-4" />
                       </button>
                     </td>
@@ -1049,7 +1216,7 @@ const EvidenceTab: React.FC = () => {
           </table>
         </Card>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -1077,12 +1244,17 @@ const CompanyTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="page-title">Custom Controls</h1>
-          <p className="page-subtitle">Organization-specific compliance requirements</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-steel-100">Custom Controls</h1>
+          <p className="text-slate-500 dark:text-steel-400 mt-1">Organization-specific compliance requirements</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -1096,49 +1268,56 @@ const CompanyTab: React.FC = () => {
       {/* Controls Grid */}
       {customControls.length === 0 ? (
         <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Briefcase className="w-8 h-8 text-secondary" />
+          <div className="w-16 h-16 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-slate-400 dark:text-steel-500" />
           </div>
-          <h3 className="text-lg font-semibold text-primary mb-2 tracking-tight">No Custom Controls</h3>
-          <p className="text-secondary mb-4">Create controls specific to your organization</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-2 tracking-tight">No Custom Controls</h3>
+          <p className="text-slate-500 dark:text-steel-400 mb-4">Create controls specific to your organization</p>
         </Card>
       ) : (
         <div className="grid gap-4">
           {customControls.map(c => (
-            <Card key={c.id} className="p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-xs font-mono bg-accent-500/10 text-accent-400 rounded">{c.id}</span>
-                    <span className="badge-info">CUSTOM</span>
-                  </div>
-                  <h3 className="font-semibold text-primary mb-1 tracking-tight">{c.title}</h3>
-                  <p className="text-sm text-secondary mb-3">{c.description}</p>
-                  {c.frameworkMappings.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {c.frameworkMappings.map((m, i) => {
-                        const color = FRAMEWORK_COLORS[m.frameworkId] || '#6366f1';
-                        return (
-                          <span
-                            key={i}
-                            className="pill"
-                            style={{ backgroundColor: `${color}20`, color, borderColor: `${color}30` }}
-                          >
-                            {m.frameworkId} {m.clauseId}
-                          </span>
-                        );
-                      })}
+            <motion.div
+              key={c.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Card className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="px-2 py-1 text-xs font-mono bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 rounded-md">{c.id}</span>
+                      <span className="px-2 py-1 text-xs font-medium bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-md">CUSTOM</span>
                     </div>
-                  )}
+                    <h3 className="font-semibold text-slate-900 dark:text-steel-100 mb-1 tracking-tight">{c.title}</h3>
+                    <p className="text-sm text-slate-500 dark:text-steel-400 mb-3">{c.description}</p>
+                    {c.frameworkMappings.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {c.frameworkMappings.map((m, i) => {
+                          const color = FRAMEWORK_COLORS[m.frameworkId] || '#6366f1';
+                          return (
+                            <span
+                              key={i}
+                              className="px-2 py-1 text-xs font-medium rounded-md"
+                              style={{ backgroundColor: `${color}15`, color, border: `1px solid ${color}25` }}
+                            >
+                              {m.frameworkId} {m.clauseId}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deleteCustomControl(c.id)}
+                    className="p-2 text-slate-400 dark:text-steel-500 hover:text-rose-600 dark:hover:text-status-risk hover:bg-rose-50 dark:hover:bg-status-risk/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => deleteCustomControl(c.id)}
-                  className="p-2 text-steel-500 hover:text-status-risk hover:bg-status-risk/10 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
           ))}
         </div>
       )}
@@ -1266,12 +1445,12 @@ const CompanyTab: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 
 // ============================================================================
-// COMMAND CENTER SIDEBAR NAVIGATION
+// PREMIUM CORPORATE SIDEBAR NAVIGATION
 // ============================================================================
 
 const CommandSidebar: React.FC<{
@@ -1283,9 +1462,12 @@ const CommandSidebar: React.FC<{
   onSyncClick: () => void;
   expanded: boolean;
   onToggle: () => void;
-}> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle }) => {
+  organizationName?: string;
+  organizationLogo?: string | null;
+  primaryColor?: string;
+}> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle, organizationName, organizationLogo, primaryColor }) => {
   const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number }> = [
-    { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-5 h-5" /> },
     { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-5 h-5" />, badge: incidentCount },
     { id: 'reporting', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
@@ -1300,42 +1482,55 @@ const CommandSidebar: React.FC<{
   return (
     <aside className={`glass-sidebar fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-16'}`}>
       {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-steel-800">
-        <div className="w-8 h-8 bg-accent-500 flex items-center justify-center flex-shrink-0">
-          <Shield className="w-5 h-5 text-white" />
-        </div>
+      <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-steel-800">
+        {organizationLogo ? (
+          <img
+            src={organizationLogo}
+            alt={organizationName || 'Organization'}
+            className="w-8 h-8 object-contain flex-shrink-0 rounded-lg"
+          />
+        ) : (
+          <div
+            className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg"
+            style={{ backgroundColor: primaryColor || '#4f46e5' }}
+          >
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+        )}
         {expanded && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="ml-3 overflow-hidden"
           >
-            <span className="font-bold text-steel-100 text-sm tracking-tight whitespace-nowrap">LYDELL</span>
-            <span className="text-xs text-steel-500 ml-1">GRC</span>
+            <span className="font-semibold text-slate-900 dark:text-steel-100 text-sm tracking-tight whitespace-nowrap">
+              {organizationName || 'LYDELL'}
+            </span>
+            <span className="text-xs text-slate-400 dark:text-steel-500 ml-1.5">GRC</span>
           </motion.div>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto">
-        <div className="space-y-1 px-2">
+      <nav className="flex-1 py-3 overflow-y-auto">
+        <div className="space-y-0.5 px-2">
           {tabs.map(tab => {
             const isActive = activeTab === tab.id;
             return (
               <div key={tab.id} className="relative group">
                 <button
                   onClick={() => onTabChange(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 ${isActive
-                    ? 'bg-accent-500/10 text-accent-400 border-l-2 border-accent-500'
-                    : 'text-steel-400 hover:text-steel-200 hover:bg-steel-800/50 border-l-2 border-transparent'
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive
+                    ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 font-medium'
+                    : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
                   }`}
                 >
                   <span className="flex-shrink-0">{tab.icon}</span>
                   {expanded && (
-                    <span className="text-sm font-medium truncate">{tab.label}</span>
+                    <span className="text-sm truncate">{tab.label}</span>
                   )}
                   {tab.badge !== undefined && tab.badge > 0 && (
-                    <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-status-risk text-white text-[10px] font-bold flex items-center justify-center`}>
+                    <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full`}>
                       {tab.badge}
                     </span>
                   )}
@@ -1353,20 +1548,20 @@ const CommandSidebar: React.FC<{
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-2 border-t border-steel-800 space-y-1">
+      <div className="p-2 border-t border-slate-200 dark:border-steel-800 space-y-0.5">
         {/* Sync Activity */}
         <div className="relative group">
           <button
             onClick={onSyncClick}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 ${syncCount > 0
-              ? 'text-status-success bg-status-success/10'
-              : 'text-steel-400 hover:text-steel-200 hover:bg-steel-800/50'
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${syncCount > 0
+              ? 'text-emerald-600 dark:text-status-success bg-emerald-50 dark:bg-status-success/10'
+              : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
             }`}
           >
             <Activity className="w-5 h-5 flex-shrink-0" />
             {expanded && <span className="text-sm font-medium">Sync Activity</span>}
             {syncCount > 0 && (
-              <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-status-success text-white text-[10px] font-bold flex items-center justify-center`}>
+              <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full`}>
                 {Math.min(syncCount, 99)}
               </span>
             )}
@@ -1384,7 +1579,7 @@ const CommandSidebar: React.FC<{
         {/* Toggle Expand */}
         <button
           onClick={onToggle}
-          className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200 hover:bg-slate-200/50 dark:hover:bg-steel-800/50 transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50 transition-all duration-200"
         >
           <Menu className="w-5 h-5 flex-shrink-0" />
           {expanded && <span className="text-sm font-medium">Collapse</span>}
@@ -1401,6 +1596,7 @@ const CommandSidebar: React.FC<{
 const AppContent: React.FC = () => {
   const compliance = useComplianceContext();
   const ir = useIncidentResponse();
+  const { currentOrg } = useOrganization();
   const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress } = compliance;
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [showSidebar, setShowSidebar] = useState(false);
@@ -1466,6 +1662,9 @@ const AppContent: React.FC = () => {
         onSyncClick={() => setShowSidebar(!showSidebar)}
         expanded={sidebarExpanded}
         onToggle={() => setSidebarExpanded(!sidebarExpanded)}
+        organizationName={currentOrg?.name}
+        organizationLogo={currentOrg?.logoUrl}
+        primaryColor={currentOrg?.primaryColor}
       />
 
       {/* Main Content */}
@@ -1504,12 +1703,22 @@ const AppContent: React.FC = () => {
             )}
             {activeTab === 'trust-center' && (
               <motion.div key="trust-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <TrustCenter compliance={compliance} organizationName="LYDELL SECURITY" />
+                <TrustCenter
+                  compliance={compliance}
+                  organizationName={currentOrg?.name || 'LYDELL SECURITY'}
+                  organizationLogo={currentOrg?.logoUrl}
+                  primaryColor={currentOrg?.primaryColor}
+                  contactEmail={currentOrg?.contactEmail}
+                />
               </motion.div>
             )}
             {activeTab === 'certificate' && (
               <motion.div key="certificate" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <CertificateGenerator compliance={compliance} organizationName="LYDELL SECURITY" />
+                <CertificateGenerator
+                  compliance={compliance}
+                  organizationName={currentOrg?.name || 'LYDELL SECURITY'}
+                  organizationLogo={currentOrg?.logoUrl}
+                />
                 <div className="mt-6">
                   <AuditBundle compliance={compliance} />
                 </div>
@@ -1567,4 +1776,5 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => <ComplianceProvider><AppContent /></ComplianceProvider>;
 
+export { SlideOverDrawer };
 export default App;

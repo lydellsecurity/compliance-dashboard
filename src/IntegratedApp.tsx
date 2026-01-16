@@ -1,8 +1,8 @@
 /**
  * Integrated App with Incident Response
- * 
+ *
  * This wrapper adds IR functionality to the existing Compliance Engine.
- * Import this instead of the base App.tsx for the full Lydell Security experience.
+ * Import this instead of the base App.tsx for the full AttestAI experience.
  */
 
 import React, { useState, createContext, useContext } from 'react';
@@ -76,8 +76,8 @@ const Navigation: React.FC<NavProps> = ({ activeTab, onTabChange, compliance, ir
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <span className="font-bold text-slate-900 dark:text-white">Lydell Security</span>
-              <span className="text-xs text-slate-500 dark:text-white/50 ml-2">Compliance Engine</span>
+              <span className="font-bold text-slate-900 dark:text-white">AttestAI</span>
+              <span className="text-xs text-slate-500 dark:text-white/50 ml-2">by Lydell Security</span>
             </div>
           </div>
 

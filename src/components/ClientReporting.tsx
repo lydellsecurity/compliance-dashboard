@@ -730,7 +730,7 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
         ` : ''}
 
         <div class="footer">
-          <p>Lydell Security | Compliance Report | Confidential</p>
+          <p>AttestAI by Lydell Security | Compliance Report | Confidential</p>
         </div>
 
         <script>window.onload = () => window.print();</script>

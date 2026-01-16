@@ -2,7 +2,7 @@
  * Incident Response Dashboard Component
  * Command Center Design - Midnight & Steel Theme
  *
- * Main dashboard for Lydell Security's IR operations.
+ * Main dashboard for AttestAI's IR operations.
  * Integrates with both useCompliance and useIncidentResponse hooks.
  */
 

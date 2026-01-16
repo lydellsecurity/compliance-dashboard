@@ -61,6 +61,13 @@ function validatePayload(payload) {
   if (payload.evidence && !Array.isArray(payload.evidence)) {
     errors.push('evidence must be an array');
   }
+  // Branding validation
+  if (payload.logoUrl && typeof payload.logoUrl !== 'string') {
+    errors.push('logoUrl must be a string');
+  }
+  if (payload.primaryColor && !/^#[0-9A-Fa-f]{6}$/.test(payload.primaryColor)) {
+    errors.push('primaryColor must be a valid hex color (e.g., #3b82f6)');
+  }
 
   return errors;
 }
@@ -181,6 +188,10 @@ exports.handler = async (event, context) => {
     const customControls = Array.isArray(payload.customControls) ? payload.customControls : [];
     const evidence = Array.isArray(payload.evidence) ? payload.evidence : [];
 
+    // Extract branding data
+    const logoUrl = payload.logoUrl || null;
+    const primaryColor = payload.primaryColor || '#3b82f6';
+
     // Calculate assessment period with proper date validation
     const now = new Date();
     let period;
@@ -218,6 +229,9 @@ exports.handler = async (event, context) => {
       assessmentPeriod: period,
       generatedBy: user.email || 'Unknown User',
       generatedAt: now.toISOString(),
+      // Branding
+      logoUrl,
+      primaryColor,
     });
 
     // Determine filename based on report type
@@ -315,10 +329,10 @@ async function generateProfessionalReport(data) {
         bufferPages: true,
         info: {
           Title: `${reportTitle} - ${data.organizationName}`,
-          Author: 'Lydell Security Compliance Engine',
+          Author: 'AttestAI by Lydell Security',
           Subject: 'Professional Compliance Assessment Report',
-          Creator: 'Lydell Security',
-          Keywords: 'compliance, audit, SOC2, ISO27001, HIPAA, NIST',
+          Creator: 'AttestAI',
+          Keywords: 'compliance, audit, SOC2, ISO27001, HIPAA, NIST, AttestAI',
         },
       });
 
@@ -442,28 +456,29 @@ async function generateProfessionalReport(data) {
 
 function addHeader(doc, data, pageNum) {
   const pageWidth = doc.page.width;
-  
+  const brandColor = data.primaryColor || '#3b82f6';
+
   // Header background
   doc.save();
   doc.rect(0, 0, pageWidth, 50).fill('#0f172a');
-  
+
   // Report title
   doc.fontSize(10)
      .fillColor('#94a3b8')
      .text('AUDIT READINESS REPORT', 50, 18);
-  
+
   // Date
   doc.fontSize(9)
      .fillColor('#64748b')
      .text(formatDate(data.generatedAt), pageWidth - 150, 18, { width: 100, align: 'right' });
-  
-  // Divider line
+
+  // Divider line (uses brand color)
   doc.moveTo(50, 49)
      .lineTo(pageWidth - 50, 49)
-     .strokeColor('#3b82f6')
+     .strokeColor(brandColor)
      .lineWidth(2)
      .stroke();
-  
+
   doc.restore();
 }
 
@@ -484,7 +499,7 @@ function addFooter(doc, data, pageNum, totalPages) {
   // Company info
   doc.fontSize(8)
      .fillColor('#64748b')
-     .text('Lydell Security | Compliance Report', pageWidth / 2 - 60, footerY + 18);
+     .text('AttestAI by Lydell Security | Compliance Report', pageWidth / 2 - 80, footerY + 18);
   
   // Page numbers
   doc.fontSize(8)
@@ -501,21 +516,22 @@ function addFooter(doc, data, pageNum, totalPages) {
 function generateCoverPage(doc, data) {
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
+  const brandColor = data.primaryColor || '#3b82f6';
 
   // Dark background
   doc.rect(0, 0, pageWidth, pageHeight).fill('#0f172a');
-  
-  // Decorative gradient circles
-  drawGradientCircle(doc, pageWidth * 0.85, pageHeight * 0.15, 180, '#3b82f6', 0.15);
+
+  // Decorative gradient circles using brand color
+  drawGradientCircle(doc, pageWidth * 0.85, pageHeight * 0.15, 180, brandColor, 0.15);
   drawGradientCircle(doc, pageWidth * 0.15, pageHeight * 0.85, 150, '#8b5cf6', 0.12);
   drawGradientCircle(doc, pageWidth * 0.5, pageHeight * 0.5, 250, '#06b6d4', 0.08);
 
-  // Company Logo (Shield icon approximation)
+  // Company Logo (Shield icon approximation or actual logo if provided)
   doc.save();
   const logoX = pageWidth / 2;
   const logoY = 140;
-  
-  // Shield shape
+
+  // Shield shape with brand color
   doc.moveTo(logoX, logoY - 30)
      .lineTo(logoX + 25, logoY - 20)
      .lineTo(logoX + 25, logoY + 10)
@@ -523,9 +539,9 @@ function generateCoverPage(doc, data) {
      .lineTo(logoX - 25, logoY + 10)
      .lineTo(logoX - 25, logoY - 20)
      .closePath()
-     .fill('#3b82f6');
-  
-  // Inner shield
+     .fill(brandColor);
+
+  // Inner shield (darker shade)
   doc.moveTo(logoX, logoY - 20)
      .lineTo(logoX + 15, logoY - 12)
      .lineTo(logoX + 15, logoY + 5)
@@ -534,23 +550,23 @@ function generateCoverPage(doc, data) {
      .lineTo(logoX - 15, logoY - 12)
      .closePath()
      .fill('#1e3a8a');
-  
+
   doc.restore();
 
-  // Report Type Badge
+  // Report Type Badge with brand color
   doc.roundedRect(pageWidth / 2 - 80, 200, 160, 28, 14)
-     .fill('#3b82f620');
+     .fill(brandColor + '20');
   doc.fontSize(10)
-     .fillColor('#3b82f6')
+     .fillColor(brandColor)
      .text('AUDIT READINESS REPORT', pageWidth / 2 - 70, 208, { align: 'center', width: 140 });
 
   // Main Title
   doc.fontSize(42)
      .fillColor('#ffffff')
      .text('COMPLIANCE', 0, 260, { align: 'center', width: pageWidth });
-  
+
   doc.fontSize(42)
-     .fillColor('#3b82f6')
+     .fillColor(brandColor)
      .text('ASSESSMENT', 0, 310, { align: 'center', width: pageWidth });
 
   // Organization Name
@@ -558,10 +574,10 @@ function generateCoverPage(doc, data) {
      .fillColor('#f8fafc')
      .text(data.organizationName, 0, 390, { align: 'center', width: pageWidth });
 
-  // Decorative line
+  // Decorative line (uses brand color)
   doc.moveTo(pageWidth * 0.3, 440)
      .lineTo(pageWidth * 0.7, 440)
-     .strokeColor('#3b82f6')
+     .strokeColor(brandColor)
      .lineWidth(3)
      .stroke();
 
@@ -614,8 +630,8 @@ function generateCoverPage(doc, data) {
   // Footer
   doc.fontSize(9)
      .fillColor('#475569')
-     .text('Powered by Lydell Security Compliance Engine', 0, pageHeight - 80, { align: 'center', width: pageWidth });
-  
+     .text('Powered by AttestAI', 0, pageHeight - 80, { align: 'center', width: pageWidth });
+
   doc.fontSize(8)
      .fillColor('#334155')
      .text(`© ${new Date().getFullYear()} Lydell Security. All rights reserved.`, 0, pageHeight - 60, { align: 'center', width: pageWidth });
@@ -627,14 +643,15 @@ function generateCoverPage(doc, data) {
 
 function generateTableOfContents(doc, data) {
   const contentTop = 100;
-  
+  const brandColor = data.primaryColor || '#3b82f6';
+
   doc.fontSize(28)
      .fillColor('#1e293b')
      .text('Table of Contents', 50, contentTop);
 
   doc.moveTo(50, contentTop + 40)
      .lineTo(220, contentTop + 40)
-     .strokeColor('#3b82f6')
+     .strokeColor(brandColor)
      .lineWidth(3)
      .stroke();
 
@@ -672,9 +689,9 @@ function generateTableOfContents(doc, data) {
        .text('.'.repeat(Math.floor(dotsWidth / 4)), 280, yPos, { width: dotsWidth });
     
     doc.fontSize(isMain ? 12 : 10)
-       .fillColor('#3b82f6')
+       .fillColor(brandColor)
        .text(item.page.toString(), 500, yPos);
-    
+
     yPos += isMain ? 30 : 24;
   });
 
@@ -696,7 +713,7 @@ function generateTableOfContents(doc, data) {
   let statX = 70;
   quickStats.forEach((stat) => {
     doc.fontSize(24)
-       .fillColor('#3b82f6')
+       .fillColor(brandColor)
        .text(stat.value.toString(), statX, yPos + 80);
     doc.fontSize(8)
        .fillColor('#64748b')
@@ -711,14 +728,15 @@ function generateTableOfContents(doc, data) {
 
 function generateExecutiveSummary(doc, data) {
   const contentTop = 100;
-  
+  const brandColor = data.primaryColor || '#3b82f6';
+
   doc.fontSize(28)
      .fillColor('#1e293b')
      .text('Executive Summary', 50, contentTop);
 
   doc.moveTo(50, contentTop + 40)
      .lineTo(250, contentTop + 40)
-     .strokeColor('#3b82f6')
+     .strokeColor(brandColor)
      .lineWidth(3)
      .stroke();
 
@@ -738,8 +756,8 @@ function generateExecutiveSummary(doc, data) {
   const chartCenterX = 160;
   const chartCenterY = 280;
   const chartRadius = 80;
-  
-  drawRadarChart(doc, chartCenterX, chartCenterY, chartRadius, data.frameworkStats);
+
+  drawRadarChart(doc, chartCenterX, chartCenterY, chartRadius, data.frameworkStats, brandColor);
 
   // Chart Legend
   doc.fontSize(11)
@@ -759,7 +777,7 @@ function generateExecutiveSummary(doc, data) {
 
   const overviewStats = [
     { label: 'Overall Compliance Score', value: `${data.stats.compliancePercentage}%`, color: getScoreColor(data.stats.compliancePercentage) },
-    { label: 'Assessment Completion', value: `${data.stats.assessmentPercentage}%`, color: '#3b82f6' },
+    { label: 'Assessment Completion', value: `${data.stats.assessmentPercentage}%`, color: brandColor },
     { label: 'Controls Evaluated', value: data.stats.answered.toString(), color: '#64748b' },
     { label: 'Compliant Controls', value: data.stats.compliant.toString(), color: '#10b981' },
     { label: 'Gaps Identified', value: data.stats.gaps.toString(), color: '#ef4444' },
@@ -787,13 +805,13 @@ function generateExecutiveSummary(doc, data) {
     {
       icon: data.stats.gaps > 0 ? '⚠' : '✓',
       color: data.stats.gaps > 0 ? '#ef4444' : '#10b981',
-      text: data.stats.gaps > 0 
+      text: data.stats.gaps > 0
         ? `${data.stats.gaps} control gap(s) require immediate remediation attention`
         : 'No critical control gaps identified - organization demonstrates strong compliance posture'
     },
     {
       icon: '◉',
-      color: '#3b82f6',
+      color: brandColor,
       text: `Assessment is ${data.stats.assessmentPercentage}% complete with ${data.stats.total - data.stats.answered} controls pending evaluation`
     },
     {
@@ -854,14 +872,15 @@ function generateExecutiveSummary(doc, data) {
 
 function generateFrameworkAnalysis(doc, data) {
   const contentTop = 100;
-  
+  const brandColor = data.primaryColor || '#3b82f6';
+
   doc.fontSize(28)
      .fillColor('#1e293b')
      .text('Framework Compliance Analysis', 50, contentTop);
 
   doc.moveTo(50, contentTop + 40)
      .lineTo(350, contentTop + 40)
-     .strokeColor('#3b82f6')
+     .strokeColor(brandColor)
      .lineWidth(3)
      .stroke();
 
@@ -1014,11 +1033,12 @@ function generateCriticalFindings(doc, data) {
   yPos += 35;
 
   // Table Rows
+  const brandColor = data.primaryColor || '#3b82f6';
   const maxRows = 12;
   data.criticalFindings.slice(0, maxRows).forEach((finding, index) => {
     const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
     const riskColor = getRiskColor(finding.risk);
-    
+
     doc.rect(50, yPos, 495, 35)
        .fill(bgColor);
 
@@ -1026,9 +1046,9 @@ function generateCriticalFindings(doc, data) {
     doc.circle(65, yPos + 17, 8)
        .fill(riskColor);
 
-    // Control ID
+    // Control ID (uses brand color)
     doc.fontSize(9)
-       .fillColor('#3b82f6')
+       .fillColor(brandColor)
        .text(finding.id, 80, yPos + 12);
 
     // Finding title
@@ -1127,6 +1147,7 @@ function generateGapAnalysis(doc, data) {
   let yPos = contentTop + 100;
   const gapsPerRow = 4;
   const gaps = data.gaps.slice(0, 20);
+  const brandColor = data.primaryColor || '#3b82f6';
 
   for (let i = 0; i < gaps.length; i += gapsPerRow) {
     const rowGaps = gaps.slice(i, i + gapsPerRow);
@@ -1134,7 +1155,7 @@ function generateGapAnalysis(doc, data) {
 
     rowGaps.forEach((gap) => {
       const riskColor = getRiskColor(gap.risk);
-      
+
       // Gap card
       doc.roundedRect(xPos, yPos, 118, 80, 6)
          .fillAndStroke('#ffffff', '#e2e8f0');
@@ -1143,9 +1164,9 @@ function generateGapAnalysis(doc, data) {
       doc.circle(xPos + 15, yPos + 15, 8)
          .fill(riskColor);
 
-      // Control ID
+      // Control ID (uses brand color)
       doc.fontSize(9)
-         .fillColor('#3b82f6')
+         .fillColor(brandColor)
          .text(gap.id, xPos + 30, yPos + 10);
 
       // Title
@@ -1182,6 +1203,7 @@ function generateGapAnalysisWithPagination(doc, data) {
   const GAPS_PER_PAGE = 20;
   const allGaps = data.gaps;
   const totalPages = Math.ceil(allGaps.length / GAPS_PER_PAGE);
+  const brandColor = data.primaryColor || '#3b82f6';
 
   for (let page = 0; page < totalPages; page++) {
     doc.addPage();
@@ -1243,9 +1265,9 @@ function generateGapAnalysisWithPagination(doc, data) {
         doc.circle(xPos + 15, yPos + 15, 8)
            .fill(riskColor);
 
-        // Control ID
+        // Control ID (uses brand color)
         doc.fontSize(9)
-           .fillColor('#3b82f6')
+           .fillColor(brandColor)
            .text(sanitizeString(gap.id, 20), xPos + 30, yPos + 10);
 
         // Title
@@ -1284,6 +1306,7 @@ function generateEvidenceAnnexWithPagination(doc, data) {
   const ITEMS_PER_PAGE = 18;
   const allControls = data.compliantControls;
   const totalPages = Math.ceil(allControls.length / ITEMS_PER_PAGE);
+  const brandColor = data.primaryColor || '#3b82f6';
 
   for (let page = 0; page < totalPages; page++) {
     doc.addPage();
@@ -1350,9 +1373,9 @@ function generateEvidenceAnnexWithPagination(doc, data) {
       doc.circle(60, yPos + 15, 5)
          .fill('#10b981');
 
-      // Control ID
+      // Control ID (uses brand color)
       doc.fontSize(8)
-         .fillColor('#3b82f6')
+         .fillColor(brandColor)
          .text(sanitizeString(control.id, 15), 70, yPos + 10);
 
       // Control title
@@ -1597,6 +1620,7 @@ function generateRemediationPlan(doc, data) {
 
   // Technical recommendations mapped to findings
   const recommendations = getRemediationRecommendations(data.criticalFindings.slice(0, 6));
+  const brandColor = data.primaryColor || '#3b82f6';
 
   let yPos = contentTop + 100;
 
@@ -1612,9 +1636,9 @@ function generateRemediationPlan(doc, data) {
        .fillColor('#ffffff')
        .text((index + 1).toString(), 65, yPos + 14);
 
-    // Control reference
+    // Control reference (uses brand color)
     doc.fontSize(10)
-       .fillColor('#3b82f6')
+       .fillColor(brandColor)
        .text(rec.controlId, 95, yPos + 12);
 
     // Recommendation title
@@ -1691,10 +1715,11 @@ function generateEvidenceAnnex(doc, data) {
   yPos += 30;
 
   // Evidence rows
+  const brandColor = data.primaryColor || '#3b82f6';
   const maxRows = 15;
   data.compliantControls.slice(0, maxRows).forEach((control, index) => {
     const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-    
+
     doc.rect(50, yPos, 495, 30)
        .fill(bgColor);
 
@@ -1702,9 +1727,9 @@ function generateEvidenceAnnex(doc, data) {
     doc.circle(60, yPos + 15, 5)
        .fill('#10b981');
 
-    // Control ID
+    // Control ID (uses brand color)
     doc.fontSize(8)
-       .fillColor('#3b82f6')
+       .fillColor(brandColor)
        .text(control.id, 70, yPos + 10);
 
     // Control title
@@ -1787,7 +1812,7 @@ function generateAppendix(doc, data) {
   doc.fontSize(9)
      .fillColor('#475569')
      .text(
-       'This assessment was conducted using the Lydell Security Compliance Engine, which evaluates ' +
+       'This assessment was conducted using AttestAI, which evaluates ' +
        'organizational controls against multiple compliance frameworks simultaneously. The "Answer Once, ' +
        'Comply Everywhere" methodology ensures that control implementations are automatically mapped ' +
        'to all applicable framework requirements, reducing assessment burden while maintaining comprehensive coverage.',
@@ -1806,7 +1831,7 @@ function generateAppendix(doc, data) {
        'This report is generated based on self-assessment data provided by the organization. ' +
        'It does not constitute a formal audit, certification, or attestation. Organizations should engage ' +
        'qualified third-party auditors for official compliance certifications. The accuracy of this report ' +
-       'is dependent on the accuracy and completeness of the input data provided. Lydell Security makes no ' +
+       'is dependent on the accuracy and completeness of the input data provided. AttestAI and Lydell Security make no ' +
        'warranties regarding the completeness or accuracy of the information contained herein.',
        60, yPos + 25, { width: 480, align: 'justify', lineGap: 2 }
      );
@@ -1845,10 +1870,10 @@ function drawGradientCircle(doc, x, y, radius, color, opacity) {
   doc.restore();
 }
 
-function drawRadarChart(doc, centerX, centerY, radius, frameworkStats) {
+function drawRadarChart(doc, centerX, centerY, radius, frameworkStats, brandColor = '#3b82f6') {
   const frameworks = ['SOC2', 'ISO27001', 'HIPAA', 'NIST'];
   const angles = frameworks.map((_, i) => (Math.PI * 2 * i) / frameworks.length - Math.PI / 2);
-  
+
   // Draw grid circles
   for (let r = 0.25; r <= 1; r += 0.25) {
     doc.save();
@@ -1871,7 +1896,7 @@ function drawRadarChart(doc, centerX, centerY, radius, frameworkStats) {
        .stroke();
   });
 
-  // Draw data polygon
+  // Draw data polygon (uses brand color)
   doc.save();
   const points = frameworks.map((fw, i) => {
     const pct = frameworkStats[fw].percentage / 100;
@@ -1885,30 +1910,30 @@ function drawRadarChart(doc, centerX, centerY, radius, frameworkStats) {
   doc.moveTo(points[0].x, points[0].y);
   points.slice(1).forEach((p) => doc.lineTo(p.x, p.y));
   doc.closePath()
-     .fillAndStroke('#3b82f640', '#3b82f6');
+     .fillAndStroke(brandColor + '40', brandColor);
   doc.restore();
 
   // Draw labels
   const labels = ['SOC 2', 'ISO 27001', 'HIPAA', 'NIST'];
   const labelOffset = 20;
-  
+
   angles.forEach((angle, i) => {
     const x = centerX + (radius + labelOffset) * Math.cos(angle);
     const y = centerY + (radius + labelOffset) * Math.sin(angle);
-    
+
     doc.fontSize(8)
        .fillColor('#475569')
        .text(labels[i], x - 25, y - 5, { width: 50, align: 'center' });
   });
 
-  // Draw data points
+  // Draw data points (uses brand color)
   points.forEach((p, i) => {
     doc.circle(p.x, p.y, 4)
-       .fill('#3b82f6');
-    
+       .fill(brandColor);
+
     // Show percentage
     doc.fontSize(7)
-       .fillColor('#3b82f6')
+       .fillColor(brandColor)
        .text(`${frameworkStats[frameworks[i]].percentage}%`, p.x - 10, p.y + 8);
   });
 }

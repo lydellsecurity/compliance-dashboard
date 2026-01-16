@@ -27,6 +27,9 @@ export interface Database {
           name: string;
           slug: string;
           logo_url: string | null;
+          primary_color: string;
+          contact_email: string | null;
+          description: string | null;
           settings: Json;
           created_at: string;
           updated_at: string;
@@ -36,6 +39,9 @@ export interface Database {
           name: string;
           slug: string;
           logo_url?: string | null;
+          primary_color?: string;
+          contact_email?: string | null;
+          description?: string | null;
           settings?: Json;
           created_at?: string;
           updated_at?: string;
@@ -45,6 +51,9 @@ export interface Database {
           name?: string;
           slug?: string;
           logo_url?: string | null;
+          primary_color?: string;
+          contact_email?: string | null;
+          description?: string | null;
           settings?: Json;
           created_at?: string;
           updated_at?: string;
@@ -266,6 +275,105 @@ export interface Database {
           created_at?: string;
         };
       };
+      trust_center_tokens: {
+        Row: {
+          id: string;
+          organization_id: string;
+          token: string;
+          name: string | null;
+          expires_at: string | null;
+          is_active: boolean;
+          view_count: number;
+          last_viewed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          token: string;
+          name?: string | null;
+          expires_at?: string | null;
+          is_active?: boolean;
+          view_count?: number;
+          last_viewed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          token?: string;
+          name?: string | null;
+          expires_at?: string | null;
+          is_active?: boolean;
+          view_count?: number;
+          last_viewed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+      };
+      organization_invites: {
+        Row: {
+          id: string;
+          organization_id: string;
+          email: string;
+          role: UserRole;
+          token: string;
+          invited_by: string | null;
+          expires_at: string;
+          accepted_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          email: string;
+          role?: UserRole;
+          token: string;
+          invited_by?: string | null;
+          expires_at?: string;
+          accepted_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          email?: string;
+          role?: UserRole;
+          token?: string;
+          invited_by?: string | null;
+          expires_at?: string;
+          accepted_at?: string | null;
+          created_at?: string;
+        };
+      };
+      organization_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          role: UserRole;
+          is_default: boolean;
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role?: UserRole;
+          is_default?: boolean;
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          user_id?: string;
+          role?: UserRole;
+          is_default?: boolean;
+          joined_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -301,3 +409,6 @@ export type EvidenceRecordRow = Tables<'evidence_records'>;
 export type CustomControlRow = Tables<'custom_controls'>;
 export type FrameworkMappingRow = Tables<'framework_mappings'>;
 export type AuditLogRow = Tables<'audit_log'>;
+export type TrustCenterToken = Tables<'trust_center_tokens'>;
+export type OrganizationInvite = Tables<'organization_invites'>;
+export type OrganizationMember = Tables<'organization_members'>;

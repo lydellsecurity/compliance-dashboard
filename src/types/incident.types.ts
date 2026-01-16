@@ -2,9 +2,9 @@
  * ============================================================================
  * INCIDENT RESPONSE TYPES
  * ============================================================================
- * 
+ *
  * Data models for post-breach compliance assessment and threat-to-control mapping.
- * Designed for Lydell Security's IR workflow integration.
+ * Part of the AttestAI platform by Lydell Security.
  */
 
 import type { FrameworkId } from '../constants/controls';

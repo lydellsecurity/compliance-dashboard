@@ -69,34 +69,38 @@
 }
 
 /* ============================================================================
-   LIGHT MODE - Corporate Professional Theme
+   LIGHT MODE - Premium Corporate "Soft Paper" Theme
    ============================================================================ */
 
 html.light {
   color-scheme: light;
 
-  --bg-primary: #F8F9FA;
-  --bg-secondary: #FFFFFF;
-  --bg-card: #FFFFFF;
-  --bg-sidebar: #F1F5F9;
-  --bg-hover: rgba(241, 245, 249, 0.8);
-  --bg-active: rgba(99, 102, 241, 0.08);
+  /* Soft Paper Palette */
+  --bg-primary: #F8F9FA;       /* Soft paper background */
+  --bg-secondary: #FFFFFF;      /* Pure white surfaces */
+  --bg-card: #FFFFFF;           /* Card backgrounds */
+  --bg-sidebar: #FFFFFF;        /* Sidebar - clean white */
+  --bg-hover: rgba(241, 245, 249, 0.6);
+  --bg-active: rgba(99, 102, 241, 0.06);
 
+  /* Razor-thin borders - Slate-200 */
   --border-primary: #E2E8F0;
-  --border-secondary: #CBD5E1;
+  --border-secondary: #E2E8F0;
 
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  /* Typography - Slate-900 primary, Slate-500 secondary */
+  --text-primary: #0F172A;      /* Slate-900 */
+  --text-secondary: #64748B;    /* Slate-500 */
+  --text-muted: #94A3B8;        /* Slate-400 */
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-elevated: 0 10px 40px rgba(0, 0, 0, 0.1);
+  /* Subtle soft shadows */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.06);
 
-  /* Light mode glows - softer */
-  --glow-accent: rgba(99, 102, 241, 0.2);
-  --glow-success: rgba(16, 185, 129, 0.2);
-  --glow-warning: rgba(245, 158, 11, 0.2);
-  --glow-risk: rgba(244, 63, 94, 0.2);
+  /* Light mode - no glows, clean look */
+  --glow-accent: transparent;
+  --glow-success: transparent;
+  --glow-warning: transparent;
+  --glow-risk: transparent;
 }
 
 /* ============================================================================
@@ -176,14 +180,16 @@ html.light * {
    ============================================================================ */
 
 @layer components {
-  /* Command Center Card - Theme Aware */
+  /* Premium Corporate Card - Theme Aware */
   .card {
+    @apply rounded-lg;
     background-color: var(--bg-card);
     border: 1px solid var(--border-primary);
     box-shadow: var(--shadow-card);
   }
 
   .card-elevated {
+    @apply rounded-lg;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-secondary);
     box-shadow: var(--shadow-elevated);
@@ -195,8 +201,16 @@ html.light * {
   }
 
   .card-interactive:hover {
-    border-color: var(--text-muted);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent-500);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+  }
+
+  html.light .card-interactive:hover {
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+  }
+
+  html.dark .card-interactive:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .card-glow {
@@ -205,12 +219,16 @@ html.light * {
   }
 
   .card-glow:hover {
-    box-shadow: var(--glow-accent);
     border-color: rgba(99, 102, 241, 0.3);
+  }
+
+  html.dark .card-glow:hover {
+    box-shadow: var(--glow-accent);
   }
 
   /* Glassmorphism Panel - Theme Aware */
   .glass-panel {
+    @apply rounded-lg;
     background-color: var(--bg-card);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-secondary);
@@ -221,18 +239,26 @@ html.light * {
   }
 
   html.light .glass-panel {
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.95);
   }
 
   .glass-sidebar {
     background-color: var(--bg-sidebar);
-    backdrop-filter: blur(12px);
     border-right: 1px solid var(--border-primary);
   }
 
-  /* Button Styles - Theme Aware */
+  html.light .glass-sidebar {
+    background-color: #FFFFFF;
+    box-shadow: 1px 0 0 var(--border-primary);
+  }
+
+  html.dark .glass-sidebar {
+    backdrop-filter: blur(12px);
+  }
+
+  /* Button Styles - Premium Corporate */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   html.dark .btn {
@@ -252,7 +278,7 @@ html.light * {
   }
 
   html.light .btn-primary {
-    @apply shadow-sm hover:shadow-md;
+    @apply shadow-sm hover:shadow;
   }
 
   .btn-secondary {
@@ -264,7 +290,7 @@ html.light * {
   }
 
   html.light .btn-secondary {
-    @apply bg-white text-slate-700 hover:bg-slate-50 border-slate-300;
+    @apply bg-white text-slate-700 hover:bg-slate-50 border-slate-200;
   }
 
   .btn-ghost {
@@ -280,7 +306,7 @@ html.light * {
   }
 
   .btn-danger {
-    @apply btn text-status-risk focus:ring-status-risk border border-status-risk/30;
+    @apply btn text-status-risk focus:ring-status-risk border border-status-risk/20;
   }
 
   html.dark .btn-danger {
@@ -288,11 +314,11 @@ html.light * {
   }
 
   html.light .btn-danger {
-    @apply bg-red-50 hover:bg-red-100;
+    @apply bg-rose-50 hover:bg-rose-100 border-rose-200;
   }
 
   .btn-success {
-    @apply btn text-status-success focus:ring-status-success border border-status-success/30;
+    @apply btn text-status-success focus:ring-status-success border border-status-success/20;
   }
 
   html.dark .btn-success {
@@ -300,12 +326,12 @@ html.light * {
   }
 
   html.light .btn-success {
-    @apply bg-emerald-50 hover:bg-emerald-100;
+    @apply bg-emerald-50 hover:bg-emerald-100 border-emerald-200;
   }
 
-  /* Input Styles - Theme Aware */
+  /* Input Styles - Premium Corporate */
   .input {
-    @apply w-full px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent-500 focus:border-accent-500 transition-colors;
+    @apply w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition-colors;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     color: var(--text-primary);
@@ -320,25 +346,49 @@ html.light * {
     background-color: var(--bg-card);
   }
 
-  /* Status Pill - Framework IDs */
+  html.light .input {
+    @apply border-slate-200;
+  }
+
+  html.light .input:focus {
+    @apply border-accent-500 ring-2 ring-accent-500/10;
+  }
+
+  /* Status Pill - Soft-Tint Style */
   .pill {
-    @apply inline-flex items-center px-2 py-0.5 text-xs font-semibold tracking-wide uppercase;
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md;
   }
 
   .pill-soc2 {
-    @apply pill bg-framework-soc2/20 text-framework-soc2 border border-framework-soc2/30;
+    @apply pill bg-violet-50 text-violet-700 border border-violet-100;
+  }
+
+  html.dark .pill-soc2 {
+    @apply bg-framework-soc2/20 text-framework-soc2 border-framework-soc2/30;
   }
 
   .pill-iso {
-    @apply pill bg-framework-iso/20 text-framework-iso border border-framework-iso/30;
+    @apply pill bg-emerald-50 text-emerald-700 border border-emerald-100;
+  }
+
+  html.dark .pill-iso {
+    @apply bg-framework-iso/20 text-framework-iso border-framework-iso/30;
   }
 
   .pill-hipaa {
-    @apply pill bg-framework-hipaa/20 text-framework-hipaa border border-framework-hipaa/30;
+    @apply pill bg-pink-50 text-pink-700 border border-pink-100;
+  }
+
+  html.dark .pill-hipaa {
+    @apply bg-framework-hipaa/20 text-framework-hipaa border-framework-hipaa/30;
   }
 
   .pill-nist {
-    @apply pill bg-framework-nist/20 text-framework-nist border border-framework-nist/30;
+    @apply pill bg-amber-50 text-amber-700 border border-amber-100;
+  }
+
+  html.dark .pill-nist {
+    @apply bg-framework-nist/20 text-framework-nist border-framework-nist/30;
   }
 
   /* Status Indicators */
@@ -362,74 +412,54 @@ html.light * {
     @apply status-dot bg-steel-500;
   }
 
-  /* Badge Components - Theme Aware */
+  /* Badge Components - Soft-Tint Style */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md;
   }
 
   .badge-success {
-    @apply badge text-status-success border border-status-success/20;
+    @apply badge text-emerald-700 bg-emerald-50 border border-emerald-100;
   }
 
   html.dark .badge-success {
-    @apply bg-status-success/10;
-  }
-
-  html.light .badge-success {
-    @apply bg-emerald-50;
+    @apply bg-status-success/10 text-status-success border-status-success/20;
   }
 
   .badge-warning {
-    @apply badge text-status-warning border border-status-warning/20;
+    @apply badge text-amber-700 bg-amber-50 border border-amber-100;
   }
 
   html.dark .badge-warning {
-    @apply bg-status-warning/10;
-  }
-
-  html.light .badge-warning {
-    @apply bg-amber-50;
+    @apply bg-status-warning/10 text-status-warning border-status-warning/20;
   }
 
   .badge-risk {
-    @apply badge text-status-risk border border-status-risk/20;
+    @apply badge text-rose-700 bg-rose-50 border border-rose-100;
   }
 
   html.dark .badge-risk {
-    @apply bg-status-risk/10;
-  }
-
-  html.light .badge-risk {
-    @apply bg-rose-50;
+    @apply bg-status-risk/10 text-status-risk border-status-risk/20;
   }
 
   .badge-info {
-    @apply badge text-status-info border border-status-info/20;
+    @apply badge text-cyan-700 bg-cyan-50 border border-cyan-100;
   }
 
   html.dark .badge-info {
-    @apply bg-status-info/10;
-  }
-
-  html.light .badge-info {
-    @apply bg-cyan-50;
+    @apply bg-status-info/10 text-status-info border-status-info/20;
   }
 
   .badge-neutral {
-    @apply badge;
+    @apply badge text-slate-600 bg-slate-50 border border-slate-100;
   }
 
   html.dark .badge-neutral {
-    @apply bg-steel-800 text-steel-400 border border-steel-700;
+    @apply bg-steel-800 text-steel-400 border-steel-700;
   }
 
-  html.light .badge-neutral {
-    @apply bg-slate-100 text-slate-600 border border-slate-200;
-  }
-
-  /* Navigation - Command Center Sidebar - Theme Aware */
+  /* Navigation - Premium Corporate Sidebar */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-200 cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 cursor-pointer;
   }
 
   html.dark .nav-item {
@@ -437,11 +467,11 @@ html.light * {
   }
 
   html.light .nav-item {
-    @apply text-slate-600 hover:text-slate-900 hover:bg-slate-200/60;
+    @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100;
   }
 
   .nav-item-active {
-    @apply nav-item text-accent-500 border-l-2 border-accent-500;
+    @apply nav-item;
   }
 
   html.dark .nav-item-active {
@@ -449,8 +479,7 @@ html.light * {
   }
 
   html.light .nav-item-active {
-    background-color: rgba(99, 102, 241, 0.08);
-    @apply text-accent-600;
+    @apply bg-accent-50 text-accent-600 font-medium;
   }
 
   .nav-tooltip {
@@ -575,14 +604,24 @@ html.light * {
     border-left: 1px solid var(--border-primary);
   }
 
-  /* Protocol Card - Interactive Assessment - Theme Aware */
+  /* Protocol Card - Premium Assessment Card */
   .protocol-card {
-    @apply relative p-4 card cursor-pointer;
+    @apply relative p-5 card cursor-pointer overflow-hidden;
+    transition: all 200ms ease-out;
   }
 
   .protocol-card::before {
     content: '';
-    @apply absolute left-0 top-0 bottom-0 w-1 bg-transparent transition-colors duration-200;
+    @apply absolute left-0 top-0 bottom-0 w-0.5 bg-transparent transition-colors duration-200 rounded-l-lg;
+  }
+
+  html.light .protocol-card:hover {
+    @apply border-slate-300;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  html.dark .protocol-card:hover {
+    @apply border-steel-600;
   }
 
   .protocol-card:hover::before {
@@ -598,7 +637,7 @@ html.light * {
   }
 
   .protocol-card-medium::before {
-    @apply bg-status-warning/60;
+    @apply bg-amber-400;
   }
 
   .protocol-card-low::before {
@@ -623,33 +662,43 @@ html.light * {
     @apply bg-status-warning/30;
   }
 
-  /* Modal Glassmorphism - Theme Aware */
+  /* Modal - Premium Corporate */
   .modal-backdrop {
-    @apply fixed inset-0 backdrop-blur-xs z-50;
+    @apply fixed inset-0 z-50;
   }
 
   html.dark .modal-backdrop {
     background-color: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(4px);
   }
 
   html.light .modal-backdrop {
-    background-color: rgba(15, 23, 42, 0.4);
+    background-color: rgba(15, 23, 42, 0.2);
+    backdrop-filter: blur(2px);
   }
 
   .modal-content {
-    box-shadow: var(--shadow-elevated);
+    @apply rounded-xl;
     background-color: var(--bg-card);
     border: 1px solid var(--border-primary);
   }
 
+  html.light .modal-content {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  html.dark .modal-content {
+    box-shadow: var(--shadow-elevated);
+  }
+
   /* Paper Preview (PDF) - Theme Aware */
   .paper-preview {
-    @apply bg-white;
+    @apply bg-white rounded-lg;
     box-shadow: var(--shadow-elevated);
   }
 
   .paper-container {
-    @apply p-8;
+    @apply p-8 rounded-lg;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-primary);
   }
