@@ -1,9 +1,12 @@
 /**
  * Vendor Risk Management Service
  * Handles vendor assessment, risk scoring, and compliance tracking
+ * Includes audit logging for compliance tracking
  */
 
 import { supabase } from '../lib/supabase';
+import { auditLog } from './audit-log.service';
+import { sanitizeString, isValidEmail, isValidUrl } from '../utils/validation';
 
 // Helper to ensure supabase is configured
 const getSupabase = () => {
@@ -551,12 +554,23 @@ class VendorRiskService {
   }
 
   async createVendor(tenantId: string, vendor: Partial<Vendor>, userId: string): Promise<Vendor> {
+    // Validate and sanitize inputs
+    const sanitizedName = sanitizeString(vendor.name || '');
+    const sanitizedDescription = vendor.description ? sanitizeString(vendor.description) : undefined;
+
+    if (vendor.primaryContactEmail && !isValidEmail(vendor.primaryContactEmail)) {
+      throw new Error('Invalid contact email address');
+    }
+    if (vendor.website && !isValidUrl(vendor.website)) {
+      throw new Error('Invalid website URL');
+    }
+
     const { data, error } = await getSupabase()
       .from('vendors')
       .insert({
         tenant_id: tenantId,
-        name: vendor.name,
-        description: vendor.description,
+        name: sanitizedName,
+        description: sanitizedDescription,
         website: vendor.website,
         primary_contact_name: vendor.primaryContactName,
         primary_contact_email: vendor.primaryContactEmail,
@@ -577,7 +591,13 @@ class VendorRiskService {
       .single();
 
     if (error) throw error;
-    return this.transformVendor(data);
+
+    const createdVendor = this.transformVendor(data);
+
+    // Audit log
+    auditLog.vendor.created(createdVendor.id, createdVendor.name);
+
+    return createdVendor;
   }
 
   async updateVendor(vendorId: string, updates: Partial<Vendor>): Promise<Vendor> {

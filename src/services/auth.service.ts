@@ -2,12 +2,16 @@
  * ============================================================================
  * SUPABASE AUTH SERVICE
  * ============================================================================
- * 
+ *
  * Handles authentication for the Compliance Engine.
+ * Includes rate limiting, input validation, and audit logging.
  */
 
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
+import { rateLimiter, RateLimitError } from '../utils/rateLimiter';
+import { isValidEmail, validatePassword, sanitizeEmail } from '../utils/validation';
+import { auditLog } from './audit-log.service';
 
 // ============================================================================
 // TYPES
@@ -51,23 +55,48 @@ class AuthService {
   async signUp(data: SignUpData): Promise<AuthResult> {
     if (!supabase) return { success: false, error: 'Supabase not configured' };
 
+    // Rate limiting
+    const rateCheck = rateLimiter.checkLimit('auth', data.email);
+    if (!rateCheck.allowed) {
+      auditLog.security.rateLimited('signup', data.email);
+      throw new RateLimitError(rateCheck.message || 'Too many signup attempts', rateCheck.retryAfter || 0);
+    }
+
+    // Input validation
+    const email = sanitizeEmail(data.email);
+    if (!isValidEmail(email)) {
+      return { success: false, error: 'Please enter a valid email address' };
+    }
+
+    const passwordValidation = validatePassword(data.password);
+    if (!passwordValidation.valid) {
+      return { success: false, error: passwordValidation.error };
+    }
+
     const { data: authData, error } = await supabase.auth.signUp({
-      email: data.email,
+      email,
       password: data.password,
       options: {
         data: {
           full_name: data.fullName,
           organization_name: data.organizationName,
-        }
-      }
+        },
+      },
     });
 
-    if (error) return { success: false, error: error.message };
-    
-    return { 
-      success: true, 
+    if (error) {
+      auditLog.auth.loginFailed(email, error.message);
+      return { success: false, error: error.message };
+    }
+
+    auditLog.log('user.created', `New user signed up: ${email}`, {
+      metadata: { organizationName: data.organizationName },
+    });
+
+    return {
+      success: true,
       user: authData.user || undefined,
-      session: authData.session || undefined
+      session: authData.session || undefined,
     };
   }
 
@@ -77,17 +106,37 @@ class AuthService {
   async signIn(data: SignInData): Promise<AuthResult> {
     if (!supabase) return { success: false, error: 'Supabase not configured' };
 
+    // Rate limiting - stricter for login attempts
+    const rateCheck = rateLimiter.checkLimit('auth', data.email);
+    if (!rateCheck.allowed) {
+      auditLog.security.rateLimited('login', data.email);
+      throw new RateLimitError(rateCheck.message || 'Too many login attempts', rateCheck.retryAfter || 0);
+    }
+
+    // Input validation
+    const email = sanitizeEmail(data.email);
+    if (!isValidEmail(email)) {
+      return { success: false, error: 'Please enter a valid email address' };
+    }
+
     const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+      email,
       password: data.password,
     });
 
-    if (error) return { success: false, error: error.message };
+    if (error) {
+      auditLog.auth.loginFailed(email, error.message);
+      return { success: false, error: error.message };
+    }
 
-    return { 
-      success: true, 
+    // Set audit log context for future logs
+    auditLog.setContext(authData.user.id, email, authData.user.user_metadata?.organization_id);
+    auditLog.auth.login(email);
+
+    return {
+      success: true,
       user: authData.user,
-      session: authData.session
+      session: authData.session,
     };
   }
 
@@ -116,9 +165,16 @@ class AuthService {
   async signOut(): Promise<AuthResult> {
     if (!supabase) return { success: false, error: 'Supabase not configured' };
 
+    // Get current user email for audit log before signing out
+    const { data: userData } = await supabase.auth.getUser();
+    const userEmail = userData?.user?.email || 'unknown';
+
     const { error } = await supabase.auth.signOut();
 
     if (error) return { success: false, error: error.message };
+
+    auditLog.auth.logout(userEmail);
+    auditLog.clearContext();
 
     return { success: true };
   }
@@ -149,11 +205,25 @@ class AuthService {
   async resetPassword(email: string): Promise<AuthResult> {
     if (!supabase) return { success: false, error: 'Supabase not configured' };
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Rate limiting for password reset
+    const rateCheck = rateLimiter.checkLimit('auth', email);
+    if (!rateCheck.allowed) {
+      auditLog.security.rateLimited('password_reset', email);
+      throw new RateLimitError(rateCheck.message || 'Too many reset attempts', rateCheck.retryAfter || 0);
+    }
+
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!isValidEmail(sanitizedEmail)) {
+      return { success: false, error: 'Please enter a valid email address' };
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) return { success: false, error: error.message };
+
+    auditLog.auth.passwordReset(sanitizedEmail);
 
     return { success: true };
   }
