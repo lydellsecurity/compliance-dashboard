@@ -14,6 +14,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import {
   Shield, CheckCircle2, Clock, Zap, Lock, Globe,
@@ -245,10 +246,10 @@ const LandingPage: React.FC = () => {
             <a href="#compare" className="text-sm text-secondary hover:text-primary transition-colors">Compare</a>
             <a href="#proof" className="text-sm text-secondary hover:text-primary transition-colors">Social Proof</a>
             <ThemeToggle />
-            <a href="#login" className="btn-primary">
+            <Link to="/login" className="btn-primary">
               Get Started
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
           <div className="md:hidden flex items-center gap-3">
             <ThemeToggle />
@@ -314,13 +315,13 @@ const LandingPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <a
-                href="#login"
+              <Link
+                to="/login"
                 className="w-full sm:w-auto px-8 py-4 bg-accent-500 hover:bg-accent-600 text-white font-bold text-lg transition-all duration-200 shadow-lg shadow-accent-500/25 hover:shadow-xl hover:shadow-accent-500/30 flex items-center justify-center gap-2 group"
               >
                 Get Your Free Audit Gap Analysis
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
               <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-steel-700 dark:border-steel-700 light:border-steel-300 text-primary font-semibold hover:border-accent-500/50 transition-all duration-200 flex items-center justify-center gap-2">
                 <Play className="w-5 h-5 text-accent-400" />
                 Watch 60s Demo
@@ -683,13 +684,13 @@ const LandingPage: React.FC = () => {
               automated, AI-powered compliance. Start your free audit gap analysis today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="#login"
+              <Link
+                to="/login"
                 className="w-full sm:w-auto px-10 py-5 bg-accent-500 hover:bg-accent-600 text-white font-bold text-lg transition-all duration-200 shadow-lg shadow-accent-500/25 hover:shadow-xl hover:shadow-accent-500/30 flex items-center justify-center gap-2 group"
               >
                 Get Your Free Audit Gap Analysis
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
               <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-steel-700 dark:border-steel-700 light:border-steel-300 text-primary font-semibold hover:border-accent-500/50 transition-all duration-200 flex items-center justify-center gap-2">
                 Schedule a Demo
                 <ExternalLink className="w-5 h-5" />
@@ -732,13 +733,13 @@ const LandingPage: React.FC = () => {
         animate={{ y: showMobileCTA ? 0 : 100 }}
         className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-midnight/95 dark:bg-midnight/95 light:bg-white/95 backdrop-blur-xl border-t border-steel-800/50 dark:border-steel-800/50 light:border-steel-200/50 md:hidden"
       >
-        <a
-          href="#login"
+        <Link
+          to="/login"
           className="w-full py-4 bg-accent-500 hover:bg-accent-600 text-white font-bold transition-all duration-200 flex items-center justify-center gap-2"
         >
           Get Free Audit Analysis
           <ArrowRight className="w-5 h-5" />
-        </a>
+        </Link>
       </motion.div>
     </div>
   );
