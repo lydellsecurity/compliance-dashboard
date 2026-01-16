@@ -16,7 +16,7 @@
     "@azure/arm-monitor": "^7.0.0",
     "@azure/arm-network": "^33.0.0",
     "@azure/arm-resourcegraph": "^4.2.1",
-    "@azure/arm-security": "^6.0.0",
+    "@azure/arm-security": "^5.0.0",
     "@azure/arm-storage": "^18.0.0",
     "@azure/arm-subscriptions": "^5.1.0",
     "@azure/identity": "^4.0.0",
