@@ -6,16 +6,16 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA routing - redirect all routes to index.html
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# API routes to functions
+# API routes to functions (must be BEFORE the SPA catch-all)
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
+  status = 200
+
+# SPA routing - redirect all routes to index.html (must be LAST)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
 
 # Security Headers - Industry Best Practices
