@@ -136,7 +136,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, hig
       animate={isInView ? 'visible' : 'hidden'}
       variants={scaleIn}
       transition={{ duration: 0.5, delay }}
-      className="group relative bg-steel-900/50 dark:bg-steel-900/50 light:bg-white border border-steel-800 dark:border-steel-800 light:border-steel-200 p-6 hover:border-accent-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-accent-500/10"
+      className="group relative bg-white dark:bg-steel-900/50 border border-slate-200 dark:border-steel-800 p-6 hover:border-accent-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-accent-500/10"
     >
       {highlight && (
         <div className="absolute -top-3 left-4 px-3 py-1 bg-accent-500 text-white text-xs font-bold uppercase tracking-wide">
@@ -184,7 +184,7 @@ const LivePulseTicker: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-steel-900/80 dark:bg-steel-900/80 light:bg-steel-100 border-y border-steel-800 dark:border-steel-800 light:border-steel-200 py-3 overflow-hidden">
+    <div className="bg-slate-100 dark:bg-steel-900/80 border-y border-slate-200 dark:border-steel-800 py-3 overflow-hidden">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -231,9 +231,9 @@ const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-midnight dark:bg-midnight light:bg-[#F8F9FA] transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-midnight transition-colors duration-300">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-midnight/80 dark:bg-midnight/80 light:bg-white/80 backdrop-blur-xl border-b border-steel-800/50 dark:border-steel-800/50 light:border-steel-200/50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-midnight/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-steel-800/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-accent-500 flex items-center justify-center">
@@ -266,7 +266,7 @@ const LandingPage: React.FC = () => {
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-steel-900/0 via-midnight/50 to-midnight dark:from-steel-900/0 dark:via-midnight/50 dark:to-midnight light:from-white/0 light:via-[#F8F9FA]/50 light:to-[#F8F9FA]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/0 via-[#F8F9FA]/50 to-[#F8F9FA] dark:from-steel-900/0 dark:via-midnight/50 dark:to-midnight" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
@@ -322,7 +322,7 @@ const LandingPage: React.FC = () => {
                 Get Your Free Audit Gap Analysis
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-steel-700 dark:border-steel-700 light:border-steel-300 text-primary font-semibold hover:border-accent-500/50 transition-all duration-200 flex items-center justify-center gap-2">
+              <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-slate-300 dark:border-steel-700 text-primary font-semibold hover:border-accent-500/50 transition-all duration-200 flex items-center justify-center gap-2">
                 <Play className="w-5 h-5 text-accent-400" />
                 Watch 60s Demo
               </button>
@@ -353,7 +353,7 @@ const LandingPage: React.FC = () => {
       </motion.section>
 
       {/* Logo Cloud */}
-      <section className="py-12 border-y border-steel-800/50 dark:border-steel-800/50 light:border-steel-200/50 bg-steel-900/30 dark:bg-steel-900/30 light:bg-steel-50">
+      <section className="py-12 border-y border-slate-200/50 dark:border-steel-800/50 bg-slate-50 dark:bg-steel-900/30">
         <div className="container mx-auto px-4">
           <p className="text-center text-sm text-secondary uppercase tracking-wider mb-8">
             Trusted by companies achieving compliance with
@@ -365,7 +365,7 @@ const LandingPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="flex items-center gap-3 text-steel-400 dark:text-steel-400 light:text-steel-600 hover:text-accent-400 transition-colors"
+                className="flex items-center gap-3 text-slate-600 dark:text-steel-400 hover:text-accent-400 transition-colors"
               >
                 {framework.icon}
                 <span className="font-semibold">{framework.name}</span>
@@ -379,7 +379,7 @@ const LandingPage: React.FC = () => {
       <LivePulseTicker />
 
       {/* Stats Section */}
-      <section className="py-20 bg-steel-900/20 dark:bg-steel-900/20 light:bg-white">
+      <section className="py-20 bg-white dark:bg-steel-900/20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <StatCard value="236" label="Controls Covered" delay={0} />
@@ -480,7 +480,7 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
               variants={scaleIn}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="md:col-span-2 lg:col-span-3 bg-steel-900/50 dark:bg-steel-900/50 light:bg-white border border-steel-800 dark:border-steel-800 light:border-steel-200 p-8"
+              className="md:col-span-2 lg:col-span-3 bg-white dark:bg-steel-900/50 border border-slate-200 dark:border-steel-800 p-8"
             >
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <div className="w-14 h-14 bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
@@ -494,13 +494,13 @@ const LandingPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-steel-800 dark:bg-steel-800 light:bg-steel-100 flex items-center justify-center">
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-steel-800 flex items-center justify-center">
                     <Cloud className="w-5 h-5 text-[#FF9900]" />
                   </div>
-                  <div className="w-10 h-10 bg-steel-800 dark:bg-steel-800 light:bg-steel-100 flex items-center justify-center">
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-steel-800 flex items-center justify-center">
                     <Cloud className="w-5 h-5 text-[#0078D4]" />
                   </div>
-                  <div className="w-10 h-10 bg-steel-800 dark:bg-steel-800 light:bg-steel-100 flex items-center justify-center">
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-steel-800 flex items-center justify-center">
                     <Github className="w-5 h-5 text-primary" />
                   </div>
                 </div>
@@ -511,7 +511,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Comparison Table */}
-      <section id="compare" className="py-20 md:py-32 bg-steel-900/30 dark:bg-steel-900/30 light:bg-steel-50">
+      <section id="compare" className="py-20 md:py-32 bg-slate-50 dark:bg-steel-900/30">
         <div className="container mx-auto px-4">
           <ScrollReveal>
             <div className="text-center mb-16">
@@ -530,16 +530,16 @@ const LandingPage: React.FC = () => {
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
-            <div className="max-w-4xl mx-auto overflow-hidden border border-steel-800 dark:border-steel-800 light:border-steel-200">
+            <div className="max-w-4xl mx-auto overflow-hidden border border-slate-200 dark:border-steel-800 rounded-lg">
               {/* Header */}
-              <div className="grid grid-cols-3 bg-steel-900 dark:bg-steel-900 light:bg-steel-100">
-                <div className="p-4 font-semibold text-secondary border-r border-steel-800 dark:border-steel-800 light:border-steel-200">
+              <div className="grid grid-cols-3 bg-slate-100 dark:bg-steel-900">
+                <div className="p-4 font-semibold text-secondary border-r border-slate-200 dark:border-steel-800">
                   Feature
                 </div>
-                <div className="p-4 font-semibold text-status-risk text-center border-r border-steel-800 dark:border-steel-800 light:border-steel-200">
+                <div className="p-4 font-semibold text-status-risk text-center border-r border-slate-200 dark:border-steel-800">
                   Legacy / Spreadsheets
                 </div>
-                <div className="p-4 font-semibold text-emerald-400 text-center">
+                <div className="p-4 font-semibold text-emerald-500 dark:text-emerald-400 text-center">
                   AttestAI
                 </div>
               </div>
@@ -552,12 +552,12 @@ const LandingPage: React.FC = () => {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="grid grid-cols-3 border-t border-steel-800 dark:border-steel-800 light:border-steel-200 bg-midnight dark:bg-midnight light:bg-white"
+                  className="grid grid-cols-3 border-t border-slate-200 dark:border-steel-800 bg-white dark:bg-midnight"
                 >
-                  <div className="p-4 text-primary border-r border-steel-800 dark:border-steel-800 light:border-steel-200">
+                  <div className="p-4 text-primary border-r border-slate-200 dark:border-steel-800">
                     {row.feature}
                   </div>
-                  <div className="p-4 text-center border-r border-steel-800 dark:border-steel-800 light:border-steel-200">
+                  <div className="p-4 text-center border-r border-slate-200 dark:border-steel-800">
                     <div className="flex items-center justify-center gap-2">
                       <X className="w-4 h-4 text-status-risk" />
                       <span className="text-status-risk/80">{row.legacy}</span>
@@ -565,8 +565,8 @@ const LandingPage: React.FC = () => {
                   </div>
                   <div className="p-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <CheckCheck className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400">{row.attestai}</span>
+                      <CheckCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                      <span className="text-emerald-500 dark:text-emerald-400">{row.attestai}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -614,7 +614,7 @@ const LandingPage: React.FC = () => {
               }
             ].map((testimonial, index) => (
               <ScrollReveal key={index} delay={index * 0.1}>
-                <div className="bg-steel-900/50 dark:bg-steel-900/50 light:bg-white border border-steel-800 dark:border-steel-800 light:border-steel-200 p-6 h-full">
+                <div className="bg-white dark:bg-steel-900/50 border border-slate-200 dark:border-steel-800 p-6 h-full rounded-lg shadow-sm">
                   <div className="flex items-center gap-1 mb-4">
                     {[...Array(5)].map((_, i) => (
                       <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
@@ -639,7 +639,7 @@ const LandingPage: React.FC = () => {
 
           {/* Verified Signature Block */}
           <ScrollReveal>
-            <div className="max-w-3xl mx-auto bg-gradient-to-br from-steel-900 to-steel-800 dark:from-steel-900 dark:to-steel-800 light:from-steel-100 light:to-white border border-steel-700 dark:border-steel-700 light:border-steel-200 p-8">
+            <div className="max-w-3xl mx-auto bg-gradient-to-br from-slate-100 to-white dark:from-steel-900 dark:to-steel-800 border border-slate-200 dark:border-steel-700 p-8 rounded-lg">
               <div className="flex items-start gap-6">
                 <div className="w-16 h-16 bg-accent-500/20 flex items-center justify-center flex-shrink-0">
                   <Shield className="w-8 h-8 text-accent-400" />
@@ -673,7 +673,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 md:py-32 bg-gradient-to-br from-accent-500/20 via-midnight to-emerald-500/10 dark:from-accent-500/20 dark:via-midnight dark:to-emerald-500/10 light:from-accent-500/10 light:via-white light:to-emerald-500/5">
+      <section className="py-20 md:py-32 bg-gradient-to-br from-accent-500/10 via-white to-emerald-500/5 dark:from-accent-500/20 dark:via-midnight dark:to-emerald-500/10">
         <div className="container mx-auto px-4 text-center">
           <ScrollReveal>
             <h2 className="text-3xl md:text-5xl font-bold text-primary mb-6">
@@ -691,7 +691,7 @@ const LandingPage: React.FC = () => {
                 Get Your Free Audit Gap Analysis
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-steel-700 dark:border-steel-700 light:border-steel-300 text-primary font-semibold hover:border-accent-500/50 transition-all duration-200 flex items-center justify-center gap-2">
+              <button className="w-full sm:w-auto px-10 py-5 bg-transparent border border-slate-300 dark:border-steel-700 text-primary font-semibold hover:border-accent-500/50 transition-all duration-200 flex items-center justify-center gap-2">
                 Schedule a Demo
                 <ExternalLink className="w-5 h-5" />
               </button>
@@ -704,7 +704,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-steel-800/50 dark:border-steel-800/50 light:border-steel-200/50 bg-steel-900/30 dark:bg-steel-900/30 light:bg-steel-50">
+      <footer className="py-12 border-t border-slate-200/50 dark:border-steel-800/50 bg-slate-50 dark:bg-steel-900/30">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
@@ -731,7 +731,7 @@ const LandingPage: React.FC = () => {
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: showMobileCTA ? 0 : 100 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-midnight/95 dark:bg-midnight/95 light:bg-white/95 backdrop-blur-xl border-t border-steel-800/50 dark:border-steel-800/50 light:border-steel-200/50 md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-white/95 dark:bg-midnight/95 backdrop-blur-xl border-t border-slate-200/50 dark:border-steel-800/50 md:hidden"
       >
         <Link
           to="/login"
