@@ -682,13 +682,16 @@ class MultiTenantService {
       if (error || !data) return [];
 
       return data.map((m) => {
-        const profile = m.profiles as Record<string, unknown>;
+        // profiles could be an array or object depending on Supabase query result
+        const profileData = m.profiles as unknown;
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        const profileObj = profile as Record<string, unknown> | undefined;
         return {
           id: m.id,
           userId: m.user_id,
-          email: (profile?.email as string) || '',
-          fullName: profile?.full_name as string | null,
-          avatarUrl: profile?.avatar_url as string | null,
+          email: (profileObj?.email as string) || '',
+          fullName: profileObj?.full_name as string | null,
+          avatarUrl: profileObj?.avatar_url as string | null,
           role: m.role as UserRole,
           department: m.department,
           isDefault: m.is_default,
@@ -1011,19 +1014,25 @@ class MultiTenantService {
 
       if (error || !data) return [];
 
-      return data.map((log) => ({
-        id: log.id,
-        tenantId: log.tenant_id,
-        userId: log.user_id,
-        userEmail: (log.profiles as Record<string, unknown>)?.email as string | null,
-        action: log.action,
-        resource: log.resource,
-        resourceId: log.resource_id,
-        details: log.details as Record<string, unknown>,
-        ipAddress: log.ip_address,
-        userAgent: log.user_agent,
-        createdAt: log.created_at,
-      }));
+      return data.map((log) => {
+        // profiles could be an array or object depending on Supabase query result
+        const profileData = log.profiles as unknown;
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        const profileObj = profile as Record<string, unknown> | undefined;
+        return {
+          id: log.id,
+          tenantId: log.tenant_id,
+          userId: log.user_id,
+          userEmail: profileObj?.email as string | null,
+          action: log.action,
+          resource: log.resource,
+          resourceId: log.resource_id,
+          details: log.details as Record<string, unknown>,
+          ipAddress: log.ip_address,
+          userAgent: log.user_agent,
+          createdAt: log.created_at,
+        };
+      });
     } catch {
       return [];
     }

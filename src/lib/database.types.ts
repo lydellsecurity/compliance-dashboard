@@ -15,7 +15,7 @@ export type Json =
 export type AnswerType = 'yes' | 'no' | 'partial' | 'na';
 export type EvidenceStatus = 'draft' | 'review' | 'final';
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
-export type FrameworkId = 'SOC2' | 'ISO27001' | 'HIPAA' | 'NIST';
+export type FrameworkId = 'SOC2' | 'ISO27001' | 'HIPAA' | 'NIST' | 'PCIDSS' | 'GDPR';
 export type UserRole = 'owner' | 'admin' | 'member' | 'viewer';
 
 export interface Database {

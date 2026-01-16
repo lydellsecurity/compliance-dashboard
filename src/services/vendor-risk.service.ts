@@ -3,7 +3,15 @@
  * Handles vendor assessment, risk scoring, and compliance tracking
  */
 
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
+
+// Helper to ensure supabase is configured
+const getSupabase = () => {
+  if (!supabase) {
+    throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+  }
+  return supabase;
+};
 
 // ============================================================================
 // TYPES
@@ -504,7 +512,7 @@ class VendorRiskService {
     category?: VendorCategory[];
     searchTerm?: string;
   }): Promise<Vendor[]> {
-    let query = supabase
+    let query = getSupabase()
       .from('vendors')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -529,7 +537,7 @@ class VendorRiskService {
   }
 
   async getVendor(vendorId: string): Promise<Vendor | null> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendors')
       .select('*')
       .eq('id', vendorId)
@@ -543,7 +551,7 @@ class VendorRiskService {
   }
 
   async createVendor(tenantId: string, vendor: Partial<Vendor>, userId: string): Promise<Vendor> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendors')
       .insert({
         tenant_id: tenantId,
@@ -573,7 +581,7 @@ class VendorRiskService {
   }
 
   async updateVendor(vendorId: string, updates: Partial<Vendor>): Promise<Vendor> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendors')
       .update({
         name: updates.name,
@@ -605,7 +613,7 @@ class VendorRiskService {
   }
 
   async deleteVendor(vendorId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('vendors')
       .delete()
       .eq('id', vendorId);
@@ -618,7 +626,7 @@ class VendorRiskService {
   // -------------------------------------------------------------------------
 
   async getAssessments(vendorId: string): Promise<VendorAssessment[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendor_assessments')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -629,7 +637,7 @@ class VendorRiskService {
   }
 
   async getAssessment(assessmentId: string): Promise<VendorAssessment | null> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendor_assessments')
       .select('*')
       .eq('id', assessmentId)
@@ -648,7 +656,7 @@ class VendorRiskService {
     assessment: Partial<VendorAssessment>,
     userId: string
   ): Promise<VendorAssessment> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendor_assessments')
       .insert({
         vendor_id: vendorId,
@@ -684,7 +692,7 @@ class VendorRiskService {
     if (updates.reviewedAt !== undefined) updateData.reviewed_at = updates.reviewedAt;
     if (updates.completedAt !== undefined) updateData.completed_at = updates.completedAt;
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('vendor_assessments')
       .update(updateData)
       .eq('id', assessmentId)
@@ -784,7 +792,7 @@ class VendorRiskService {
     }
 
     // Get recent assessments
-    const { data: recentData } = await supabase
+    const { data: recentData } = await getSupabase()
       .from('vendor_assessments')
       .select('*')
       .eq('tenant_id', tenantId)

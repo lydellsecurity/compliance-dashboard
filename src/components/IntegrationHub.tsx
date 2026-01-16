@@ -14,11 +14,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plug,
   Search,
-  Check,
   X,
   AlertCircle,
   RefreshCw,
-  Settings,
   ExternalLink,
   Shield,
   Users,
@@ -28,12 +26,10 @@ import {
   Cloud,
   Lock,
   MessageSquare,
-  ChevronRight,
   Clock,
   Zap,
   Link2,
   Unlink,
-  MoreVertical,
   Key,
   Globe,
   CheckCircle,
@@ -442,7 +438,6 @@ const ConnectModal: React.FC<{
   onSuccess: () => void;
 }> = ({ provider, onClose, onSuccess }) => {
   const [apiKey, setApiKey] = useState('');
-  const [apiSecret, setApiSecret] = useState('');
   const [domain, setDomain] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
@@ -456,7 +451,6 @@ const ConnectModal: React.FC<{
 
       if (provider.authMethod === 'api_key') {
         credentials.apiKey = apiKey;
-        if (apiSecret) credentials.apiSecret = apiSecret;
         if (domain) credentials.domain = domain;
       }
 

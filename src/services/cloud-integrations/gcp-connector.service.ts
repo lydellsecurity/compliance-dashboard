@@ -13,7 +13,7 @@
  * - VPC firewall rules
  */
 
-import type { VerificationStatus, ControlVerification } from './aws-connector.service';
+import type { ControlVerification } from './aws-connector.service';
 
 // ============================================================================
 // TYPES

@@ -24,19 +24,13 @@ import {
   AlertTriangle,
   Check,
   X,
-  Plus,
   Mail,
-  ChevronRight,
   Search,
-  Filter,
   Download,
   RefreshCw,
-  ExternalLink,
   Crown,
   UserPlus,
-  MoreVertical,
   Trash2,
-  Edit,
   Lock,
   Key,
   Globe,
@@ -251,11 +245,6 @@ const OverviewTab: React.FC<{
   analytics: TenantAnalytics | null;
   members: TenantMember[];
 }> = ({ tenant, analytics, members }) => {
-  const usagePercentage = (current: number, max: number) => {
-    if (max === -1) return 0;
-    return Math.round((current / max) * 100);
-  };
-
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -771,7 +760,7 @@ const SecurityTab: React.FC<{
   tenant: Tenant;
   canManage: boolean;
   onUpdate: () => void;
-}> = ({ tenant, canManage, onUpdate }) => {
+}> = ({ tenant, canManage, onUpdate: _onUpdate }) => {
   return (
     <div className="space-y-6 max-w-2xl">
       {/* MFA Settings */}

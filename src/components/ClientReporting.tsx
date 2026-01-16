@@ -25,6 +25,8 @@ const FRAMEWORK_CONFIG: Record<FrameworkId, { name: string; color: string }> = {
   ISO27001: { name: 'ISO 27001:2022', color: '#059669' },
   HIPAA: { name: 'HIPAA Security', color: '#7C3AED' },
   NIST: { name: 'NIST CSF 2.0', color: '#D97706' },
+  PCIDSS: { name: 'PCI DSS 4.0', color: '#3b82f6' },
+  GDPR: { name: 'GDPR', color: '#06b6d4' },
 };
 
 const REPORT_TYPES = [

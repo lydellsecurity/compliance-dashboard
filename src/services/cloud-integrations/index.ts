@@ -5,8 +5,8 @@
  */
 
 // AWS Connector
-export {
-  awsConnector,
+import {
+  awsConnector as awsConnectorService,
   AWSConnector,
   AWS_CONTROL_CHECKS,
   type AWSCredentials,
@@ -15,26 +15,52 @@ export {
   type VerificationStatus,
   type ControlVerification,
 } from './aws-connector.service';
+export {
+  awsConnectorService as awsConnector,
+  AWSConnector,
+  AWS_CONTROL_CHECKS,
+  type AWSCredentials,
+  type AWSConnectionStatus,
+  type AWSVerificationResult,
+  type VerificationStatus,
+  type ControlVerification,
+};
 
 // Azure Connector
-export {
-  azureConnector,
+import {
+  azureConnector as azureConnectorService,
   AzureConnector,
   AZURE_CONTROL_CHECKS,
   type AzureCredentials,
   type AzureConnectionStatus,
   type AzureVerificationResult,
 } from './azure-connector.service';
+export {
+  azureConnectorService as azureConnector,
+  AzureConnector,
+  AZURE_CONTROL_CHECKS,
+  type AzureCredentials,
+  type AzureConnectionStatus,
+  type AzureVerificationResult,
+};
 
 // GCP Connector
-export {
-  gcpConnector,
+import {
+  gcpConnector as gcpConnectorService,
   GCPConnector,
   GCP_CONTROL_CHECKS,
   type GCPCredentials,
   type GCPConnectionStatus,
   type GCPVerificationResult,
 } from './gcp-connector.service';
+export {
+  gcpConnectorService as gcpConnector,
+  GCPConnector,
+  GCP_CONTROL_CHECKS,
+  type GCPCredentials,
+  type GCPConnectionStatus,
+  type GCPVerificationResult,
+};
 
 // ============================================================================
 // UNIFIED TYPES

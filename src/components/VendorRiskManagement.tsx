@@ -7,10 +7,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingBag, Search, Plus, Filter, Building2, AlertTriangle, Shield,
-  Calendar, FileText, ChevronRight, ExternalLink, Mail, Phone, Globe,
-  CheckCircle2, XCircle, Clock, TrendingUp, TrendingDown, BarChart3,
-  Users, AlertCircle, RefreshCw, Download, Upload, Eye, Edit, Trash2,
-  Star, Award, Lock, Briefcase, X
+  Calendar, FileText, ChevronRight, Mail, Phone, Globe,
+  CheckCircle2, XCircle, Clock, BarChart3,
+  Users, AlertCircle, RefreshCw, Edit, Award, X
 } from 'lucide-react';
 import {
   vendorRiskService,
@@ -26,6 +25,16 @@ import {
 interface VendorRiskManagementProps {
   organizationId: string;
   userId: string;
+}
+
+interface VendorDashboardData {
+  totalVendors: number;
+  byStatus: Record<VendorStatus, number>;
+  byCriticality: Record<VendorCriticality, number>;
+  byRiskTier: Record<VendorRiskTier, number>;
+  assessmentsDue: number;
+  contractsExpiring: number;
+  recentAssessments: VendorAssessment[];
 }
 
 // ============================================================================
@@ -84,15 +93,7 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [showAddVendor, setShowAddVendor] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [dashboard, setDashboard] = useState<{
-    totalVendors: number;
-    byStatus: Record<VendorStatus, number>;
-    byCriticality: Record<VendorCriticality, number>;
-    byRiskTier: Record<VendorRiskTier, number>;
-    assessmentsDue: number;
-    contractsExpiring: number;
-    recentAssessments: VendorAssessment[];
-  } | null>(null);
+  const [dashboard, setDashboard] = useState<VendorDashboardData | null>(null);
 
   // Load data
   useEffect(() => {
@@ -261,7 +262,7 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
 // ============================================================================
 
 const DashboardView: React.FC<{
-  dashboard: NonNullable<Parameters<typeof VendorRiskManagement>[0] extends { dashboard?: infer D } ? D : never>;
+  dashboard: VendorDashboardData;
   vendors: Vendor[];
   onVendorClick: (vendor: Vendor) => void;
 }> = ({ dashboard, vendors, onVendorClick }) => {

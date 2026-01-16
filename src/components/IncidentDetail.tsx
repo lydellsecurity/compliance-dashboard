@@ -47,6 +47,8 @@ const FRAMEWORK_COLORS: Record<FrameworkId, string> = {
   ISO27001: '#059669',
   HIPAA: '#7C3AED',
   NIST: '#D97706',
+  PCIDSS: '#3b82f6',
+  GDPR: '#06b6d4',
 };
 
 // ============================================================================

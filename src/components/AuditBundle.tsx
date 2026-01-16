@@ -173,6 +173,8 @@ const AuditBundle: React.FC<AuditBundleProps> = ({
       ISO27001: { total: 0, completed: 0 },
       HIPAA: { total: 0, completed: 0 },
       NIST: { total: 0, completed: 0 },
+      PCIDSS: { total: 0, completed: 0 },
+      GDPR: { total: 0, completed: 0 },
     };
 
     allControls.forEach(control => {

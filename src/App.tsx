@@ -32,7 +32,6 @@ import MonitoringDashboard from './components/MonitoringDashboard';
 import AlertConfiguration from './components/AlertConfiguration';
 import CloudVerification from './components/CloudVerification';
 import RemediationChat from './components/RemediationChat';
-import EvidenceRepository from './components/EvidenceRepository';
 import IntegrationHub from './components/IntegrationHub';
 import TenantAdmin from './components/TenantAdmin';
 import VendorRiskManagement from './components/VendorRiskManagement';
@@ -62,11 +61,13 @@ const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 // FRAMEWORK COLORS - Industrial Palette
 // ============================================================================
 
-const FRAMEWORK_COLORS: Record<string, string> = {
+const FRAMEWORK_COLORS: Record<FrameworkId, string> = {
   SOC2: '#8b5cf6',     // Violet
   ISO27001: '#10b981', // Emerald
   HIPAA: '#ec4899',    // Pink
   NIST: '#f59e0b',     // Amber
+  PCIDSS: '#3b82f6',   // Blue
+  GDPR: '#06b6d4',     // Cyan
 };
 
 // ============================================================================
@@ -1233,10 +1234,10 @@ const CompanyTab: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', question: '', riskLevel: 'medium' as 'low' | 'medium' | 'high' | 'critical' });
   const [selectedFrameworks, setSelectedFrameworks] = useState<FrameworkId[]>([]);
-  const [clauseInputs, setClauseInputs] = useState<Record<FrameworkId, string>>({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '' });
+  const [clauseInputs, setClauseInputs] = useState<Record<FrameworkId, string>>({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '', PCIDSS: '', GDPR: '' });
 
   const toggleFramework = (fwId: FrameworkId) => setSelectedFrameworks(prev => prev.includes(fwId) ? prev.filter(f => f !== fwId) : [...prev, fwId]);
-  const resetForm = () => { setForm({ title: '', description: '', question: '', riskLevel: 'medium' }); setSelectedFrameworks([]); setClauseInputs({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '' }); };
+  const resetForm = () => { setForm({ title: '', description: '', question: '', riskLevel: 'medium' }); setSelectedFrameworks([]); setClauseInputs({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '', PCIDSS: '', GDPR: '' }); };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

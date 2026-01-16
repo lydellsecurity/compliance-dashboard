@@ -66,6 +66,20 @@ const FRAMEWORK_DETAILS: Record<FrameworkId, {
     color: '#D97706',
     certBody: 'NIST',
   },
+  PCIDSS: {
+    name: 'PCI DSS',
+    fullName: 'Payment Card Industry Data Security Standard 4.0',
+    description: 'Security standards for organizations that handle payment card data',
+    color: '#3b82f6',
+    certBody: 'PCI SSC',
+  },
+  GDPR: {
+    name: 'GDPR',
+    fullName: 'General Data Protection Regulation',
+    description: 'European Union data protection and privacy regulation',
+    color: '#06b6d4',
+    certBody: 'EU DPA',
+  },
 };
 
 // ============================================================================
