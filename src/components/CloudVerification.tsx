@@ -3,6 +3,7 @@
  *
  * Provides OAuth/credential flow for connecting to cloud providers
  * and displays automated verification results for compliance controls.
+ * Supports AWS, Azure, and GCP.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -14,11 +15,13 @@ import {
 } from 'lucide-react';
 import {
   awsConnector,
+  azureConnector,
+  gcpConnector,
   type AWSCredentials,
-  type AWSConnectionStatus,
-  type AWSVerificationResult,
+  type AzureCredentials,
+  type GCPCredentials,
   type ControlVerification,
-} from '../services/cloud-integrations/aws-connector.service';
+} from '../services/cloud-integrations';
 
 // ============================================================================
 // TYPES
@@ -26,10 +29,31 @@ import {
 
 type CloudProvider = 'aws' | 'azure' | 'gcp';
 
+interface ConnectionStatus {
+  connected: boolean;
+  accountId?: string;
+  error?: string;
+  lastChecked: string;
+  providerDetails?: Record<string, string>;
+}
+
+interface VerificationResult {
+  success: boolean;
+  verifications: ControlVerification[];
+  summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    partial: number;
+    errors: number;
+  };
+  checkedAt: string;
+}
+
 interface CloudVerificationProps {
   isOpen: boolean;
   onClose: () => void;
-  onVerificationComplete?: (results: AWSVerificationResult) => void;
+  onVerificationComplete?: (results: VerificationResult) => void;
 }
 
 // ============================================================================
@@ -44,8 +68,8 @@ const CLOUD_PROVIDERS: {
   available: boolean;
 }[] = [
   { id: 'aws', name: 'AWS', fullName: 'Amazon Web Services', color: '#FF9900', available: true },
-  { id: 'azure', name: 'Azure', fullName: 'Microsoft Azure', color: '#0078D4', available: false },
-  { id: 'gcp', name: 'GCP', fullName: 'Google Cloud Platform', color: '#4285F4', available: false },
+  { id: 'azure', name: 'Azure', fullName: 'Microsoft Azure', color: '#0078D4', available: true },
+  { id: 'gcp', name: 'GCP', fullName: 'Google Cloud Platform', color: '#4285F4', available: true },
 ];
 
 const STATUS_CONFIG = {
@@ -66,8 +90,24 @@ const CredentialInput: React.FC<{
   onChange: (value: string) => void;
   placeholder: string;
   isSecret?: boolean;
-}> = ({ label, value, onChange, placeholder, isSecret }) => {
+  isTextArea?: boolean;
+}> = ({ label, value, onChange, placeholder, isSecret, isTextArea }) => {
   const [showValue, setShowValue] = useState(false);
+
+  if (isTextArea) {
+    return (
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-primary">{label}</label>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={4}
+          className="w-full px-4 py-2.5 bg-slate-50 dark:bg-steel-800 border border-slate-200 dark:border-steel-700 rounded-lg text-sm text-primary font-mono placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent resize-none"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1.5">
@@ -188,67 +228,185 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
   onVerificationComplete,
 }) => {
   const [selectedProvider, setSelectedProvider] = useState<CloudProvider>('aws');
-  const [connectionStatus, setConnectionStatus] = useState<AWSConnectionStatus | null>(null);
-  const [verificationResults, setVerificationResults] = useState<AWSVerificationResult | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null);
+  const [verificationResults, setVerificationResults] = useState<VerificationResult | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [isConnecting, setIsConnecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // AWS Credentials form
-  const [accessKeyId, setAccessKeyId] = useState('');
-  const [secretAccessKey, setSecretAccessKey] = useState('');
-  const [region, setRegion] = useState('us-east-1');
+  // AWS Credentials
+  const [awsAccessKeyId, setAwsAccessKeyId] = useState('');
+  const [awsSecretAccessKey, setAwsSecretAccessKey] = useState('');
+  const [awsRegion, setAwsRegion] = useState('us-east-1');
 
-  const verifiableControls = awsConnector.getVerifiableControls();
+  // Azure Credentials
+  const [azureTenantId, setAzureTenantId] = useState('');
+  const [azureClientId, setAzureClientId] = useState('');
+  const [azureClientSecret, setAzureClientSecret] = useState('');
+  const [azureSubscriptionId, setAzureSubscriptionId] = useState('');
 
-  // Clear sensitive data when modal closes
+  // GCP Credentials
+  const [gcpProjectId, setGcpProjectId] = useState('');
+  const [gcpClientEmail, setGcpClientEmail] = useState('');
+  const [gcpPrivateKey, setGcpPrivateKey] = useState('');
+
+  // Get verifiable controls for selected provider
+  const getVerifiableControls = useCallback(() => {
+    switch (selectedProvider) {
+      case 'aws':
+        return awsConnector.getVerifiableControls();
+      case 'azure':
+        return azureConnector.getVerifiableControls();
+      case 'gcp':
+        return gcpConnector.getVerifiableControls();
+    }
+  }, [selectedProvider]);
+
+  const verifiableControls = getVerifiableControls();
+
+  // Clear sensitive data when modal closes or provider changes
   useEffect(() => {
     if (!isOpen) {
-      // Clear credentials when modal closes for security
-      setAccessKeyId('');
-      setSecretAccessKey('');
+      // Clear all credentials when modal closes for security
+      setAwsAccessKeyId('');
+      setAwsSecretAccessKey('');
+      setAzureTenantId('');
+      setAzureClientId('');
+      setAzureClientSecret('');
+      setAzureSubscriptionId('');
+      setGcpProjectId('');
+      setGcpClientEmail('');
+      setGcpPrivateKey('');
       setConnectionStatus(null);
       setVerificationResults(null);
       setError(null);
       setExpandedCards(new Set());
       awsConnector.disconnect();
+      azureConnector.disconnect();
+      gcpConnector.disconnect();
     }
   }, [isOpen]);
 
-  const handleConnect = useCallback(async () => {
-    if (!accessKeyId || !secretAccessKey) {
-      setError('Please provide both Access Key ID and Secret Access Key');
-      return;
-    }
+  // Clear connection when provider changes
+  useEffect(() => {
+    setConnectionStatus(null);
+    setVerificationResults(null);
+    setError(null);
+  }, [selectedProvider]);
 
+  const handleConnect = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
 
-    const credentials: AWSCredentials = {
-      accessKeyId,
-      secretAccessKey,
-      region,
-    };
-
-    const status = await awsConnector.testConnection(credentials);
-    setConnectionStatus(status);
-
-    if (!status.connected) {
-      setError(status.error || 'Failed to connect to AWS');
+    try {
+      switch (selectedProvider) {
+        case 'aws': {
+          if (!awsAccessKeyId || !awsSecretAccessKey) {
+            setError('Please provide both Access Key ID and Secret Access Key');
+            setIsConnecting(false);
+            return;
+          }
+          const credentials: AWSCredentials = {
+            accessKeyId: awsAccessKeyId,
+            secretAccessKey: awsSecretAccessKey,
+            region: awsRegion,
+          };
+          const status = await awsConnector.testConnection(credentials);
+          setConnectionStatus({
+            connected: status.connected,
+            accountId: status.accountId,
+            error: status.error,
+            lastChecked: status.lastChecked,
+            providerDetails: { region: awsRegion },
+          });
+          if (!status.connected) {
+            setError(status.error || 'Failed to connect to AWS');
+          }
+          break;
+        }
+        case 'azure': {
+          if (!azureTenantId || !azureClientId || !azureClientSecret || !azureSubscriptionId) {
+            setError('Please provide all Azure credentials');
+            setIsConnecting(false);
+            return;
+          }
+          const credentials: AzureCredentials = {
+            tenantId: azureTenantId,
+            clientId: azureClientId,
+            clientSecret: azureClientSecret,
+            subscriptionId: azureSubscriptionId,
+          };
+          const status = await azureConnector.testConnection(credentials);
+          setConnectionStatus({
+            connected: status.connected,
+            accountId: status.subscriptionId,
+            error: status.error,
+            lastChecked: status.lastChecked,
+            providerDetails: { subscriptionName: status.subscriptionName || '' },
+          });
+          if (!status.connected) {
+            setError(status.error || 'Failed to connect to Azure');
+          }
+          break;
+        }
+        case 'gcp': {
+          if (!gcpProjectId || !gcpClientEmail || !gcpPrivateKey) {
+            setError('Please provide all GCP credentials');
+            setIsConnecting(false);
+            return;
+          }
+          const credentials: GCPCredentials = {
+            projectId: gcpProjectId,
+            clientEmail: gcpClientEmail,
+            privateKey: gcpPrivateKey,
+          };
+          const status = await gcpConnector.testConnection(credentials);
+          setConnectionStatus({
+            connected: status.connected,
+            accountId: status.projectId,
+            error: status.error,
+            lastChecked: status.lastChecked,
+            providerDetails: { projectName: status.projectName || '' },
+          });
+          if (!status.connected) {
+            setError(status.error || 'Failed to connect to GCP');
+          }
+          break;
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connection failed');
     }
 
     setIsConnecting(false);
-  }, [accessKeyId, secretAccessKey, region]);
+  }, [selectedProvider, awsAccessKeyId, awsSecretAccessKey, awsRegion, azureTenantId, azureClientId, azureClientSecret, azureSubscriptionId, gcpProjectId, gcpClientEmail, gcpPrivateKey]);
 
   const handleDisconnect = useCallback(() => {
-    awsConnector.disconnect();
+    switch (selectedProvider) {
+      case 'aws':
+        awsConnector.disconnect();
+        setAwsAccessKeyId('');
+        setAwsSecretAccessKey('');
+        break;
+      case 'azure':
+        azureConnector.disconnect();
+        setAzureTenantId('');
+        setAzureClientId('');
+        setAzureClientSecret('');
+        setAzureSubscriptionId('');
+        break;
+      case 'gcp':
+        gcpConnector.disconnect();
+        setGcpProjectId('');
+        setGcpClientEmail('');
+        setGcpPrivateKey('');
+        break;
+    }
     setConnectionStatus(null);
     setVerificationResults(null);
-    setAccessKeyId('');
-    setSecretAccessKey('');
     setError(null);
-  }, []);
+  }, [selectedProvider]);
 
   const handleVerify = useCallback(async () => {
     if (!connectionStatus?.connected) return;
@@ -256,21 +414,51 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
     setIsVerifying(true);
     setError(null);
 
-    const credentials: AWSCredentials = {
-      accessKeyId,
-      secretAccessKey,
-      region,
-    };
+    try {
+      let results: VerificationResult;
 
-    const results = await awsConnector.verifyAll(credentials);
-    setVerificationResults(results);
+      switch (selectedProvider) {
+        case 'aws': {
+          const credentials: AWSCredentials = {
+            accessKeyId: awsAccessKeyId,
+            secretAccessKey: awsSecretAccessKey,
+            region: awsRegion,
+          };
+          results = await awsConnector.verifyAll(credentials);
+          break;
+        }
+        case 'azure': {
+          const credentials: AzureCredentials = {
+            tenantId: azureTenantId,
+            clientId: azureClientId,
+            clientSecret: azureClientSecret,
+            subscriptionId: azureSubscriptionId,
+          };
+          results = await azureConnector.verifyAll(credentials);
+          break;
+        }
+        case 'gcp': {
+          const credentials: GCPCredentials = {
+            projectId: gcpProjectId,
+            clientEmail: gcpClientEmail,
+            privateKey: gcpPrivateKey,
+          };
+          results = await gcpConnector.verifyAll(credentials);
+          break;
+        }
+      }
 
-    if (onVerificationComplete) {
-      onVerificationComplete(results);
+      setVerificationResults(results);
+
+      if (onVerificationComplete) {
+        onVerificationComplete(results);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
     }
 
     setIsVerifying(false);
-  }, [connectionStatus, accessKeyId, secretAccessKey, region, onVerificationComplete]);
+  }, [connectionStatus, selectedProvider, awsAccessKeyId, awsSecretAccessKey, awsRegion, azureTenantId, azureClientId, azureClientSecret, azureSubscriptionId, gcpProjectId, gcpClientEmail, gcpPrivateKey, onVerificationComplete]);
 
   const toggleCard = (controlId: string) => {
     setExpandedCards(prev => {
@@ -287,10 +475,11 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
   const downloadEvidence = () => {
     if (!verificationResults) return;
 
+    const providerName = CLOUD_PROVIDERS.find(p => p.id === selectedProvider)?.name || selectedProvider;
     const data = {
-      provider: 'AWS',
+      provider: providerName,
       accountId: connectionStatus?.accountId,
-      region,
+      providerDetails: connectionStatus?.providerDetails,
       verifiedAt: verificationResults.checkedAt,
       summary: verificationResults.summary,
       verifications: verificationResults.verifications,
@@ -300,11 +489,135 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aws-verification-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `${selectedProvider}-verification-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const getProviderLabel = () => {
+    return CLOUD_PROVIDERS.find(p => p.id === selectedProvider)?.name || '';
+  };
+
+  const renderCredentialsForm = () => {
+    switch (selectedProvider) {
+      case 'aws':
+        return (
+          <>
+            <CredentialInput
+              label="Access Key ID"
+              value={awsAccessKeyId}
+              onChange={setAwsAccessKeyId}
+              placeholder="AKIAIOSFODNN7EXAMPLE"
+            />
+            <CredentialInput
+              label="Secret Access Key"
+              value={awsSecretAccessKey}
+              onChange={setAwsSecretAccessKey}
+              placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+              isSecret
+            />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-primary">Region</label>
+              <select
+                value={awsRegion}
+                onChange={(e) => setAwsRegion(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-steel-800 border border-slate-200 dark:border-steel-700 rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+              >
+                <option value="us-east-1">US East (N. Virginia)</option>
+                <option value="us-east-2">US East (Ohio)</option>
+                <option value="us-west-1">US West (N. California)</option>
+                <option value="us-west-2">US West (Oregon)</option>
+                <option value="eu-west-1">EU (Ireland)</option>
+                <option value="eu-west-2">EU (London)</option>
+                <option value="eu-central-1">EU (Frankfurt)</option>
+                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
+                <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+              </select>
+            </div>
+          </>
+        );
+
+      case 'azure':
+        return (
+          <>
+            <CredentialInput
+              label="Tenant ID"
+              value={azureTenantId}
+              onChange={setAzureTenantId}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            />
+            <CredentialInput
+              label="Client ID (Application ID)"
+              value={azureClientId}
+              onChange={setAzureClientId}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            />
+            <CredentialInput
+              label="Client Secret"
+              value={azureClientSecret}
+              onChange={setAzureClientSecret}
+              placeholder="Your client secret"
+              isSecret
+            />
+            <CredentialInput
+              label="Subscription ID"
+              value={azureSubscriptionId}
+              onChange={setAzureSubscriptionId}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            />
+          </>
+        );
+
+      case 'gcp':
+        return (
+          <>
+            <CredentialInput
+              label="Project ID"
+              value={gcpProjectId}
+              onChange={setGcpProjectId}
+              placeholder="my-project-id"
+            />
+            <CredentialInput
+              label="Service Account Email"
+              value={gcpClientEmail}
+              onChange={setGcpClientEmail}
+              placeholder="service-account@project.iam.gserviceaccount.com"
+            />
+            <CredentialInput
+              label="Private Key"
+              value={gcpPrivateKey}
+              onChange={setGcpPrivateKey}
+              placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+              isTextArea
+            />
+          </>
+        );
+    }
+  };
+
+  const getSecurityNote = () => {
+    switch (selectedProvider) {
+      case 'aws':
+        return 'We recommend using temporary credentials from AWS STS or an IAM role with read-only permissions. Credentials are never stored.';
+      case 'azure':
+        return 'Create a service principal with Reader role for verification. Use Azure Key Vault for production. Credentials are never stored.';
+      case 'gcp':
+        return 'Use a service account with Viewer role. Download the JSON key file from GCP Console. Credentials are never stored.';
+    }
+  };
+
+  const isFormValid = () => {
+    switch (selectedProvider) {
+      case 'aws':
+        return awsAccessKeyId && awsSecretAccessKey;
+      case 'azure':
+        return azureTenantId && azureClientId && azureClientSecret && azureSubscriptionId;
+      case 'gcp':
+        return gcpProjectId && gcpClientEmail && gcpPrivateKey;
+    }
   };
 
   return (
@@ -388,9 +701,11 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-status-success" />
                       <div>
-                        <p className="font-medium text-green-800 dark:text-green-300">Connected to AWS</p>
+                        <p className="font-medium text-green-800 dark:text-green-300">Connected to {getProviderLabel()}</p>
                         <p className="text-sm text-green-700 dark:text-green-400">
-                          Account: {connectionStatus.accountId} • Region: {connectionStatus.region}
+                          {selectedProvider === 'aws' && `Account: ${connectionStatus.accountId} • Region: ${connectionStatus.providerDetails?.region}`}
+                          {selectedProvider === 'azure' && `Subscription: ${connectionStatus.providerDetails?.subscriptionName || connectionStatus.accountId}`}
+                          {selectedProvider === 'gcp' && `Project: ${connectionStatus.providerDetails?.projectName || connectionStatus.accountId}`}
                         </p>
                       </div>
                     </div>
@@ -412,46 +727,13 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
                       <div>
                         <p className="font-medium text-amber-800 dark:text-amber-300">Security Note</p>
                         <p className="text-sm text-amber-700 dark:text-amber-400">
-                          We recommend using temporary credentials from AWS STS or an IAM role with read-only permissions. Credentials are never stored.
+                          {getSecurityNote()}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <CredentialInput
-                    label="Access Key ID"
-                    value={accessKeyId}
-                    onChange={setAccessKeyId}
-                    placeholder="AKIAIOSFODNN7EXAMPLE"
-                  />
-
-                  <CredentialInput
-                    label="Secret Access Key"
-                    value={secretAccessKey}
-                    onChange={setSecretAccessKey}
-                    placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-                    isSecret
-                  />
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-primary">Region</label>
-                    <select
-                      value={region}
-                      onChange={(e) => setRegion(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-steel-800 border border-slate-200 dark:border-steel-700 rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                    >
-                      <option value="us-east-1">US East (N. Virginia)</option>
-                      <option value="us-east-2">US East (Ohio)</option>
-                      <option value="us-west-1">US West (N. California)</option>
-                      <option value="us-west-2">US West (Oregon)</option>
-                      <option value="eu-west-1">EU (Ireland)</option>
-                      <option value="eu-west-2">EU (London)</option>
-                      <option value="eu-central-1">EU (Frankfurt)</option>
-                      <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                      <option value="ap-southeast-2">Asia Pacific (Sydney)</option>
-                      <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
-                    </select>
-                  </div>
+                  {renderCredentialsForm()}
 
                   {error && (
                     <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
@@ -461,7 +743,7 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
 
                   <button
                     onClick={handleConnect}
-                    disabled={isConnecting || !accessKeyId || !secretAccessKey}
+                    disabled={isConnecting || !isFormValid()}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent-500 hover:bg-accent-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isConnecting ? (
@@ -472,7 +754,7 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
                     ) : (
                       <>
                         <Shield className="w-5 h-5" />
-                        Connect to AWS
+                        Connect to {getProviderLabel()}
                       </>
                     )}
                   </button>
@@ -484,7 +766,7 @@ export const CloudVerification: React.FC<CloudVerificationProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-semibold text-primary">Available Verifications</h3>
                   <p className="text-sm text-secondary">
-                    The following {verifiableControls.length} controls can be automatically verified against your AWS account.
+                    The following {verifiableControls.length} controls can be automatically verified against your {getProviderLabel()} account.
                   </p>
 
                   <div className="grid gap-2">
