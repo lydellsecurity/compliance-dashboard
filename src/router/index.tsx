@@ -12,6 +12,7 @@ import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { OrganizationProvider } from '../contexts/OrganizationContext';
+import { ToastProvider } from '../components/ui';
 import { Shield, Loader2 } from 'lucide-react';
 
 // Lazy load components for better performance
@@ -71,9 +72,11 @@ const RootLayout: React.FC = () => {
   return (
     <AuthProvider>
       <OrganizationProvider>
-        <Suspense fallback={<LoadingScreen />}>
-          <Outlet />
-        </Suspense>
+        <ToastProvider>
+          <Suspense fallback={<LoadingScreen />}>
+            <Outlet />
+          </Suspense>
+        </ToastProvider>
       </OrganizationProvider>
     </AuthProvider>
   );
@@ -83,9 +86,11 @@ const RootLayout: React.FC = () => {
 const PublicLayout: React.FC = () => {
   return (
     <AuthProvider>
-      <Suspense fallback={<LoadingScreen />}>
-        <Outlet />
-      </Suspense>
+      <ToastProvider>
+        <Suspense fallback={<LoadingScreen />}>
+          <Outlet />
+        </Suspense>
+      </ToastProvider>
     </AuthProvider>
   );
 };

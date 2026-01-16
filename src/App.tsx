@@ -38,6 +38,7 @@ import VendorRiskManagement from './components/VendorRiskManagement';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
+import { useAuth } from './hooks/useAuth';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'trust-center' | 'certificate' | 'verify' | 'company' | 'admin' | 'settings';
 
@@ -1231,10 +1232,13 @@ const EvidenceTab: React.FC = () => {
 
 const CompanyTab: React.FC = () => {
   const { customControls, addCustomControl, deleteCustomControl } = useComplianceContext();
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', question: '', riskLevel: 'medium' as 'low' | 'medium' | 'high' | 'critical' });
   const [selectedFrameworks, setSelectedFrameworks] = useState<FrameworkId[]>([]);
   const [clauseInputs, setClauseInputs] = useState<Record<FrameworkId, string>>({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '', PCIDSS: '', GDPR: '' });
+
+  const currentUserId = user?.id || 'anonymous-user';
 
   const toggleFramework = (fwId: FrameworkId) => setSelectedFrameworks(prev => prev.includes(fwId) ? prev.filter(f => f !== fwId) : [...prev, fwId]);
   const resetForm = () => { setForm({ title: '', description: '', question: '', riskLevel: 'medium' }); setSelectedFrameworks([]); setClauseInputs({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '', PCIDSS: '', GDPR: '' }); };
@@ -1243,7 +1247,7 @@ const CompanyTab: React.FC = () => {
     e.preventDefault();
     if (form.title && form.description) {
       const mappings = selectedFrameworks.filter(fwId => clauseInputs[fwId].trim()).map(fwId => ({ id: '', frameworkId: fwId, clauseId: clauseInputs[fwId].trim(), clauseTitle: 'Custom mapping', controlId: null, customControlId: null }));
-      addCustomControl({ title: form.title, description: form.description, question: form.question || `Is ${form.title} implemented?`, category: 'company_specific', frameworkMappings: mappings, riskLevel: form.riskLevel, createdBy: 'current-user' });
+      addCustomControl({ title: form.title, description: form.description, question: form.question || `Is ${form.title} implemented?`, category: 'company_specific', frameworkMappings: mappings, riskLevel: form.riskLevel, createdBy: currentUserId });
       resetForm(); setShowModal(false);
     }
   };
@@ -1605,7 +1609,11 @@ const AppContent: React.FC = () => {
   const compliance = useComplianceContext();
   const ir = useIncidentResponse();
   const { currentOrg } = useOrganization();
+  const { user } = useAuth();
   const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress } = compliance;
+
+  // Use actual user ID from auth, fallback for offline/development mode
+  const currentUserId = user?.id || 'anonymous-user';
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -1708,7 +1716,7 @@ const AppContent: React.FC = () => {
               <motion.div key="integrations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <IntegrationHub
                   organizationId={currentOrg?.id || 'default-org'}
-                  userId="current-user"
+                  userId={currentUserId}
                 />
               </motion.div>
             )}
@@ -1716,7 +1724,7 @@ const AppContent: React.FC = () => {
               <motion.div key="vendors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <VendorRiskManagement
                   organizationId={currentOrg?.id || 'default-org'}
-                  userId="current-user"
+                  userId={currentUserId}
                 />
               </motion.div>
             )}
@@ -1724,8 +1732,8 @@ const AppContent: React.FC = () => {
               <motion.div key="admin" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <TenantAdmin
                   tenantId={currentOrg?.id || 'default-org'}
-                  userId="current-user"
-                  userRole="admin"
+                  userId={currentUserId}
+                  userRole={currentOrg?.role || 'member'}
                 />
               </motion.div>
             )}

@@ -531,7 +531,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
           clauseId: n.clause_id,
           clauseTitle: n.clause_title,
           timestamp: new Date(n.created_at).getTime(),
-          userId: 'current-user',
+          userId: supabaseUser?.id || 'anonymous',
         }));
         setSyncNotifications(prev => [...convertedNotifs, ...prev].slice(0, 50));
       }
