@@ -881,19 +881,52 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const { allDomains, domainProgress, getControlsByDomain, allControls } = useComplianceContext();
   const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || allDomains[0]);
   const [search, setSearch] = useState('');
+  const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
+  const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
 
   const controls = useMemo(() => {
+    let filtered = allControls;
+
+    // Filter by framework first if selected
+    if (selectedFramework !== 'all') {
+      filtered = filtered.filter(c =>
+        c.frameworkMappings.some(m => m.frameworkId === selectedFramework)
+      );
+    }
+
+    // Then filter by search or domain
     if (search.trim()) {
       const q = search.toLowerCase();
-      return allControls.filter(c =>
+      return filtered.filter(c =>
         c.id.toLowerCase().includes(q) ||
         c.title.toLowerCase().includes(q) ||
         c.keywords.some(k => k.toLowerCase().includes(q))
       );
     }
+
+    // If framework is selected, show all controls for that framework (not filtered by domain)
+    if (selectedFramework !== 'all') {
+      return filtered;
+    }
+
     return getControlsByDomain(activeDomain.id as string);
-  }, [activeDomain.id, search, allControls, getControlsByDomain]);
+  }, [activeDomain.id, search, selectedFramework, allControls, getControlsByDomain]);
+
+  const selectedFrameworkMeta = selectedFramework !== 'all'
+    ? FRAMEWORKS.find(f => f.id === selectedFramework)
+    : null;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showFrameworkDropdown && !(e.target as Element).closest('[data-framework-dropdown]')) {
+        setShowFrameworkDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showFrameworkDropdown]);
 
   const currentDomainProgress = domainProgress.find(d => d.id === (activeDomain.id as string));
 
@@ -975,25 +1008,112 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-steel-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search controls..."
-            className="input-search w-full"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-300">
-              <X className="w-5 h-5" />
+        {/* Search and Framework Filter */}
+        <div className="flex gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-steel-500" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search controls..."
+              className="input-search w-full"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-300">
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          {/* Framework Filter Dropdown */}
+          <div className="relative" data-framework-dropdown>
+            <button
+              onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all ${
+                selectedFramework !== 'all'
+                  ? 'bg-indigo-50 dark:bg-accent-500/10 border-indigo-300 dark:border-accent-500/30 text-indigo-700 dark:text-accent-400'
+                  : 'bg-white dark:bg-steel-900 border-slate-200 dark:border-steel-700 text-slate-700 dark:text-steel-300 hover:border-slate-300 dark:hover:border-steel-600'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              <span className="text-sm font-medium whitespace-nowrap">
+                {selectedFramework === 'all' ? 'All Frameworks' : selectedFrameworkMeta?.name || selectedFramework}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showFrameworkDropdown ? 'rotate-180' : ''}`} />
             </button>
-          )}
+
+            {showFrameworkDropdown && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-steel-900 border border-slate-200 dark:border-steel-700 rounded-lg shadow-lg z-50 overflow-hidden">
+                <button
+                  onClick={() => { setSelectedFramework('all'); setShowFrameworkDropdown(false); }}
+                  className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-steel-800 transition-colors ${
+                    selectedFramework === 'all' ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400' : 'text-slate-700 dark:text-steel-300'
+                  }`}
+                >
+                  <div className="w-2 h-2 rounded-full bg-slate-400" />
+                  <span>All Frameworks</span>
+                  {selectedFramework === 'all' && <Check className="w-4 h-4 ml-auto" />}
+                </button>
+                <div className="border-t border-slate-100 dark:border-steel-800" />
+                {FRAMEWORKS.map(fw => (
+                  <button
+                    key={fw.id}
+                    onClick={() => { setSelectedFramework(fw.id); setShowFrameworkDropdown(false); }}
+                    className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-steel-800 transition-colors ${
+                      selectedFramework === fw.id ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400' : 'text-slate-700 dark:text-steel-300'
+                    }`}
+                  >
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: FRAMEWORK_COLORS[fw.id] }} />
+                    <div className="flex-1">
+                      <div className="font-medium">{fw.name}</div>
+                      <div className="text-xs text-slate-500 dark:text-steel-500">{fw.fullName}</div>
+                    </div>
+                    {selectedFramework === fw.id && <Check className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Framework Filter Active Banner */}
+        {selectedFramework !== 'all' && selectedFrameworkMeta && (
+          <div
+            className="p-4 rounded-lg border flex items-center justify-between"
+            style={{
+              backgroundColor: `${FRAMEWORK_COLORS[selectedFramework]}10`,
+              borderColor: `${FRAMEWORK_COLORS[selectedFramework]}30`
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                style={{ backgroundColor: `${FRAMEWORK_COLORS[selectedFramework]}20` }}
+              >
+                {selectedFrameworkMeta.icon}
+              </div>
+              <div>
+                <p className="font-medium text-slate-900 dark:text-steel-100">
+                  Showing {selectedFrameworkMeta.name} controls only
+                </p>
+                <p className="text-sm text-slate-600 dark:text-steel-400">
+                  {controls.length} controls mapped to {selectedFrameworkMeta.fullName}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedFramework('all')}
+              className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-white/50 dark:hover:bg-steel-800/50 rounded-lg transition-colors"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+
         {/* Domain Header */}
-        {!search && currentDomainProgress && (
+        {!search && !selectedFrameworkMeta && currentDomainProgress && (
           <Card className="p-5">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 dark:bg-accent-500/10">
