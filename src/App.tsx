@@ -1610,7 +1610,7 @@ const CommandSidebar: React.FC<{
 const AppContent: React.FC = () => {
   const compliance = useComplianceContext();
   const ir = useIncidentResponse();
-  const { currentOrg, needsOnboarding, loading: orgLoading } = useOrganization();
+  const { currentOrg } = useOrganization();
   const { user } = useAuth();
   const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress } = compliance;
 
