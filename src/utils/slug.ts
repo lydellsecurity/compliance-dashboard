@@ -88,13 +88,20 @@ export async function slugExists(
   slug: string,
   supabase: SupabaseClient
 ): Promise<boolean> {
+  // Use maybeSingle() to handle 0 rows gracefully (returns null instead of error)
   const { data, error } = await supabase
     .from('organizations')
     .select('id')
     .eq('slug', slug)
-    .single();
+    .maybeSingle();
 
-  return !error && !!data;
+  // If there's an error, assume slug doesn't exist
+  if (error) {
+    console.warn('slugExists check error:', error);
+    return false;
+  }
+
+  return !!data;
 }
 
 /**

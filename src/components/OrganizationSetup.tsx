@@ -262,13 +262,21 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({ isOpen, onComplet
 
     setCheckingSlug(true);
     try {
-      const { data } = await supabase
+      // Use maybeSingle() instead of single() to handle 0 rows gracefully
+      const { data, error } = await supabase
         .from('organizations')
         .select('id')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
 
-      setSlugAvailable(!data);
+      // If no error and no data, slug is available
+      // If data exists, slug is taken
+      if (error) {
+        console.warn('Slug check error:', error);
+        setSlugAvailable(true); // Assume available on error
+      } else {
+        setSlugAvailable(!data);
+      }
     } catch {
       setSlugAvailable(true); // Assume available if error (likely means not found)
     } finally {
