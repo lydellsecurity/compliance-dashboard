@@ -23,7 +23,9 @@ import {
   Clock,
   Send,
   Download,
+  Upload,
   Edit,
+  Trash2,
   ChevronRight,
   ChevronDown,
   BookOpen,
@@ -123,6 +125,9 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
   const [filterFormat, setFilterFormat] = useState<QuestionnaireFormat | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [aiGenerating, setAiGenerating] = useState<string | null>(null);
   const [stats, setStats] = useState<{
@@ -470,6 +475,101 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
     }
   };
 
+  // Handle update questionnaire
+  const handleUpdateQuestionnaire = async (updates: {
+    name?: string;
+    customerName?: string;
+    customerEmail?: string;
+    dueDate?: string;
+    status?: QuestionnaireStatus;
+  }) => {
+    if (!selectedQuestionnaire) return;
+
+    setProcessing(true);
+    try {
+      const success = await questionnaireService.updateQuestionnaire(selectedQuestionnaire.id, updates);
+      if (success) {
+        // Update local state
+        setSelectedQuestionnaire({
+          ...selectedQuestionnaire,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        });
+        setShowEditModal(false);
+        loadQuestionnaires(); // Refresh list
+      }
+    } catch (error) {
+      console.error('Failed to update questionnaire:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle delete questionnaire
+  const handleDeleteQuestionnaire = async (questionnaireId: string) => {
+    setProcessing(true);
+    try {
+      const success = await questionnaireService.deleteQuestionnaire(questionnaireId);
+      if (success) {
+        setShowDeleteConfirm(null);
+        setSelectedQuestionnaire(null);
+        setViewMode('list');
+        loadQuestionnaires();
+      }
+    } catch (error) {
+      console.error('Failed to delete questionnaire:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle import questionnaire
+  const handleImportQuestionnaire = async (file: File, customerName: string, format: QuestionnaireFormat) => {
+    setProcessing(true);
+    try {
+      const result = await questionnaireService.importQuestionnaire(file, customerName, format);
+      if (result.success && result.questionnaire) {
+        setShowImportModal(false);
+        handleSelectQuestionnaire(result.questionnaire);
+      }
+    } catch (error) {
+      console.error('Failed to import questionnaire:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle export questionnaire
+  const handleExportQuestionnaire = async (format: 'csv' | 'json') => {
+    if (!selectedQuestionnaire) return;
+
+    setProcessing(true);
+    try {
+      const blob = await questionnaireService.exportQuestionnaire(selectedQuestionnaire.id, {
+        format,
+        includeAIReasoning: true,
+        includeEvidence: true,
+        includeControlMappings: true,
+        questionsOnly: false,
+      });
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${selectedQuestionnaire.name.replace(/\s+/g, '_')}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Failed to export questionnaire:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   // Toggle category expansion
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
@@ -604,6 +704,13 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
           >
             <BookOpen className="w-4 h-4" />
             Question Library
+          </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-steel-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-steel-600 dark:text-steel-400 hover:border-steel-300 dark:hover:border-steel-600"
+          >
+            <Upload className="w-4 h-4" />
+            Import
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -810,9 +917,39 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
               )}
               Generate All AI Answers
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-steel-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-steel-600 dark:text-steel-400">
-              <Download className="w-4 h-4" />
-              Export
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-steel-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-steel-600 dark:text-steel-400 hover:border-steel-300 dark:hover:border-steel-600">
+                <Download className="w-4 h-4" />
+                Export
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-steel-900 rounded-lg border border-steel-200 dark:border-steel-700 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                <button
+                  onClick={() => handleExportQuestionnaire('csv')}
+                  className="w-full px-4 py-2 text-left text-sm text-steel-700 dark:text-steel-300 hover:bg-steel-50 dark:hover:bg-steel-800 rounded-t-lg"
+                >
+                  Export as CSV
+                </button>
+                <button
+                  onClick={() => handleExportQuestionnaire('json')}
+                  className="w-full px-4 py-2 text-left text-sm text-steel-700 dark:text-steel-300 hover:bg-steel-50 dark:hover:bg-steel-800 rounded-b-lg"
+                >
+                  Export as JSON
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-steel-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-steel-600 dark:text-steel-400 hover:border-steel-300 dark:hover:border-steel-600"
+            >
+              <Edit className="w-4 h-4" />
+              Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(selectedQuestionnaire.id)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-steel-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1296,6 +1433,317 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
     </AnimatePresence>
   );
 
+  // Render import modal
+  const renderImportModal = () => (
+    <AnimatePresence>
+      {showImportModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowImportModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white dark:bg-steel-900 rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-steel-200 dark:border-steel-700">
+              <h3 className="text-lg font-semibold text-steel-900 dark:text-white">Import Questionnaire</h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="p-1 text-steel-400 hover:text-steel-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const file = (e.currentTarget.elements.namedItem('file') as HTMLInputElement).files?.[0];
+                if (file) {
+                  handleImportQuestionnaire(
+                    file,
+                    formData.get('customerName') as string,
+                    formData.get('format') as QuestionnaireFormat
+                  );
+                }
+              }}
+              className="p-4 space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  CSV File
+                </label>
+                <input
+                  type="file"
+                  name="file"
+                  accept=".csv"
+                  required
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white"
+                />
+                <p className="text-xs text-steel-500 mt-1">
+                  Expected format: category, question_number, question_text, question_type
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  name="customerName"
+                  required
+                  placeholder="e.g., Acme Corporation"
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white placeholder-steel-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Format
+                </label>
+                <select
+                  name="format"
+                  required
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white"
+                >
+                  {Object.entries(FORMAT_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-steel-600 dark:text-steel-400 hover:text-steel-900 dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={processing}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {processing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Import
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  // Render edit modal
+  const renderEditModal = () => (
+    <AnimatePresence>
+      {showEditModal && selectedQuestionnaire && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowEditModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white dark:bg-steel-900 rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-steel-200 dark:border-steel-700">
+              <h3 className="text-lg font-semibold text-steel-900 dark:text-white">Edit Questionnaire</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1 text-steel-400 hover:text-steel-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleUpdateQuestionnaire({
+                  name: formData.get('name') as string,
+                  customerName: formData.get('customerName') as string,
+                  customerEmail: formData.get('customerEmail') as string || undefined,
+                  dueDate: formData.get('dueDate') as string || undefined,
+                  status: formData.get('status') as QuestionnaireStatus,
+                });
+              }}
+              className="p-4 space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Questionnaire Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  defaultValue={selectedQuestionnaire.name}
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white placeholder-steel-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  name="customerName"
+                  required
+                  defaultValue={selectedQuestionnaire.customerName}
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white placeholder-steel-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Customer Email
+                </label>
+                <input
+                  type="email"
+                  name="customerEmail"
+                  defaultValue={selectedQuestionnaire.customerEmail || ''}
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white placeholder-steel-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  name="dueDate"
+                  defaultValue={selectedQuestionnaire.dueDate?.split('T')[0] || ''}
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-steel-700 dark:text-steel-300 mb-1">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  required
+                  defaultValue={selectedQuestionnaire.status}
+                  className="w-full px-3 py-2 border border-steel-200 dark:border-steel-700 rounded-lg bg-white dark:bg-steel-900 text-steel-900 dark:text-white"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-steel-600 dark:text-steel-400 hover:text-steel-900 dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={processing}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {processing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  // Render delete confirmation
+  const renderDeleteConfirm = () => (
+    <AnimatePresence>
+      {showDeleteConfirm && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowDeleteConfirm(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white dark:bg-steel-900 rounded-xl shadow-xl max-w-md w-full mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-steel-900 dark:text-white">Delete Questionnaire</h3>
+                <p className="text-sm text-steel-600 dark:text-steel-400">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-steel-700 dark:text-steel-300 mb-6">
+              Are you sure you want to delete this questionnaire? All questions and answers will be permanently removed.
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-4 py-2 text-steel-600 dark:text-steel-400 hover:text-steel-900 dark:hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteQuestionnaire(showDeleteConfirm)}
+                disabled={processing}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {processing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Delete
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
@@ -1324,6 +1772,9 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
 
         {/* Modals */}
         {renderCreateModal()}
+        {renderImportModal()}
+        {renderEditModal()}
+        {renderDeleteConfirm()}
       </div>
     </div>
   );
