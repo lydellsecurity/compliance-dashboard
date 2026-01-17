@@ -163,6 +163,9 @@ class AnalyticsService {
       // Calculate framework readiness
       const frameworkReadiness = this.calculateFrameworkReadiness(controlResponses);
 
+      // Calculate upcoming deadlines (within next 30 days)
+      const upcomingDeadlines = await this.getUpcomingDeadlinesCount(organizationId);
+
       return {
         overallScore,
         scoreChange7d: score7dAgo !== null ? overallScore - score7dAgo : 0,
@@ -171,7 +174,7 @@ class AnalyticsService {
         controlsTotal: total,
         criticalGaps,
         highGaps,
-        upcomingDeadlines: 0, // TODO: implement deadline tracking
+        upcomingDeadlines,
         recentActivity: activityCount || 0,
         frameworkReadiness,
       };
@@ -598,6 +601,63 @@ class AnalyticsService {
     } catch (error) {
       console.error('Failed to get recent activity:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get count of upcoming deadlines within the next 30 days
+   * Includes: questionnaire due dates, vendor assessments, contract expirations
+   */
+  private async getUpcomingDeadlinesCount(organizationId: string): Promise<number> {
+    if (!isSupabaseConfigured() || !supabase) {
+      return 0;
+    }
+
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const thirtyDaysStr = thirtyDaysFromNow.toISOString();
+    const nowStr = new Date().toISOString();
+
+    let totalDeadlines = 0;
+
+    try {
+      // Count questionnaires with upcoming due dates
+      const { count: questionnaireCount } = await supabase
+        .from('questionnaires')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .in('status', ['draft', 'in_progress'])
+        .gte('due_date', nowStr)
+        .lte('due_date', thirtyDaysStr);
+
+      totalDeadlines += questionnaireCount || 0;
+
+      // Count vendor assessments due
+      const { count: assessmentCount } = await supabase
+        .from('vendors')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('status', 'active')
+        .gte('next_assessment_at', nowStr)
+        .lte('next_assessment_at', thirtyDaysStr);
+
+      totalDeadlines += assessmentCount || 0;
+
+      // Count vendor contracts expiring
+      const { count: contractCount } = await supabase
+        .from('vendors')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('status', 'active')
+        .gte('contract_end_date', nowStr.split('T')[0])
+        .lte('contract_end_date', thirtyDaysStr.split('T')[0]);
+
+      totalDeadlines += contractCount || 0;
+
+      return totalDeadlines;
+    } catch (error) {
+      console.error('Failed to get upcoming deadlines:', error);
+      return 0;
     }
   }
 
