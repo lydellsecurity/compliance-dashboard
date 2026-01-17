@@ -37,6 +37,7 @@ import TenantAdmin from './components/TenantAdmin';
 import VendorRiskManagement from './components/VendorRiskManagement';
 import QuestionnaireAutomation from './components/QuestionnaireAutomation';
 import OrganizationSetup from './components/OrganizationSetup';
+import FrameworkRequirementsView from './components/FrameworkRequirementsView';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
@@ -878,12 +879,19 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
 // ============================================================================
 
 const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ initialDomain }) => {
-  const { allDomains, domainProgress, getControlsByDomain, allControls } = useComplianceContext();
+  const { allDomains, domainProgress, getControlsByDomain, allControls, getResponse } = useComplianceContext();
   const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || allDomains[0]);
   const [search, setSearch] = useState('');
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
+  const [viewMode, setViewMode] = useState<'controls' | 'requirements'>('controls');
+
+  // Helper function to get control answer for FrameworkRequirementsView
+  const getControlAnswer = (controlId: string) => {
+    const response = getResponse(controlId);
+    return response?.answer || null;
+  };
 
   const controls = useMemo(() => {
     let filtered = allControls;
@@ -1081,34 +1089,72 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         {/* Framework Filter Active Banner */}
         {selectedFramework !== 'all' && selectedFrameworkMeta && (
           <div
-            className="p-4 rounded-lg border flex items-center justify-between"
+            className="p-4 rounded-lg border"
             style={{
               backgroundColor: `${FRAMEWORK_COLORS[selectedFramework]}10`,
               borderColor: `${FRAMEWORK_COLORS[selectedFramework]}30`
             }}
           >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                style={{ backgroundColor: `${FRAMEWORK_COLORS[selectedFramework]}20` }}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                  style={{ backgroundColor: `${FRAMEWORK_COLORS[selectedFramework]}20` }}
+                >
+                  {selectedFrameworkMeta.icon}
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-steel-100">
+                    {selectedFrameworkMeta.name} Compliance
+                  </p>
+                  <p className="text-sm text-slate-600 dark:text-steel-400">
+                    {selectedFrameworkMeta.fullName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedFramework('all')}
+                className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-white/50 dark:hover:bg-steel-800/50 rounded-lg transition-colors"
               >
-                {selectedFrameworkMeta.icon}
-              </div>
-              <div>
-                <p className="font-medium text-slate-900 dark:text-steel-100">
-                  Showing {selectedFrameworkMeta.name} controls only
-                </p>
-                <p className="text-sm text-slate-600 dark:text-steel-400">
-                  {controls.length} controls mapped to {selectedFrameworkMeta.fullName}
-                </p>
-              </div>
+                Clear filter
+              </button>
             </div>
-            <button
-              onClick={() => setSelectedFramework('all')}
-              className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-white/50 dark:hover:bg-steel-800/50 rounded-lg transition-colors"
-            >
-              Clear filter
-            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex gap-2 p-1 bg-white/50 dark:bg-steel-800/50 rounded-lg w-fit">
+              <button
+                onClick={() => setViewMode('controls')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  viewMode === 'controls'
+                    ? 'bg-white dark:bg-steel-700 text-slate-900 dark:text-steel-100 shadow-sm'
+                    : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Shield className="w-4 h-4" />
+                  Controls View
+                </span>
+              </button>
+              <button
+                onClick={() => setViewMode('requirements')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  viewMode === 'requirements'
+                    ? 'bg-white dark:bg-steel-700 text-slate-900 dark:text-steel-100 shadow-sm'
+                    : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-4 h-4" />
+                  Requirements View
+                </span>
+              </button>
+            </div>
+
+            {viewMode === 'controls' && (
+              <p className="text-xs text-slate-500 dark:text-steel-500 mt-2">
+                {controls.length} controls mapped to this framework
+              </p>
+            )}
           </div>
         )}
 
@@ -1142,30 +1188,47 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           </div>
         )}
 
+        {/* Framework Requirements View */}
+        {selectedFramework !== 'all' && viewMode === 'requirements' && (
+          <FrameworkRequirementsView
+            frameworkId={selectedFramework}
+            controls={allControls}
+            getControlAnswer={getControlAnswer}
+            onControlClick={(controlId) => {
+              const control = allControls.find(c => c.id === controlId);
+              if (control) {
+                handleOpenRemediation(controlId, control.title);
+              }
+            }}
+          />
+        )}
+
         {/* Controls List */}
-        <div className="space-y-3">
-          {controls.length === 0 ? (
-            <Card className="p-16 text-center">
-              <div className="w-12 h-12 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Search className="w-6 h-6 text-slate-400 dark:text-steel-500" />
-              </div>
-              <p className="text-slate-500 dark:text-steel-400">
-                {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
-              </p>
-            </Card>
-          ) : (
-            controls.map((control, i) => (
-              <motion.div
-                key={control.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.02 }}
-              >
-                <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
-              </motion.div>
-            ))
-          )}
-        </div>
+        {(selectedFramework === 'all' || viewMode === 'controls') && (
+          <div className="space-y-3">
+            {controls.length === 0 ? (
+              <Card className="p-16 text-center">
+                <div className="w-12 h-12 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-6 h-6 text-slate-400 dark:text-steel-500" />
+                </div>
+                <p className="text-slate-500 dark:text-steel-400">
+                  {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
+                </p>
+              </Card>
+            ) : (
+              controls.map((control, i) => (
+                <motion.div
+                  key={control.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                >
+                  <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Remediation Engine Modal */}
