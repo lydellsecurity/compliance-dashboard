@@ -439,8 +439,31 @@ class OrganizationService {
         throw new Error(error?.message || 'Failed to create invitation');
       }
 
-      // TODO: Send email via Netlify function
-      // await fetch('/.netlify/functions/send-invite', { ... })
+      // Send email via Netlify function
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const response = await fetch('/.netlify/functions/send-invite', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              organizationId: orgId,
+              email: data.email,
+              role: data.role,
+            }),
+          });
+
+          if (!response.ok) {
+            console.warn('Email send failed, but invite was created:', await response.text());
+          }
+        }
+      } catch (emailError) {
+        // Log but don't fail the invite if email fails
+        console.warn('Failed to send invite email:', emailError);
+      }
 
       return { success: true, inviteId: invite.id };
     } catch (error) {
