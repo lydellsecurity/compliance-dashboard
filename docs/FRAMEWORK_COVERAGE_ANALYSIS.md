@@ -180,8 +180,8 @@ Art.5(1)(c-f), Art.12, Art.13, Art.17, Art.24, Art.25, Art.28, Art.29, Art.30, A
 
 - [x] Add ~40-50 new controls for missing framework requirements (COMPLETED: Added 51 controls)
 - [x] Migrate ISO 27001 to 2022 format (COMPLETED: 57 mappings updated)
-- [ ] Update ~30 existing controls with corrected framework mappings (Future optimization)
-- [ ] Remove ~50 inappropriate cross-mappings (Future optimization - requires domain review)
+- [x] Update existing controls with corrected framework mappings (COMPLETED: Rebuilt all mappings)
+- [x] Remove inappropriate cross-mappings (COMPLETED: Domain-based relevance applied)
 - [ ] Create automated coverage validation tool
 - [ ] Document framework mapping methodology
 
@@ -202,6 +202,26 @@ Art.5(1)(c-f), Art.12, Art.13, Art.17, Art.24, Art.25, Art.28, Art.29, Art.30, A
 - Migrated 57 control mappings from ISO 27001:2013 to 2022 format
 - Old A.12.x (Operations) → A.8.x (Technological)
 - Old A.13.x (Communications) → A.8.x (Technological)
+
+### Framework Mapping Rebuild
+Rebuilt all framework mappings based on domain relevance:
+
+| Framework | Controls | Notes |
+|-----------|----------|-------|
+| SOC 2 | 281 | Broad coverage (Trust Services Criteria) |
+| ISO 27001 | 268 | Information security management |
+| NIST CSF | 266 | Cybersecurity framework |
+| PCI DSS | 224 | Payment card data focus |
+| HIPAA | 213 | Healthcare/PHI focus |
+| GDPR | 169 | EU data privacy focus |
+
+**Mapping Methodology:**
+- Controls mapped based on domain relevance to each framework
+- Framework-specific controls only mapped to their relevant frameworks
+- Physical security not mapped to GDPR (not directly applicable)
+- HR security not mapped to PCI DSS/GDPR (limited relevance)
+- Business continuity not mapped to PCI DSS/GDPR (not primary focus)
+- Change management not mapped to HIPAA/GDPR (not explicitly required)
 
 ### Current Control Count: 287 controls (236 original + 51 new)
 
