@@ -9,17 +9,35 @@ interface ThemeToggleProps {
 }
 
 const THEME_KEY = 'compliance-dashboard-theme';
+const LEGACY_DARK_MODE_KEY = 'attestai-dark-mode';
+
+/**
+ * Get initial theme from localStorage, checking both new and legacy keys
+ * for backward compatibility with useCompliance hook
+ */
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'dark';
+
+  // Check new theme key first
+  const stored = localStorage.getItem(THEME_KEY) as Theme | null;
+  if (stored) return stored;
+
+  // Check legacy dark mode key from useCompliance for backward compatibility
+  const legacyDarkMode = localStorage.getItem(LEGACY_DARK_MODE_KEY);
+  if (legacyDarkMode !== null) {
+    try {
+      return JSON.parse(legacyDarkMode) ? 'dark' : 'light';
+    } catch {
+      // Fallback if parse fails
+    }
+  }
+
+  // Default to dark mode for consistency with the dashboard
+  return 'dark';
+}
 
 export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check localStorage first
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-      if (stored) return stored;
-    }
-    // Default to light mode for premium corporate GRC look
-    return 'light';
-  });
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -32,7 +50,9 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
       root.classList.remove('dark');
     }
 
+    // Save to both keys for synchronization with useCompliance hook
     localStorage.setItem(THEME_KEY, theme);
+    localStorage.setItem(LEGACY_DARK_MODE_KEY, JSON.stringify(theme === 'dark'));
   }, [theme]);
 
   const toggleTheme = () => {
@@ -110,14 +130,7 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
 
 // Theme context for use throughout the app
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-      if (stored) return stored;
-    }
-    // Default to light mode for premium corporate GRC look
-    return 'light';
-  });
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     const handleStorageChange = () => {

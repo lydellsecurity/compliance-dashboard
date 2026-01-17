@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -7,20 +7,24 @@
     <title>Compliance Engine - Live Regulatory Update System</title>
     <meta name="description" content="AI-powered compliance management with automated regulatory scanning and drift detection" />
     <script>
-      // Prevent FOUC by setting theme before render - Light mode is primary
+      // Prevent FOUC by setting theme before render - Dark mode is primary
       (function() {
-        const stored = localStorage.getItem('compliance-dashboard-theme');
-        if (stored === 'dark') {
-          document.documentElement.classList.remove('light');
-          document.documentElement.classList.add('dark');
-        } else if (stored === 'light') {
+        var theme = localStorage.getItem('compliance-dashboard-theme');
+        // Check legacy key if new key not found (for backward compatibility)
+        if (!theme) {
+          var legacyDarkMode = localStorage.getItem('attestai-dark-mode');
+          if (legacyDarkMode !== null) {
+            try {
+              theme = JSON.parse(legacyDarkMode) ? 'dark' : 'light';
+            } catch(e) {}
+          }
+        }
+        // Apply theme (default to dark if nothing stored)
+        if (theme === 'light') {
           document.documentElement.classList.remove('dark');
           document.documentElement.classList.add('light');
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.remove('light');
-          document.documentElement.classList.add('dark');
         }
-        // Default is light (set in HTML class), no action needed
+        // Default is dark (set in HTML class), no action needed for dark
       })();
     </script>
   </head>
