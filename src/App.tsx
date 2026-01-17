@@ -39,6 +39,7 @@ import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
 import { useAuth } from './hooks/useAuth';
+import { CommandPalette, useCommandPalette } from './components/ui';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'trust-center' | 'certificate' | 'verify' | 'company' | 'admin' | 'settings';
 
@@ -1625,6 +1626,20 @@ const AppContent: React.FC = () => {
   const [showAlertConfiguration, setShowAlertConfiguration] = useState(false);
   const [showCloudVerification, setShowCloudVerification] = useState(false);
 
+  // Command palette for quick navigation
+  const { isOpen: commandPaletteOpen, setIsOpen: setCommandPaletteOpen, commands } = useCommandPalette({
+    onNavigate: (tab) => setActiveTab(tab as TabId),
+    onToggleTheme: () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      document.documentElement.classList.toggle('dark', !isDark);
+      localStorage.setItem('compliance_dark_mode', (!isDark).toString());
+    },
+    onSignOut: () => {
+      // Will be handled by auth context
+      window.location.href = '/';
+    },
+  });
+
   // Get alert counts from monitoring service
   const [alertCounts, setAlertCounts] = useState(0);
 
@@ -1668,6 +1683,14 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen transition-colors duration-200">
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        commands={commands}
+        placeholder="Search commands... (navigation, actions, settings)"
+      />
+
       {/* Command Center Sidebar */}
       <CommandSidebar
         activeTab={activeTab}

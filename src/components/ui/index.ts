@@ -27,3 +27,7 @@ export {
   FormSkeleton,
   ProfileSkeleton,
 } from './Skeleton';
+
+// Command palette
+export { CommandPalette, useCommandPalette } from './CommandPalette';
+export type { CommandItem, CommandCategory } from './CommandPalette';
