@@ -420,9 +420,9 @@ class AuditLogService {
     }
 
     try {
+      // Note: id is omitted to let database generate UUID
       const { error } = await supabase.from('audit_log').insert(
         logsToFlush.map((log) => ({
-          id: log.id,
           timestamp: log.timestamp,
           action: log.action,
           category: log.category,
