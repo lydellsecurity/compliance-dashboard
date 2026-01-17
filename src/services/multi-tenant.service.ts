@@ -356,7 +356,7 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Get tenant by ID
+   * Get tenant by ID (uses organizations table)
    */
   async getTenant(tenantId: string): Promise<Tenant | null> {
     // Check cache first
@@ -368,7 +368,7 @@ class MultiTenantService {
 
     try {
       const { data, error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('*')
         .eq('id', tenantId)
         .single();
@@ -384,14 +384,14 @@ class MultiTenantService {
   }
 
   /**
-   * Get tenant by slug
+   * Get tenant by slug (uses organizations table)
    */
   async getTenantBySlug(slug: string): Promise<Tenant | null> {
     if (!supabase) return null;
 
     try {
       const { data, error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('*')
         .eq('slug', slug)
         .single();
@@ -405,14 +405,14 @@ class MultiTenantService {
   }
 
   /**
-   * Get tenant by custom domain
+   * Get tenant by custom domain (uses organizations table)
    */
   async getTenantByDomain(domain: string): Promise<Tenant | null> {
     if (!supabase) return null;
 
     try {
       const { data, error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('*')
         .eq('custom_domain', domain)
         .single();
@@ -426,7 +426,7 @@ class MultiTenantService {
   }
 
   /**
-   * Create a new tenant
+   * Create a new tenant (uses organizations table)
    */
   async createTenant(
     name: string,
@@ -442,7 +442,7 @@ class MultiTenantService {
       const planConfig = PLAN_CONFIGS[plan];
 
       const { data, error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .insert({
           name,
           slug,
@@ -479,8 +479,8 @@ class MultiTenantService {
       if (error) throw error;
 
       // Add creator as owner
-      await supabase.from('tenant_members').insert({
-        tenant_id: data.id,
+      await supabase.from('organization_members').insert({
+        organization_id: data.id,
         user_id: creatorUserId,
         role: 'owner',
         is_default: true,
@@ -497,7 +497,7 @@ class MultiTenantService {
   }
 
   /**
-   * Update tenant settings
+   * Update tenant settings (uses organizations table)
    */
   async updateTenantSettings(
     tenantId: string,
@@ -507,13 +507,13 @@ class MultiTenantService {
 
     try {
       const { data: current } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('settings')
         .eq('id', tenantId)
         .single();
 
       const { error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .update({
           settings: { ...(current?.settings || DEFAULT_TENANT_SETTINGS), ...settings },
           updated_at: new Date().toISOString(),
@@ -530,7 +530,7 @@ class MultiTenantService {
   }
 
   /**
-   * Update tenant branding
+   * Update tenant branding (uses organizations table)
    */
   async updateTenantBranding(
     tenantId: string,
@@ -540,13 +540,13 @@ class MultiTenantService {
 
     try {
       const { data: current } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('branding')
         .eq('id', tenantId)
         .single();
 
       const { error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .update({
           branding: { ...(current?.branding || DEFAULT_BRANDING), ...branding },
           updated_at: new Date().toISOString(),
@@ -567,7 +567,7 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Upgrade/downgrade tenant plan
+   * Upgrade/downgrade tenant plan (uses organizations table)
    */
   async changePlan(tenantId: string, newPlan: TenantPlan): Promise<boolean> {
     if (!supabase) return false;
@@ -576,7 +576,7 @@ class MultiTenantService {
       const planConfig = PLAN_CONFIGS[newPlan];
 
       const { error } = await supabase
-        .from('tenants')
+        .from('organizations')
         .update({
           plan: newPlan,
           limits: planConfig.limits,
@@ -588,7 +588,7 @@ class MultiTenantService {
 
       if (!error) {
         this.tenantCache.delete(tenantId);
-        await this.logAuditEvent(tenantId, 'plan_changed', 'tenant', tenantId, { newPlan });
+        await this.logAuditEvent(tenantId, 'plan_changed', 'organization', tenantId, { newPlan });
       }
       return !error;
     } catch {
@@ -655,14 +655,14 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Get all members of a tenant
+   * Get all members of a tenant (uses organization_members table)
    */
   async getTenantMembers(tenantId: string): Promise<TenantMember[]> {
     if (!supabase) return [];
 
     try {
       const { data, error } = await supabase
-        .from('tenant_members')
+        .from('organization_members')
         .select(`
           id,
           user_id,
@@ -677,7 +677,7 @@ class MultiTenantService {
             avatar_url
           )
         `)
-        .eq('tenant_id', tenantId);
+        .eq('organization_id', tenantId);
 
       if (error || !data) return [];
 
@@ -705,7 +705,7 @@ class MultiTenantService {
   }
 
   /**
-   * Add member to tenant
+   * Add member to tenant (uses organization_members table)
    */
   async addMember(
     tenantId: string,
@@ -722,8 +722,8 @@ class MultiTenantService {
     }
 
     try {
-      const { error } = await supabase.from('tenant_members').insert({
-        tenant_id: tenantId,
+      const { error } = await supabase.from('organization_members').insert({
+        organization_id: tenantId,
         user_id: userId,
         role,
         department,
@@ -741,14 +741,14 @@ class MultiTenantService {
   }
 
   /**
-   * Remove member from tenant
+   * Remove member from tenant (uses organization_members table)
    */
   async removeMember(tenantId: string, memberId: string): Promise<boolean> {
     if (!supabase) return false;
 
     try {
       const { data: member } = await supabase
-        .from('tenant_members')
+        .from('organization_members')
         .select('user_id, role')
         .eq('id', memberId)
         .single();
@@ -758,10 +758,10 @@ class MultiTenantService {
       }
 
       const { error } = await supabase
-        .from('tenant_members')
+        .from('organization_members')
         .delete()
         .eq('id', memberId)
-        .eq('tenant_id', tenantId);
+        .eq('organization_id', tenantId);
 
       if (!error) {
         await this.incrementUsage(tenantId, 'usersCount', -1);
@@ -774,14 +774,14 @@ class MultiTenantService {
   }
 
   /**
-   * Update member role
+   * Update member role (uses organization_members table)
    */
   async updateMemberRole(memberId: string, newRole: UserRole): Promise<boolean> {
     if (!supabase) return false;
 
     try {
       const { error } = await supabase
-        .from('tenant_members')
+        .from('organization_members')
         .update({ role: newRole })
         .eq('id', memberId);
 
@@ -796,7 +796,7 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Increment usage counter
+   * Increment usage counter (uses organizations table)
    */
   async incrementUsage(
     tenantId: string,
@@ -807,7 +807,7 @@ class MultiTenantService {
 
     try {
       const { data: tenant } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('usage')
         .eq('id', tenantId)
         .single();
@@ -818,7 +818,7 @@ class MultiTenantService {
       const currentValue = (usage[field] as number) || 0;
 
       await supabase
-        .from('tenants')
+        .from('organizations')
         .update({
           usage: {
             ...usage,
@@ -842,14 +842,14 @@ class MultiTenantService {
   }
 
   /**
-   * Reset monthly API calls (for billing cycle)
+   * Reset monthly API calls (for billing cycle) - uses organizations table
    */
   async resetMonthlyApiCalls(tenantId: string): Promise<void> {
     if (!supabase) return;
 
     try {
       const { data: tenant } = await supabase
-        .from('tenants')
+        .from('organizations')
         .select('usage')
         .eq('id', tenantId)
         .single();
@@ -857,7 +857,7 @@ class MultiTenantService {
       if (!tenant) return;
 
       await supabase
-        .from('tenants')
+        .from('organizations')
         .update({
           usage: {
             ...(tenant.usage as TenantUsage),
@@ -1055,16 +1055,16 @@ class MultiTenantService {
   }
 
   /**
-   * Validate tenant access
+   * Validate tenant access (uses organization_members table)
    */
   async validateAccess(tenantId: string, userId: string): Promise<boolean> {
     if (!supabase) return false;
 
     try {
       const { data } = await supabase
-        .from('tenant_members')
+        .from('organization_members')
         .select('id')
-        .eq('tenant_id', tenantId)
+        .eq('organization_id', tenantId)
         .eq('user_id', userId)
         .single();
 
