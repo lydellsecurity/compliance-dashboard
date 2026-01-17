@@ -35,6 +35,7 @@ import RemediationChat from './components/RemediationChat';
 import IntegrationHub from './components/IntegrationHub';
 import TenantAdmin from './components/TenantAdmin';
 import VendorRiskManagement from './components/VendorRiskManagement';
+import QuestionnaireAutomation from './components/QuestionnaireAutomation';
 import OrganizationSetup from './components/OrganizationSetup';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
@@ -42,7 +43,7 @@ import { useOrganization } from './contexts/OrganizationContext';
 import { useAuth } from './hooks/useAuth';
 import { CommandPalette, useCommandPalette } from './components/ui';
 
-type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'trust-center' | 'certificate' | 'verify' | 'company' | 'admin' | 'settings';
+type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'questionnaires' | 'trust-center' | 'certificate' | 'verify' | 'company' | 'admin' | 'settings';
 
 // ============================================================================
 // CONTEXT
@@ -1485,6 +1486,7 @@ const CommandSidebar: React.FC<{
     { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-5 h-5" /> },
     { id: 'integrations', label: 'Integrations', icon: <Plug className="w-5 h-5" /> },
     { id: 'vendors', label: 'Vendors', icon: <ShoppingBag className="w-5 h-5" /> },
+    { id: 'questionnaires', label: 'Questionnaires', icon: <ClipboardCheck className="w-5 h-5" /> },
     { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-5 h-5" /> },
     { id: 'certificate', label: 'Certificate', icon: <Award className="w-5 h-5" /> },
     { id: 'verify', label: 'Verify', icon: <ShieldCheck className="w-5 h-5" /> },
@@ -1770,6 +1772,29 @@ const AppContent: React.FC = () => {
                     <div className="text-6xl mb-4">🏢</div>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Organization Required</h2>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">Please set up your organization to access vendor management.</p>
+                    <button
+                      onClick={() => setActiveTab('admin')}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      Set Up Organization
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+            {activeTab === 'questionnaires' && (
+              <motion.div key="questionnaires" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                {currentOrg?.id ? (
+                  <QuestionnaireAutomation
+                    organizationId={currentOrg.id}
+                    userId={currentUserId}
+                    userEmail={user?.email || ''}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="text-6xl mb-4">🏢</div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Organization Required</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">Please set up your organization to access security questionnaires.</p>
                     <button
                       onClick={() => setActiveTab('admin')}
                       className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
