@@ -155,7 +155,7 @@ class AnalyticsService {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
       const { count: activityCount } = await supabase
-        .from('audit_logs')
+        .from('audit_log')
         .select('*', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
         .gte('created_at', sevenDaysAgo.toISOString());
@@ -556,7 +556,7 @@ class AnalyticsService {
 
     try {
       const { data: logs } = await supabase
-        .from('audit_logs')
+        .from('audit_log')
         .select(`
           id,
           created_at,

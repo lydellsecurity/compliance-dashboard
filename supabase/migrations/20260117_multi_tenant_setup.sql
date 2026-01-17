@@ -13,11 +13,21 @@
 -- PART 1: ORGANIZATION BRANDING COLUMNS
 -- ============================================================================
 
--- Add branding columns to organizations table
+-- Add branding and slug columns to organizations table
 ALTER TABLE organizations
+  ADD COLUMN IF NOT EXISTS slug TEXT,
+  ADD COLUMN IF NOT EXISTS logo_url TEXT,
   ADD COLUMN IF NOT EXISTS primary_color VARCHAR(7) DEFAULT '#6366f1',
   ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255),
   ADD COLUMN IF NOT EXISTS description TEXT;
+
+-- Generate slugs for existing organizations that don't have one
+UPDATE organizations
+SET slug = LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g')) || '-' || SUBSTRING(id::text, 1, 8)
+WHERE slug IS NULL;
+
+-- Make slug NOT NULL after populating
+ALTER TABLE organizations ALTER COLUMN slug SET NOT NULL;
 
 -- Unique slug constraint (may already exist, so use DO block)
 DO $$
@@ -116,20 +126,61 @@ CREATE TRIGGER trigger_single_default_org
   EXECUTE FUNCTION ensure_single_default_org();
 
 -- ============================================================================
+-- PART 4.5: CREATE PROFILES TABLE IF NOT EXISTS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
+    email TEXT,
+    full_name TEXT,
+    avatar_url TEXT,
+    role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Create control_responses table if not exists
+CREATE TABLE IF NOT EXISTS public.control_responses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    control_id TEXT NOT NULL,
+    response TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    created_by UUID,
+    UNIQUE(organization_id, control_id)
+);
+
+-- ============================================================================
 -- PART 5: ENABLE ROW LEVEL SECURITY
 -- ============================================================================
 
--- Enable RLS on all tenant-scoped tables
+-- Enable RLS on all tenant-scoped tables (use DO block to handle if table doesn't exist)
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE control_responses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE evidence_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE custom_controls ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_responses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trust_center_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organization_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+
+-- Enable RLS on tables that may or may not exist
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'evidence_records' AND table_schema = 'public') THEN
+        ALTER TABLE evidence_records ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'custom_controls' AND table_schema = 'public') THEN
+        ALTER TABLE custom_controls ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_responses' AND table_schema = 'public') THEN
+        ALTER TABLE user_responses ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_log' AND table_schema = 'public') THEN
+        ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+    END IF;
+END $$;
 
 -- ============================================================================
 -- PART 6: RLS POLICIES - ORGANIZATIONS
@@ -231,111 +282,130 @@ CREATE POLICY "Users can update control responses"
   );
 
 -- ============================================================================
--- PART 9: RLS POLICIES - EVIDENCE RECORDS
+-- PART 9: RLS POLICIES - EVIDENCE RECORDS (conditional)
 -- ============================================================================
 
--- Users can manage evidence in their organizations
-DROP POLICY IF EXISTS "Users can view evidence" ON evidence_records;
-CREATE POLICY "Users can view evidence"
-  ON evidence_records FOR SELECT
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'evidence_records' AND table_schema = 'public') THEN
+    DROP POLICY IF EXISTS "Users can view evidence" ON evidence_records;
+    CREATE POLICY "Users can view evidence"
+      ON evidence_records FOR SELECT
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
 
-DROP POLICY IF EXISTS "Users can insert evidence" ON evidence_records;
-CREATE POLICY "Users can insert evidence"
-  ON evidence_records FOR INSERT
-  WITH CHECK (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+    DROP POLICY IF EXISTS "Users can insert evidence" ON evidence_records;
+    CREATE POLICY "Users can insert evidence"
+      ON evidence_records FOR INSERT
+      WITH CHECK (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
 
-DROP POLICY IF EXISTS "Users can update evidence" ON evidence_records;
-CREATE POLICY "Users can update evidence"
-  ON evidence_records FOR UPDATE
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+    DROP POLICY IF EXISTS "Users can update evidence" ON evidence_records;
+    CREATE POLICY "Users can update evidence"
+      ON evidence_records FOR UPDATE
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
 
-DROP POLICY IF EXISTS "Users can delete evidence" ON evidence_records;
-CREATE POLICY "Users can delete evidence"
-  ON evidence_records FOR DELETE
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
-
--- ============================================================================
--- PART 10: RLS POLICIES - CUSTOM CONTROLS
--- ============================================================================
-
-DROP POLICY IF EXISTS "Users can view custom controls" ON custom_controls;
-CREATE POLICY "Users can view custom controls"
-  ON custom_controls FOR SELECT
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
-
-DROP POLICY IF EXISTS "Users can manage custom controls" ON custom_controls;
-CREATE POLICY "Users can manage custom controls"
-  ON custom_controls FOR ALL
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+    DROP POLICY IF EXISTS "Users can delete evidence" ON evidence_records;
+    CREATE POLICY "Users can delete evidence"
+      ON evidence_records FOR DELETE
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================================
--- PART 11: RLS POLICIES - USER RESPONSES
+-- PART 10: RLS POLICIES - CUSTOM CONTROLS (conditional)
 -- ============================================================================
 
-DROP POLICY IF EXISTS "Users can view user responses" ON user_responses;
-CREATE POLICY "Users can view user responses"
-  ON user_responses FOR SELECT
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'custom_controls' AND table_schema = 'public') THEN
+    DROP POLICY IF EXISTS "Users can view custom controls" ON custom_controls;
+    CREATE POLICY "Users can view custom controls"
+      ON custom_controls FOR SELECT
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
 
-DROP POLICY IF EXISTS "Users can manage user responses" ON user_responses;
-CREATE POLICY "Users can manage user responses"
-  ON user_responses FOR ALL
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+    DROP POLICY IF EXISTS "Users can manage custom controls" ON custom_controls;
+    CREATE POLICY "Users can manage custom controls"
+      ON custom_controls FOR ALL
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================================
--- PART 12: RLS POLICIES - AUDIT LOG
+-- PART 11: RLS POLICIES - USER RESPONSES (conditional)
 -- ============================================================================
 
-DROP POLICY IF EXISTS "Users can view audit logs" ON audit_log;
-CREATE POLICY "Users can view audit logs"
-  ON audit_log FOR SELECT
-  USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_responses' AND table_schema = 'public') THEN
+    DROP POLICY IF EXISTS "Users can view user responses" ON user_responses;
+    CREATE POLICY "Users can view user responses"
+      ON user_responses FOR SELECT
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
 
-DROP POLICY IF EXISTS "System can insert audit logs" ON audit_log;
-CREATE POLICY "System can insert audit logs"
-  ON audit_log FOR INSERT
-  WITH CHECK (
-    organization_id IN (
-      SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
-    )
-  );
+    DROP POLICY IF EXISTS "Users can manage user responses" ON user_responses;
+    CREATE POLICY "Users can manage user responses"
+      ON user_responses FOR ALL
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
+
+-- ============================================================================
+-- PART 12: RLS POLICIES - AUDIT LOG (conditional)
+-- ============================================================================
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_log' AND table_schema = 'public') THEN
+    DROP POLICY IF EXISTS "Users can view audit logs" ON audit_log;
+    CREATE POLICY "Users can view audit logs"
+      ON audit_log FOR SELECT
+      USING (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
+
+    DROP POLICY IF EXISTS "System can insert audit logs" ON audit_log;
+    CREATE POLICY "System can insert audit logs"
+      ON audit_log FOR INSERT
+      WITH CHECK (
+        organization_id IN (
+          SELECT organization_id FROM organization_members WHERE user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================================
 -- PART 13: RLS POLICIES - TRUST CENTER TOKENS

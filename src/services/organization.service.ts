@@ -874,7 +874,7 @@ class OrganizationService {
 
       // Record initialization in audit log (ignore errors)
       try {
-        await supabase.from('audit_logs').insert({
+        await supabase.from('audit_log').insert({
           organization_id: orgId,
           user_id: userId,
           action: 'baseline_initialized',

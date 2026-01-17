@@ -420,7 +420,7 @@ class AuditLogService {
     }
 
     try {
-      const { error } = await supabase.from('audit_logs').insert(
+      const { error } = await supabase.from('audit_log').insert(
         logsToFlush.map((log) => ({
           id: log.id,
           timestamp: log.timestamp,
@@ -474,7 +474,7 @@ class AuditLogService {
     }
 
     let query = supabase
-      .from('audit_logs')
+      .from('audit_log')
       .select('*')
       .order('timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
