@@ -35,6 +35,7 @@ import RemediationChat from './components/RemediationChat';
 import IntegrationHub from './components/IntegrationHub';
 import TenantAdmin from './components/TenantAdmin';
 import VendorRiskManagement from './components/VendorRiskManagement';
+import OrganizationSetup from './components/OrganizationSetup';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
@@ -1609,7 +1610,7 @@ const CommandSidebar: React.FC<{
 const AppContent: React.FC = () => {
   const compliance = useComplianceContext();
   const ir = useIncidentResponse();
-  const { currentOrg } = useOrganization();
+  const { currentOrg, needsOnboarding, loading: orgLoading } = useOrganization();
   const { user } = useAuth();
   const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress } = compliance;
 
@@ -1737,27 +1738,59 @@ const AppContent: React.FC = () => {
             )}
             {activeTab === 'integrations' && (
               <motion.div key="integrations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <IntegrationHub
-                  organizationId={currentOrg?.id || 'default-org'}
-                  userId={currentUserId}
-                />
+                {currentOrg?.id ? (
+                  <IntegrationHub
+                    organizationId={currentOrg.id}
+                    userId={currentUserId}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="text-6xl mb-4">🏢</div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Organization Required</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">Please set up your organization to access integrations.</p>
+                    <button
+                      onClick={() => setActiveTab('admin')}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      Set Up Organization
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
             {activeTab === 'vendors' && (
               <motion.div key="vendors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <VendorRiskManagement
-                  organizationId={currentOrg?.id || 'default-org'}
-                  userId={currentUserId}
-                />
+                {currentOrg?.id ? (
+                  <VendorRiskManagement
+                    organizationId={currentOrg.id}
+                    userId={currentUserId}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="text-6xl mb-4">🏢</div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Organization Required</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">Please set up your organization to access vendor management.</p>
+                    <button
+                      onClick={() => setActiveTab('admin')}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      Set Up Organization
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
             {activeTab === 'admin' && (
               <motion.div key="admin" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <TenantAdmin
-                  tenantId={currentOrg?.id || 'default-org'}
-                  userId={currentUserId}
-                  userRole={currentOrg?.role || 'member'}
-                />
+                {currentOrg?.id ? (
+                  <TenantAdmin
+                    tenantId={currentOrg.id}
+                    userId={currentUserId}
+                    userRole={currentOrg.role || 'member'}
+                  />
+                ) : (
+                  <OrganizationSetup isOpen={true} onComplete={() => window.location.reload()} />
+                )}
               </motion.div>
             )}
             {activeTab === 'company' && (
