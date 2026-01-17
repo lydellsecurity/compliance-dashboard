@@ -7,6 +7,7 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { generateSlug, ensureUniqueSlug } from '../utils/slug';
+import { MASTER_CONTROLS } from '../constants/controls';
 import type { Database } from '../lib/database.types';
 import type {
   OrganizationBranding,
@@ -821,17 +822,199 @@ class OrganizationService {
 
   /**
    * Initialize baseline controls for a new organization
+   * Creates control_responses entries for all master controls
    */
   async initializeOrgBaseline(orgId: string, userId: string): Promise<void> {
-    // This would copy the 236 controls to the organization's control_responses
-    // For now, this is a placeholder - the actual implementation would
-    // copy default control responses and settings
-    console.log(`Initializing baseline for org ${orgId} by user ${userId}`);
+    if (!isSupabaseConfigured() || !supabase) {
+      console.warn('Supabase not configured, skipping baseline initialization');
+      return;
+    }
 
-    // In a full implementation, this would:
-    // 1. Create default control_responses entries for all 236 controls
-    // 2. Set initial compliance status
-    // 3. Create any default evidence_records
+    try {
+      // Check if this org already has control responses (prevent duplicates)
+      const { count } = await supabase
+        .from('control_responses')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', orgId);
+
+      if (count && count > 0) {
+        console.log(`Org ${orgId} already has ${count} control responses, skipping initialization`);
+        return;
+      }
+
+      // Create control_responses for all master controls in batches
+      const batchSize = 50;
+      const now = new Date().toISOString();
+
+      for (let i = 0; i < MASTER_CONTROLS.length; i += batchSize) {
+        const batch = MASTER_CONTROLS.slice(i, i + batchSize);
+
+        const controlResponses = batch.map(control => ({
+          organization_id: orgId,
+          control_id: control.id,
+          answer: null, // Not yet answered
+          evidence_id: null,
+          remediation_plan: '',
+          answered_at: null,
+          answered_by: null,
+          updated_at: now,
+        }));
+
+        const { error } = await supabase
+          .from('control_responses')
+          .insert(controlResponses);
+
+        if (error) {
+          console.error(`Failed to insert control responses batch ${i}:`, error);
+          // Continue with other batches even if one fails
+        }
+      }
+
+      console.log(`Initialized ${MASTER_CONTROLS.length} baseline controls for org ${orgId}`);
+
+      // Record initialization in audit log (ignore errors)
+      try {
+        await supabase.from('audit_logs').insert({
+          organization_id: orgId,
+          user_id: userId,
+          action: 'baseline_initialized',
+          resource_type: 'controls',
+          resource_id: orgId,
+          details: { controlCount: MASTER_CONTROLS.length },
+          created_at: now,
+        });
+      } catch {
+        // Ignore audit log errors
+      }
+
+    } catch (error) {
+      console.error('Failed to initialize baseline controls:', error);
+      // Don't throw - organization creation should succeed even if baseline fails
+    }
+  }
+
+  /**
+   * Get baseline initialization status for an organization
+   */
+  async getBaselineStatus(orgId: string): Promise<{
+    initialized: boolean;
+    totalControls: number;
+    answeredControls: number;
+    lastUpdated: string | null;
+  }> {
+    if (!isSupabaseConfigured() || !supabase) {
+      return {
+        initialized: false,
+        totalControls: 0,
+        answeredControls: 0,
+        lastUpdated: null,
+      };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('control_responses')
+        .select('answer, updated_at')
+        .eq('organization_id', orgId);
+
+      if (error) {
+        console.error('Failed to get baseline status:', error);
+        return {
+          initialized: false,
+          totalControls: 0,
+          answeredControls: 0,
+          lastUpdated: null,
+        };
+      }
+
+      const responses = data || [];
+      const answered = responses.filter(r => r.answer !== null).length;
+      const lastUpdated = responses.length > 0
+        ? responses.reduce((latest, r) =>
+            r.updated_at > latest ? r.updated_at : latest,
+            responses[0].updated_at
+          )
+        : null;
+
+      return {
+        initialized: responses.length > 0,
+        totalControls: responses.length,
+        answeredControls: answered,
+        lastUpdated,
+      };
+    } catch (error) {
+      console.error('Failed to get baseline status:', error);
+      return {
+        initialized: false,
+        totalControls: 0,
+        answeredControls: 0,
+        lastUpdated: null,
+      };
+    }
+  }
+
+  /**
+   * Re-initialize baseline controls (add missing controls only)
+   * Useful when new controls are added to the master list
+   */
+  async syncBaselineControls(orgId: string): Promise<{
+    added: number;
+    existing: number;
+  }> {
+    if (!isSupabaseConfigured() || !supabase) {
+      return { added: 0, existing: 0 };
+    }
+
+    try {
+      // Get existing control IDs for this org
+      const { data: existingResponses } = await supabase
+        .from('control_responses')
+        .select('control_id')
+        .eq('organization_id', orgId);
+
+      const existingIds = new Set((existingResponses || []).map(r => r.control_id));
+
+      // Find controls that don't exist yet
+      const missingControls = MASTER_CONTROLS.filter(c => !existingIds.has(c.id));
+
+      if (missingControls.length === 0) {
+        return { added: 0, existing: existingIds.size };
+      }
+
+      // Add missing controls in batches
+      const batchSize = 50;
+      const now = new Date().toISOString();
+      let added = 0;
+
+      for (let i = 0; i < missingControls.length; i += batchSize) {
+        const batch = missingControls.slice(i, i + batchSize);
+
+        const controlResponses = batch.map(control => ({
+          organization_id: orgId,
+          control_id: control.id,
+          answer: null,
+          evidence_id: null,
+          remediation_plan: '',
+          answered_at: null,
+          answered_by: null,
+          updated_at: now,
+        }));
+
+        const { error } = await supabase
+          .from('control_responses')
+          .insert(controlResponses);
+
+        if (!error) {
+          added += batch.length;
+        }
+      }
+
+      console.log(`Synced baseline: added ${added} new controls for org ${orgId}`);
+      return { added, existing: existingIds.size };
+    } catch (error) {
+      console.error('Failed to sync baseline controls:', error);
+      return { added: 0, existing: 0 };
+    }
   }
 
   // ============================================================================
