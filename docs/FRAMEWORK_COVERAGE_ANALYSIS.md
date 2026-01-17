@@ -203,7 +203,7 @@ Art.5(1)(c-f), Art.12, Art.13, Art.17, Art.24, Art.25, Art.28, Art.29, Art.30, A
 - Old A.12.x (Operations) → A.8.x (Technological)
 - Old A.13.x (Communications) → A.8.x (Technological)
 
-### Current Control Count: 305 controls
+### Current Control Count: 287 controls (236 original + 51 new)
 
 ---
 

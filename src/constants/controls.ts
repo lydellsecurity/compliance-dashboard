@@ -3,7 +3,7 @@
  * COMPLIANCE ENGINE - CONSTANTS & DATA
  * ============================================================================
  * 
- * Master control library with 305 controls mapped to 6 compliance frameworks
+ * Master control library with 287 controls mapped to 6 compliance frameworks
  * Frameworks: SOC 2, ISO 27001:2022, HIPAA, NIST CSF 2.0, PCI DSS v4.0, GDPR
  */
 
