@@ -178,12 +178,32 @@ Art.5(1)(c-f), Art.12, Art.13, Art.17, Art.24, Art.25, Art.28, Art.29, Art.30, A
 
 ## Action Items
 
-- [ ] Add ~40-50 new controls for missing framework requirements
-- [ ] Update ~30 existing controls with corrected framework mappings
-- [ ] Remove ~50 inappropriate cross-mappings
-- [ ] Migrate ISO 27001 to 2022 format
+- [x] Add ~40-50 new controls for missing framework requirements (COMPLETED: Added 51 controls)
+- [x] Migrate ISO 27001 to 2022 format (COMPLETED: 57 mappings updated)
+- [ ] Update ~30 existing controls with corrected framework mappings (Future optimization)
+- [ ] Remove ~50 inappropriate cross-mappings (Future optimization - requires domain review)
 - [ ] Create automated coverage validation tool
 - [ ] Document framework mapping methodology
+
+---
+
+## Completed Actions (January 17, 2026)
+
+### New Controls Added (51 total)
+| Category | Control IDs | Count | Coverage |
+|----------|-------------|-------|----------|
+| Processing Integrity | PI-001 to PI-005 | 5 | SOC 2 PI1.1-PI1.5 |
+| Confidentiality | CF-001 to CF-002 | 2 | SOC 2 C1.1-C1.2 |
+| Governance | GV-001 to GV-030 | 30 | NIST CSF 2.0 GOVERN |
+| Data Subject Rights | DSR-001 to DSR-006 | 6 | GDPR Art.15,16,18,20 |
+| SOC 2 Missing Criteria | SOC-001 to SOC-008 | 8 | CC1.2,CC1.3,CC1.5,CC2.2,CC3.3,CC3.4,CC5.1,CC9.1 |
+
+### ISO 27001 Migration
+- Migrated 57 control mappings from ISO 27001:2013 to 2022 format
+- Old A.12.x (Operations) → A.8.x (Technological)
+- Old A.13.x (Communications) → A.8.x (Technological)
+
+### Current Control Count: 305 controls
 
 ---
 
