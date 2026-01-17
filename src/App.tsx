@@ -38,6 +38,7 @@ import VendorRiskManagement from './components/VendorRiskManagement';
 import QuestionnaireAutomation from './components/QuestionnaireAutomation';
 import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
+import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
@@ -886,6 +887,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
   const [viewMode, setViewMode] = useState<'controls' | 'requirements'>('controls');
+  const [showRequirementWizard, setShowRequirementWizard] = useState(false);
 
   // Helper function to get control answer for FrameworkRequirementsView
   const getControlAnswer = (controlId: string) => {
@@ -941,6 +943,34 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const handleOpenRemediation = (controlId: string, controlTitle: string) => {
     setRemediationControl({ id: controlId, title: controlTitle });
   };
+
+  // Show Requirement Assessment Wizard when activated
+  if (showRequirementWizard) {
+    return (
+      <div className="h-[calc(100vh-140px)] -mx-6 -mt-6">
+        <RequirementAssessmentWizard
+          controls={allControls}
+          getControlAnswer={getControlAnswer}
+          onControlClick={(controlId) => {
+            const control = allControls.find(c => c.id === controlId);
+            if (control) {
+              handleOpenRemediation(controlId, control.title);
+            }
+          }}
+          onClose={() => setShowRequirementWizard(false)}
+        />
+        {/* Remediation Modal */}
+        {remediationControl && (
+          <RemediationEngine
+            controlId={remediationControl.id}
+            controlTitle={remediationControl.title}
+            isOpen={true}
+            onClose={() => setRemediationControl(null)}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -1084,6 +1114,15 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               </div>
             )}
           </div>
+
+          {/* Requirement Assessment Wizard Button */}
+          <button
+            onClick={() => setShowRequirementWizard(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent hover:from-indigo-600 hover:to-purple-600 transition-all shadow-sm"
+          >
+            <Target className="w-4 h-4" />
+            <span className="text-sm font-medium whitespace-nowrap">Requirement Wizard</span>
+          </button>
         </div>
 
         {/* Framework Filter Active Banner */}
