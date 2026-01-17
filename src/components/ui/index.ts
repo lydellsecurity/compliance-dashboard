@@ -31,3 +31,13 @@ export {
 // Command palette
 export { CommandPalette, useCommandPalette } from './CommandPalette';
 export type { CommandItem, CommandCategory } from './CommandPalette';
+
+// Export menu
+export {
+  ExportMenu,
+  COMPLIANCE_EXPORT_OPTIONS,
+  CONTROLS_EXPORT_OPTIONS,
+  VENDOR_EXPORT_OPTIONS,
+  EVIDENCE_EXPORT_OPTIONS,
+} from './ExportMenu';
+export type { ExportOption, ExportMenuProps } from './ExportMenu';

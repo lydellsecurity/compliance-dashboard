@@ -9,7 +9,8 @@ import {
   ShoppingBag, Search, Plus, Filter, Building2, AlertTriangle, Shield,
   Calendar, FileText, ChevronRight, Mail, Phone, Globe,
   CheckCircle2, XCircle, Clock, BarChart3,
-  Users, AlertCircle, RefreshCw, Edit, Award, X
+  Users, AlertCircle, RefreshCw, Edit, Award, X,
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   vendorRiskService,
@@ -21,6 +22,8 @@ import {
   type VendorRiskTier,
   QUESTIONNAIRE_TEMPLATES,
 } from '../services/vendor-risk.service';
+import { useOrganization } from '../contexts/OrganizationContext';
+import { exportService, type VendorExportData } from '../services/export.service';
 
 interface VendorRiskManagementProps {
   organizationId: string;
@@ -84,6 +87,7 @@ const STATUS_CONFIG: Record<VendorStatus, { label: string; icon: React.ReactNode
 // ============================================================================
 
 const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizationId, userId }) => {
+  const { currentOrg } = useOrganization();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'vendors' | 'assessments' | 'questionnaires'>('dashboard');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +98,33 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
   const [showAddVendor, setShowAddVendor] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [dashboard, setDashboard] = useState<VendorDashboardData | null>(null);
+
+  // Export functions
+  const convertToExportData = (vendor: Vendor): VendorExportData => ({
+    id: vendor.id,
+    name: vendor.name,
+    category: CATEGORY_LABELS[vendor.category] || vendor.category,
+    riskTier: (vendor.riskTier?.replace('tier', '') || vendor.criticality) as 'critical' | 'high' | 'medium' | 'low',
+    overallScore: vendor.riskScore || 0,
+    lastAssessment: vendor.lastAssessmentAt || null,
+    status: STATUS_CONFIG[vendor.status]?.label || vendor.status,
+    certifications: [], // Certifications not part of base Vendor type
+  });
+
+  const handleExportPDF = () => {
+    const exportData = vendors.map(convertToExportData);
+    exportService.vendorRiskPDF(exportData, {
+      organization: currentOrg,
+      title: 'Vendor Risk Assessment Report',
+    });
+  };
+
+  const handleExportCSV = () => {
+    const exportData = vendors.map(convertToExportData);
+    exportService.vendorRiskCSV(exportData, {
+      organization: currentOrg,
+    });
+  };
 
   // Load data
   useEffect(() => {
@@ -146,6 +177,24 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
+          <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1">
+            <button
+              onClick={handleExportPDF}
+              className="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
+              title="Export as PDF"
+            >
+              <FileText className="w-4 h-4" />
+              PDF
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
+              title="Export as CSV"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              CSV
+            </button>
+          </div>
           <button
             onClick={() => setShowAddVendor(true)}
             className="px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors flex items-center gap-2"

@@ -8,13 +8,16 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, Download, Plus, Building2, Target,
+  FileText, Plus, Building2, Target,
   AlertTriangle, BarChart3, TrendingUp, Eye, X,
+  FileSpreadsheet,
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../hooks/useCompliance';
 import type { UseIncidentResponseReturn } from '../hooks/useIncidentResponse';
 import type { ClientEngagement, ComplianceReport } from '../types/incident.types';
 import type { FrameworkId } from '../constants/controls';
+import { useOrganization } from '../contexts/OrganizationContext';
+import { exportService } from '../services/export.service';
 
 // ============================================================================
 // CONSTANTS
@@ -153,8 +156,9 @@ const EngagementCard: React.FC<{
 const ReportCard: React.FC<{
   report: ComplianceReport;
   onView: () => void;
-  onDownload: () => void;
-}> = ({ report, onView, onDownload }) => (
+  onDownloadPDF: () => void;
+  onDownloadCSV: () => void;
+}> = ({ report, onView, onDownloadPDF, onDownloadCSV }) => (
   <div className="p-4 rounded-xl bg-slate-50 dark:bg-steel-800 border border-slate-200 dark:border-steel-700">
     <div className="flex items-start justify-between gap-3 mb-3">
       <div>
@@ -190,11 +194,20 @@ const ReportCard: React.FC<{
         View
       </button>
       <button
-        onClick={onDownload}
+        onClick={onDownloadPDF}
         className="btn-primary flex-1"
+        title="Export as PDF"
       >
-        <Download className="w-4 h-4" />
-        Export
+        <FileText className="w-4 h-4" />
+        PDF
+      </button>
+      <button
+        onClick={onDownloadCSV}
+        className="btn-ghost flex-1"
+        title="Export as CSV"
+      >
+        <FileSpreadsheet className="w-4 h-4" />
+        CSV
       </button>
     </div>
   </div>
@@ -398,8 +411,9 @@ const CreateEngagementModal: React.FC<{
 const ReportPreviewModal: React.FC<{
   report: ComplianceReport | null;
   onClose: () => void;
-  onExport: (report: ComplianceReport) => void;
-}> = ({ report, onClose, onExport }) => {
+  onExportPDF: (report: ComplianceReport) => void;
+  onExportCSV: (report: ComplianceReport) => void;
+}> = ({ report, onClose, onExportPDF, onExportCSV }) => {
   if (!report) return null;
 
   const getScoreColor = (score: number) => {
@@ -434,13 +448,22 @@ const ReportPreviewModal: React.FC<{
                 })}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => onExport(report)}
+                onClick={() => onExportPDF(report)}
                 className="btn-primary"
+                title="Export as PDF"
               >
-                <Download className="w-4 h-4" />
-                Export PDF
+                <FileText className="w-4 h-4" />
+                PDF
+              </button>
+              <button
+                onClick={() => onExportCSV(report)}
+                className="btn-ghost"
+                title="Export as CSV"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                CSV
               </button>
               <button
                 onClick={onClose}
@@ -609,6 +632,7 @@ interface ClientReportingProps {
 }
 
 const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => {
+  const { currentOrg } = useOrganization();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedEngagement, setSelectedEngagement] = useState<ClientEngagement | null>(null);
   const [selectedReportType, setSelectedReportType] = useState<string>('executive_summary');
@@ -634,112 +658,18 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
   };
 
   const handleExportPDF = (report: ComplianceReport) => {
-    // Generate PDF export
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Please allow popups');
-      return;
-    }
+    // Use the export service with tenant branding
+    exportService.compliancePDF(report, {
+      organization: currentOrg,
+      includeFindings: true,
+      includeRecommendations: true,
+    });
+  };
 
-    const frameworkRows = report.frameworkScores.map(fs => `
-      <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
-          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${FRAMEWORK_CONFIG[fs.frameworkId].color}; margin-right: 8px;"></span>
-          ${FRAMEWORK_CONFIG[fs.frameworkId].name}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: 600; color: ${fs.score >= 80 ? '#10B981' : fs.score >= 60 ? '#F59E0B' : '#EF4444'};">${fs.score}%</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${fs.controlsAssessed}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #10B981;">${fs.controlsCompliant}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #EF4444;">${fs.gaps}</td>
-      </tr>
-    `).join('');
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${report.title}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; color: #1e293b; }
-          .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #0066FF; }
-          .header h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
-          .header p { color: #64748b; }
-          .logo { font-size: 24px; font-weight: bold; color: #0066FF; margin-bottom: 20px; }
-          .score-section { text-align: center; margin: 40px 0; }
-          .score-circle { width: 150px; height: 150px; border-radius: 50%; border: 8px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; }
-          .score { font-size: 48px; font-weight: bold; color: ${report.overallScore >= 80 ? '#10B981' : report.overallScore >= 60 ? '#F59E0B' : '#EF4444'}; }
-          .section { margin-bottom: 32px; }
-          .section h2 { font-size: 18px; color: #334155; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
-          table { width: 100%; border-collapse: collapse; }
-          th { background: #f8fafc; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b; }
-          .findings { list-style: none; }
-          .findings li { padding: 12px; background: #fef2f2; border-radius: 8px; margin-bottom: 8px; color: #991b1b; }
-          .recommendations li { padding: 12px; background: #f0fdf4; border-radius: 8px; margin-bottom: 8px; color: #166534; }
-          .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 12px; }
-          @media print { body { padding: 20px; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo">LYDELL SECURITY</div>
-          <h1>${report.title}</h1>
-          <p>Generated on ${new Date(report.generatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          <p>Period: ${new Date(report.periodStart).toLocaleDateString()} - ${new Date(report.periodEnd).toLocaleDateString()}</p>
-        </div>
-
-        <div class="score-section">
-          <div class="score-circle">
-            <div class="score">${report.overallScore}</div>
-            <div style="font-size: 12px; color: #64748b;">Overall Score</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>Framework Compliance</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Framework</th>
-                <th style="text-align: center;">Score</th>
-                <th style="text-align: center;">Assessed</th>
-                <th style="text-align: center;">Compliant</th>
-                <th style="text-align: center;">Gaps</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${frameworkRows}
-            </tbody>
-          </table>
-        </div>
-
-        ${report.criticalFindings.length > 0 ? `
-        <div class="section">
-          <h2>Critical Findings</h2>
-          <ul class="findings">
-            ${report.criticalFindings.map(f => `<li>${f}</li>`).join('')}
-          </ul>
-        </div>
-        ` : ''}
-
-        ${report.recommendations.length > 0 ? `
-        <div class="section">
-          <h2>Recommendations</h2>
-          <ul class="findings recommendations">
-            ${report.recommendations.map(r => `<li>${r}</li>`).join('')}
-          </ul>
-        </div>
-        ` : ''}
-
-        <div class="footer">
-          <p>AttestAI by Lydell Security | Compliance Report | Confidential</p>
-        </div>
-
-        <script>window.onload = () => window.print();</script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
+  const handleExportCSV = (report: ComplianceReport) => {
+    exportService.complianceCSV(report, {
+      organization: currentOrg,
+    });
   };
 
   const handleViewReport = (report: ComplianceReport) => {
@@ -880,7 +810,8 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
                         key={report.id}
                         report={report}
                         onView={() => handleViewReport(report)}
-                        onDownload={() => handleExportPDF(report)}
+                        onDownloadPDF={() => handleExportPDF(report)}
+                        onDownloadCSV={() => handleExportCSV(report)}
                       />
                     ))}
                   </div>
@@ -902,7 +833,8 @@ const ClientReporting: React.FC<ClientReportingProps> = ({ compliance, ir }) => 
       <ReportPreviewModal
         report={previewReport}
         onClose={() => setPreviewReport(null)}
-        onExport={handleExportPDF}
+        onExportPDF={handleExportPDF}
+        onExportCSV={handleExportCSV}
       />
     </div>
   );
