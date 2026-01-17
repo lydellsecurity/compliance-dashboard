@@ -296,9 +296,15 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
         <AddVendorModal
           onClose={() => setShowAddVendor(false)}
           onSave={async (vendor) => {
-            await vendorRiskService.createVendor(organizationId, vendor, userId);
-            setShowAddVendor(false);
-            loadData();
+            try {
+              await vendorRiskService.createVendor(organizationId, vendor, userId);
+              setShowAddVendor(false);
+              loadData();
+            } catch (error) {
+              console.error('Failed to create vendor:', error);
+              // Show error to user - the modal will stay open so they can retry
+              alert(error instanceof Error ? error.message : 'Failed to create vendor. Please try again.');
+            }
           }}
         />
       )}
@@ -1000,6 +1006,7 @@ const AddVendorModal: React.FC<{
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
+        onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-xl bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl"
       >
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
