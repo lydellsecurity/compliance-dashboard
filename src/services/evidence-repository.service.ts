@@ -354,7 +354,9 @@ class EvidenceRepositoryService {
         query = query.contains('framework_mappings', [params.framework]);
       }
       if (params.searchText) {
-        query = query.or(`title.ilike.%${params.searchText}%,description.ilike.%${params.searchText}%`);
+        // Escape special characters to prevent SQL injection in ilike patterns
+        const escapedSearch = params.searchText.replace(/[%_\\]/g, '\\$&');
+        query = query.or(`title.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`);
       }
       if (params.startDate) {
         query = query.gte('created_at', params.startDate);
@@ -545,7 +547,7 @@ class EvidenceRepositoryService {
           filename,
           original_name: file.name,
           original_filename: file.name, // Also set legacy column name
-          mime_type: file.type,
+          mime_type: file.type || 'application/octet-stream', // Default if no type
           size: file.size,
           size_bytes: file.size, // Also set legacy column name
           url: urlData.publicUrl,
@@ -558,6 +560,13 @@ class EvidenceRepositoryService {
 
       if (fileError) {
         console.error('[EvidenceRepo] Failed to create file record:', fileError);
+        // Clean up the uploaded file from storage since record creation failed
+        try {
+          await supabase.storage.from(this.bucketName).remove([filename]);
+          console.log('[EvidenceRepo] Cleaned up orphaned file from storage:', filename);
+        } catch (cleanupError) {
+          console.error('[EvidenceRepo] Failed to clean up orphaned file:', cleanupError);
+        }
         throw fileError;
       }
 
@@ -580,20 +589,39 @@ class EvidenceRepositoryService {
    * Delete a file from evidence
    */
   async deleteFile(fileId: string): Promise<boolean> {
-    if (!supabase) return false;
+    if (!supabase || !this.organizationId) return false;
 
     try {
-      // Get file info first
+      // Get file info with organization check through evidence_items
       const { data: file } = await supabase
         .from('evidence_files')
-        .select('filename')
+        .select(`
+          filename,
+          evidence_id,
+          evidence_items!evidence_id (
+            organization_id
+          )
+        `)
         .eq('id', fileId)
         .single();
 
       if (!file) return false;
 
+      // Verify organization ownership - evidence_items is nested via join
+      const evidenceItems = file.evidence_items as { organization_id: string } | { organization_id: string }[] | null;
+      const orgId = Array.isArray(evidenceItems)
+        ? evidenceItems[0]?.organization_id
+        : evidenceItems?.organization_id;
+
+      if (!orgId || orgId !== this.organizationId) {
+        console.error('[EvidenceRepo] Unauthorized file deletion attempt');
+        return false;
+      }
+
       // Delete from storage
-      await supabase.storage.from(this.bucketName).remove([file.filename]);
+      if (file.filename) {
+        await supabase.storage.from(this.bucketName).remove([file.filename]);
+      }
 
       // Delete record
       const { error } = await supabase
@@ -602,7 +630,8 @@ class EvidenceRepositoryService {
         .eq('id', fileId);
 
       return !error;
-    } catch {
+    } catch (err) {
+      console.error('[EvidenceRepo] deleteFile error:', err);
       return false;
     }
   }
@@ -630,12 +659,13 @@ class EvidenceRepositoryService {
 
       const newVersion = evidence.current_version + 1;
 
-      // Create version record
+      // Create version record with both version and version_number for compatibility
       const { error: versionError } = await supabase
         .from('evidence_versions')
         .insert({
           evidence_id: evidenceId,
           version: newVersion,
+          version_number: newVersion, // Include both for schema compatibility
           notes,
           status: 'draft',
           created_by: this.userId,
@@ -1053,17 +1083,18 @@ class EvidenceRepositoryService {
   private mapToEvidenceItem(data: Record<string, unknown>): EvidenceItem {
     const versions = (data.evidence_versions as Record<string, unknown>[] || []).map((v) => ({
       id: v.id as string,
-      version: v.version as number,
-      notes: v.notes as string,
+      // Handle both 'version' and 'version_number' columns for compatibility
+      version: (v.version ?? v.version_number ?? 1) as number,
+      notes: (v.notes ?? v.change_summary ?? '') as string,
       status: v.status as EvidenceStatus,
       files: ((v.evidence_files as Record<string, unknown>[]) || []).map((f) => ({
         id: f.id as string,
         filename: f.filename as string,
-        originalName: f.original_name as string,
-        mimeType: f.mime_type as string,
-        size: f.size as number,
-        url: f.url as string,
-        uploadedAt: f.uploaded_at as string,
+        originalName: (f.original_name ?? f.original_filename ?? f.filename ?? 'Unknown') as string,
+        mimeType: (f.mime_type ?? 'application/octet-stream') as string,
+        size: (f.size ?? f.size_bytes ?? 0) as number,
+        url: (f.url ?? '') as string,
+        uploadedAt: (f.uploaded_at ?? f.created_at ?? new Date().toISOString()) as string,
         uploadedBy: f.uploaded_by as string | null,
       })),
       createdAt: v.created_at as string,

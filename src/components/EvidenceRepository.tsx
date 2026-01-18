@@ -9,7 +9,7 @@
  * - Evidence statistics dashboard
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen,
@@ -209,27 +209,51 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
     }
   }, []);
 
-  // Evidence actions
+  // Evidence actions with error handling
   const handleApprove = async (evidenceId: string) => {
-    const success = await evidenceRepository.approveEvidence(evidenceId);
-    if (success) {
-      await loadEvidence();
+    try {
+      const success = await evidenceRepository.approveEvidence(evidenceId);
+      if (success) {
+        await loadEvidence();
+      } else {
+        console.error('[EvidenceRepo UI] Failed to approve evidence');
+        alert('Failed to approve evidence. Please try again.');
+      }
+    } catch (error) {
+      console.error('[EvidenceRepo UI] Approve error:', error);
+      alert('An error occurred while approving evidence.');
     }
   };
 
   const handleReject = async (evidenceId: string) => {
-    const success = await evidenceRepository.rejectEvidence(evidenceId);
-    if (success) {
-      await loadEvidence();
+    try {
+      const success = await evidenceRepository.rejectEvidence(evidenceId);
+      if (success) {
+        await loadEvidence();
+      } else {
+        console.error('[EvidenceRepo UI] Failed to reject evidence');
+        alert('Failed to reject evidence. Please try again.');
+      }
+    } catch (error) {
+      console.error('[EvidenceRepo UI] Reject error:', error);
+      alert('An error occurred while rejecting evidence.');
     }
   };
 
   const handleDelete = async (evidenceId: string) => {
     if (window.confirm('Are you sure you want to archive this evidence?')) {
-      const success = await evidenceRepository.deleteEvidence(evidenceId);
-      if (success) {
-        await loadEvidence();
-        setSelectedEvidence(null);
+      try {
+        const success = await evidenceRepository.deleteEvidence(evidenceId);
+        if (success) {
+          await loadEvidence();
+          setSelectedEvidence(null);
+        } else {
+          console.error('[EvidenceRepo UI] Failed to archive evidence');
+          alert('Failed to archive evidence. Please try again.');
+        }
+      } catch (error) {
+        console.error('[EvidenceRepo UI] Delete error:', error);
+        alert('An error occurred while archiving evidence.');
       }
     }
   };
@@ -543,7 +567,22 @@ const EvidenceCard: React.FC<{
   onUploadFile: () => void;
 }> = ({ evidence, onClick, onApprove, onReject, onDelete, onViewHistory, onUploadFile }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const statusStyle = STATUS_COLORS[evidence.status];
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!showMenu) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -571,7 +610,7 @@ const EvidenceCard: React.FC<{
             </p>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -718,26 +757,42 @@ const UploadModal: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !controlId) return;
+    if (!title.trim() || !controlId.trim()) return;
 
     setUploading(true);
     try {
       const result = await evidenceRepository.createEvidence({
-        controlId,
-        title,
-        description,
+        controlId: controlId.trim(),
+        title: title.trim(),
+        description: description.trim(),
         type,
       });
 
-      if (result.success && result.evidenceId && files.length > 0) {
+      if (!result.success) {
+        console.error('[EvidenceRepo UI] Create evidence failed:', result.error);
+        alert(result.error || 'Failed to create evidence. Please try again.');
+        setUploading(false);
+        return;
+      }
+
+      if (result.evidenceId && files.length > 0) {
+        let uploadFailures = 0;
         for (const file of files) {
-          await evidenceRepository.uploadFile(result.evidenceId, file);
+          const uploadResult = await evidenceRepository.uploadFile(result.evidenceId, file);
+          if (!uploadResult.success) {
+            uploadFailures++;
+            console.error('[EvidenceRepo UI] File upload failed:', file.name, uploadResult.error);
+          }
+        }
+        if (uploadFailures > 0) {
+          alert(`Evidence created, but ${uploadFailures} file(s) failed to upload.`);
         }
       }
 
       onSuccess();
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('[EvidenceRepo UI] Upload failed:', error);
+      alert('An error occurred while creating evidence. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -1068,9 +1123,9 @@ const FileUploadModal: React.FC<{
           {/* File list */}
           {files.length > 0 && (
             <div className="space-y-2 max-h-48 overflow-auto">
-              {files.map((file) => (
+              {files.map((file, index) => (
                 <div
-                  key={file.name}
+                  key={`${file.name}-${file.size}-${index}`}
                   className="flex items-center justify-between p-3 bg-slate-50 dark:bg-steel-800 rounded-lg"
                 >
                   <div className="flex items-center gap-3 min-w-0">
