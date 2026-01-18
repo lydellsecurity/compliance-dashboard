@@ -35,6 +35,8 @@ import {
   Key,
   Globe,
   Bell,
+  Plus,
+  Briefcase,
 } from 'lucide-react';
 import {
   multiTenant,
@@ -46,6 +48,9 @@ import {
   PLAN_CONFIGS,
 } from '../services/multi-tenant.service';
 import type { UserRole } from '../lib/database.types';
+import { FRAMEWORKS, type FrameworkId } from '../constants/controls';
+import { useComplianceContext } from '../App';
+import { useAuth } from '../hooks/useAuth';
 
 // ============================================================================
 // TYPES
@@ -57,7 +62,7 @@ interface TenantAdminProps {
   userRole: UserRole;
 }
 
-type AdminTab = 'overview' | 'team' | 'settings' | 'billing' | 'security' | 'audit';
+type AdminTab = 'overview' | 'team' | 'controls' | 'settings' | 'billing' | 'security' | 'audit';
 
 // ============================================================================
 // CONSTANTS
@@ -175,6 +180,7 @@ const TenantAdmin: React.FC<TenantAdminProps> = ({ tenantId, userId, userRole })
         {[
           { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
           { id: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
+          { id: 'controls', label: 'Custom Controls', icon: <Briefcase className="w-4 h-4" /> },
           { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
           { id: 'billing', label: 'Billing', icon: <CreditCard className="w-4 h-4" /> },
           { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
@@ -208,6 +214,9 @@ const TenantAdmin: React.FC<TenantAdminProps> = ({ tenantId, userId, userRole })
             onInvite={() => setShowInviteModal(true)}
             onUpdate={loadData}
           />
+        )}
+        {activeTab === 'controls' && (
+          <CustomControlsTab canManage={canManage} />
         )}
         {activeTab === 'settings' && (
           <SettingsTab tenant={tenant} canManage={canManage} onUpdate={loadData} />
@@ -971,6 +980,254 @@ const AuditLogTab: React.FC<{ logs: TenantAuditLog[] }> = ({ logs }) => {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// CUSTOM CONTROLS TAB
+// ============================================================================
+
+const FRAMEWORK_COLORS: Record<FrameworkId, string> = {
+  SOC2: '#6366f1',
+  ISO27001: '#0ea5e9',
+  HIPAA: '#8b5cf6',
+  NIST: '#14b8a6',
+  PCIDSS: '#f59e0b',
+  GDPR: '#ec4899',
+};
+
+const CustomControlsTab: React.FC<{ canManage: boolean }> = ({ canManage }) => {
+  const { customControls, addCustomControl, deleteCustomControl } = useComplianceContext();
+  const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', question: '', riskLevel: 'medium' as 'low' | 'medium' | 'high' | 'critical' });
+  const [selectedFrameworks, setSelectedFrameworks] = useState<FrameworkId[]>([]);
+  const [clauseInputs, setClauseInputs] = useState<Record<FrameworkId, string>>({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '', PCIDSS: '', GDPR: '' });
+
+  const currentUserId = user?.id || 'anonymous-user';
+
+  const toggleFramework = (fwId: FrameworkId) => setSelectedFrameworks(prev => prev.includes(fwId) ? prev.filter(f => f !== fwId) : [...prev, fwId]);
+  const resetForm = () => { setForm({ title: '', description: '', question: '', riskLevel: 'medium' }); setSelectedFrameworks([]); setClauseInputs({ SOC2: '', ISO27001: '', HIPAA: '', NIST: '', PCIDSS: '', GDPR: '' }); };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.title && form.description) {
+      const mappings = selectedFrameworks.filter(fwId => clauseInputs[fwId].trim()).map(fwId => ({ id: '', frameworkId: fwId, clauseId: clauseInputs[fwId].trim(), clauseTitle: 'Custom mapping', controlId: null, customControlId: null }));
+      addCustomControl({ title: form.title, description: form.description, question: form.question || `Is ${form.title} implemented?`, category: 'company_specific', frameworkMappings: mappings, riskLevel: form.riskLevel, createdBy: currentUserId });
+      resetForm(); setShowModal(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">Custom Controls</h2>
+          <p className="text-sm text-slate-500 dark:text-steel-400">Organization-specific compliance requirements</p>
+        </div>
+        {canManage && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Control
+          </button>
+        )}
+      </div>
+
+      {/* Controls List */}
+      {customControls.length === 0 ? (
+        <div className="p-16 text-center bg-white dark:bg-midnight-800 rounded-lg border border-slate-200 dark:border-steel-700">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-slate-400 dark:text-steel-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-2">No Custom Controls</h3>
+          <p className="text-slate-500 dark:text-steel-400 mb-4">Create controls specific to your organization</p>
+          {canManage && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Your First Control
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {customControls.map(c => (
+            <motion.div
+              key={c.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="p-5 bg-white dark:bg-midnight-800 rounded-lg border border-slate-200 dark:border-steel-700"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 text-xs font-mono bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-md">{c.id}</span>
+                    <span className="px-2 py-1 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md">CUSTOM</span>
+                  </div>
+                  <h3 className="font-semibold text-slate-900 dark:text-steel-100 mb-1">{c.title}</h3>
+                  <p className="text-sm text-slate-500 dark:text-steel-400 mb-3">{c.description}</p>
+                  {c.frameworkMappings.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {c.frameworkMappings.map((m, i) => {
+                        const color = FRAMEWORK_COLORS[m.frameworkId] || '#6366f1';
+                        return (
+                          <span
+                            key={i}
+                            className="px-2 py-1 text-xs font-medium rounded-md"
+                            style={{ backgroundColor: `${color}15`, color, border: `1px solid ${color}25` }}
+                          >
+                            {m.frameworkId} {m.clauseId}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {canManage && (
+                  <button
+                    onClick={() => deleteCustomControl(c.id)}
+                    className="p-2 text-slate-400 dark:text-steel-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+            onClick={() => { setShowModal(false); resetForm(); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white dark:bg-midnight-800 rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-5 border-b border-slate-200 dark:border-steel-700">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-steel-100">Create Custom Control</h2>
+                <p className="text-sm text-slate-500 dark:text-steel-400">Add organization-specific requirements</p>
+              </div>
+              <form onSubmit={submit} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">Control Name *</label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
+                    placeholder="e.g., Weekly Security Standups"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">Description *</label>
+                  <textarea
+                    value={form.description}
+                    onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100 resize-none"
+                    rows={2}
+                    placeholder="Describe what this control does..."
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">Assessment Question</label>
+                  <input
+                    type="text"
+                    value={form.question}
+                    onChange={e => setForm(p => ({ ...p, question: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
+                    placeholder="e.g., Are weekly security standups conducted?"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">Risk Level</label>
+                  <select
+                    value={form.riskLevel}
+                    onChange={e => setForm(p => ({ ...p, riskLevel: e.target.value as typeof form.riskLevel }))}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-midnight-900 border border-slate-200 dark:border-steel-700 rounded-lg">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-3">Framework Mapping</label>
+                  <div className="space-y-3">
+                    {FRAMEWORKS.map(fw => {
+                      const isSelected = selectedFrameworks.includes(fw.id);
+                      const color = FRAMEWORK_COLORS[fw.id] || '#6366f1';
+                      return (
+                        <div key={fw.id} className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleFramework(fw.id)}
+                            className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-all ${isSelected ? '' : 'border-slate-300 dark:border-steel-700 hover:border-slate-400 dark:hover:border-steel-600'}`}
+                            style={isSelected ? { borderColor: color, backgroundColor: `${color}10`, color } : undefined}
+                          >
+                            <div
+                              className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? '' : 'border-slate-400 dark:border-steel-600'}`}
+                              style={isSelected ? { borderColor: color, backgroundColor: color } : undefined}
+                            >
+                              {isSelected && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                            <span className={`text-sm font-medium ${isSelected ? '' : 'text-slate-600 dark:text-steel-400'}`}>{fw.name}</span>
+                          </button>
+                          {isSelected && (
+                            <input
+                              type="text"
+                              value={clauseInputs[fw.id]}
+                              onChange={e => setClauseInputs(p => ({ ...p, [fw.id]: e.target.value }))}
+                              placeholder={`${fw.id} Clause ID`}
+                              className="flex-1 px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowModal(false); resetForm(); }}
+                    className="px-4 py-2 border border-slate-200 dark:border-steel-700 text-slate-700 dark:text-steel-300 rounded-lg hover:bg-slate-50 dark:hover:bg-steel-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    Create Control
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
