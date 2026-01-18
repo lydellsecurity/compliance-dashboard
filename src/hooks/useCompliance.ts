@@ -1102,7 +1102,12 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   }, [evidence]);
 
   const getEvidenceFileCounts = useCallback((controlId: string): { evidenceCount: number; fileCount: number; hasFiles: boolean } | undefined => {
-    return evidenceFileCounts.get(controlId);
+    const result = evidenceFileCounts.get(controlId);
+    // Debug: log lookups for specific control IDs
+    if (controlId === 'GV-022' || controlId === 'DP-001') {
+      console.log(`[getEvidenceFileCounts] Lookup "${controlId}": result =`, result, `(map size: ${evidenceFileCounts.size})`);
+    }
+    return result;
   }, [evidenceFileCounts]);
 
   const refreshEvidenceCounts = useCallback(async (): Promise<void> => {
