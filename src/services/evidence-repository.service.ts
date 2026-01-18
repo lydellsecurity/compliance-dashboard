@@ -494,12 +494,16 @@ class EvidenceRepositoryService {
 
       // Get or create version
       let versionId: string;
-      const { data: existingVersion } = await supabase
+
+      // Use maybeSingle() to avoid 406 error when no version exists
+      const { data: existingVersions } = await supabase
         .from('evidence_versions')
         .select('id')
         .eq('evidence_id', evidenceId)
-        .eq('version', currentVersion)
-        .single();
+        .or(`version.eq.${currentVersion},version_number.eq.${currentVersion}`)
+        .limit(1);
+
+      const existingVersion = existingVersions?.[0];
 
       if (existingVersion) {
         versionId = existingVersion.id;
@@ -510,19 +514,22 @@ class EvidenceRepositoryService {
             .eq('id', versionId);
         }
       } else {
+        // Insert with both version and version_number for compatibility
         const { data: newVersion, error: versionError } = await supabase
           .from('evidence_versions')
           .insert({
             evidence_id: evidenceId,
             version: currentVersion,
+            version_number: currentVersion,
             notes: versionNotes || `Version ${currentVersion}`,
             status: 'draft',
             created_by: this.userId,
           })
-          .select()
+          .select('id')
           .single();
 
         if (versionError || !newVersion) {
+          console.error('[EvidenceRepo] Failed to create version:', versionError);
           throw new Error('Failed to create version');
         }
         versionId = newVersion.id;
