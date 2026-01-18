@@ -21,6 +21,7 @@ const AuthScreen = lazy(() => import('../components/AuthScreen'));
 const App = lazy(() => import('../App'));
 const PublicTrustCenter = lazy(() => import('../components/PublicTrustCenter'));
 const InviteAcceptPage = lazy(() => import('../components/InviteAcceptPage'));
+const AuditorPortalPage = lazy(() => import('../pages/AuditorPortalPage'));
 
 // Loading component
 const LoadingScreen: React.FC = () => (
@@ -165,6 +166,17 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <InviteAcceptPage />,
+      },
+    ],
+  },
+  // Auditor Portal (token-protected, no auth required)
+  {
+    path: '/auditor-portal/:token',
+    element: <PublicLayout />,
+    children: [
+      {
+        index: true,
+        element: <AuditorPortalPage />,
       },
     ],
   },
