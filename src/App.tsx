@@ -8,9 +8,9 @@ import React, { useState, useMemo, createContext, useContext, useRef, useEffect 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
-  Info, AlertTriangle, Shield, Upload, FileText, Lock, Users,
+  Info, AlertTriangle, Shield, FileText, Lock, Users,
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
-  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe, ExternalLink,
+  Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
   Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown,
 } from 'lucide-react';
 
@@ -38,6 +38,7 @@ import VendorRiskManagement from './components/VendorRiskManagement';
 import QuestionnaireAutomation from './components/QuestionnaireAutomation';
 import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
+import EvidenceRepository from './components/EvidenceRepository';
 import AuditorRequirementView from './components/AuditorRequirementView';
 import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
 import { monitoringService } from './services/continuous-monitoring.service';
@@ -1477,176 +1478,6 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
 };
 
 // ============================================================================
-// EVIDENCE TAB
-// ============================================================================
-
-const EvidenceTab: React.FC = () => {
-  const { getAllEvidence, updateEvidence, getControlById } = useComplianceContext();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'review' | 'final'>('all');
-  const saveTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const allEvidence = getAllEvidence();
-
-  const filteredEvidence = useMemo(() => {
-    let result = allEvidence;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(e => {
-        const control = getControlById(e.controlId);
-        return e.controlId.toLowerCase().includes(q) || control?.title.toLowerCase().includes(q) || e.notes.toLowerCase().includes(q);
-      });
-    }
-    if (statusFilter !== 'all') result = result.filter(e => e.status === statusFilter);
-    return result;
-  }, [allEvidence, search, statusFilter, getControlById]);
-
-  const handleNotesChange = (evidenceId: string, notes: string) => {
-    clearTimeout(saveTimeoutRef.current[evidenceId]);
-    saveTimeoutRef.current[evidenceId] = setTimeout(() => updateEvidence(evidenceId, { notes }), 300);
-  };
-
-  return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-steel-100">Evidence Repository</h1>
-          <p className="text-slate-500 dark:text-steel-400 mt-1">Manage audit documentation and evidence</p>
-        </div>
-        <div className="badge-success">
-          {allEvidence.length} Records
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-steel-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search evidence..."
-            className="input-search w-full"
-          />
-        </div>
-        <div className="relative">
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="input appearance-none pr-10"
-          >
-            <option value="all">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="review">Review</option>
-            <option value="final">Final</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-steel-500 pointer-events-none" />
-        </div>
-      </div>
-
-      {/* Evidence Table */}
-      {allEvidence.length === 0 ? (
-        <Card className="p-16 text-center">
-          <div className="w-16 h-16 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <FolderOpen className="w-8 h-8 text-slate-400 dark:text-steel-500" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-2 tracking-tight">No Evidence Yet</h3>
-          <p className="text-slate-500 dark:text-steel-400">Complete controls with "Yes" to generate evidence records</p>
-        </Card>
-      ) : filteredEvidence.length === 0 ? (
-        <Card className="p-16 text-center">
-          <div className="w-12 h-12 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Search className="w-6 h-6 text-slate-400 dark:text-steel-500" />
-          </div>
-          <p className="text-slate-500 dark:text-steel-400">No evidence matches your search</p>
-        </Card>
-      ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-steel-800">
-                <th className="table-header">Control</th>
-                <th className="table-header">Evidence ID</th>
-                <th className="table-header w-28">Status</th>
-                <th className="table-header">Notes</th>
-                <th className="table-header w-32">Policy</th>
-                <th className="table-header w-24">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEvidence.map(entry => {
-                const control = getControlById(entry.controlId);
-                const policyUrl = entry.fileUrls && entry.fileUrls.length > 0 ? entry.fileUrls.find(url => url.includes('policy')) || entry.fileUrls[0] : null;
-                return (
-                  <tr key={entry.id} className="table-row">
-                    <td className="table-cell">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-1 text-xs font-mono bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-300 rounded-md">{entry.controlId}</span>
-                        <span className="text-sm text-slate-700 dark:text-steel-200 font-medium truncate max-w-[200px]">{control?.title || 'Unknown'}</span>
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      <span className="px-2 py-1 text-xs font-mono bg-emerald-50 dark:bg-status-success/10 text-emerald-600 dark:text-status-success rounded-md">{entry.id.slice(0, 16)}...</span>
-                    </td>
-                    <td className="table-cell">
-                      <select
-                        value={entry.status}
-                        onChange={e => updateEvidence(entry.id, { status: e.target.value as 'draft' | 'review' | 'final' })}
-                        className="px-2.5 py-1.5 text-xs bg-white dark:bg-transparent border border-slate-200 dark:border-steel-700 text-slate-600 dark:text-steel-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                      >
-                        <option value="draft">Draft</option>
-                        <option value="review">Review</option>
-                        <option value="final">Final</option>
-                      </select>
-                    </td>
-                    <td className="table-cell">
-                      <input
-                        type="text"
-                        defaultValue={entry.notes}
-                        onChange={e => handleNotesChange(entry.id, e.target.value)}
-                        placeholder="Add notes..."
-                        className="w-full px-3 py-1.5 text-sm bg-transparent border border-transparent hover:border-slate-200 dark:hover:border-steel-700 focus:border-indigo-500 text-slate-600 dark:text-steel-300 focus:outline-none transition-colors rounded-lg"
-                      />
-                    </td>
-                    <td className="table-cell">
-                      {policyUrl ? (
-                        <a
-                          href={policyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 text-xs font-medium rounded-md hover:bg-indigo-100 dark:hover:bg-accent-500/20 transition-colors"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          View PDF
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-xs text-slate-400 dark:text-steel-600">No policy</span>
-                      )}
-                    </td>
-                    <td className="table-cell">
-                      <button className="p-2 text-slate-400 dark:text-steel-500 hover:text-indigo-600 dark:hover:text-accent-400 hover:bg-indigo-50 dark:hover:bg-accent-500/10 rounded-lg transition-colors" title="Upload file">
-                        <Upload className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
-      )}
-    </motion.div>
-  );
-};
-
-// ============================================================================
 // COMPANY TAB
 // ============================================================================
 
@@ -2152,7 +1983,17 @@ const AppContent: React.FC = () => {
             )}
             {activeTab === 'evidence' && (
               <motion.div key="evidence" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <EvidenceTab />
+                {currentOrg?.id ? (
+                  <EvidenceRepository
+                    organizationId={currentOrg.id}
+                    userId={currentUserId}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <FolderOpen className="w-12 h-12 text-slate-300 dark:text-steel-600 mb-4" />
+                    <p className="text-slate-500 dark:text-steel-400">Please select an organization to view evidence</p>
+                  </div>
+                )}
               </motion.div>
             )}
             {activeTab === 'integrations' && (
