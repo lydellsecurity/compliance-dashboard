@@ -893,6 +893,23 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const [viewMode, setViewMode] = useState<'controls' | 'requirements' | 'auditor'>('requirements');
   const [showRequirementWizard, setShowRequirementWizard] = useState(false);
 
+  // Scroll to top when active domain changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeDomain]);
+
+  // Navigate to next domain
+  const handleNextDomain = () => {
+    const currentIndex = allDomains.findIndex(d => d.id === activeDomain.id);
+    if (currentIndex < allDomains.length - 1) {
+      setActiveDomain(allDomains[currentIndex + 1]);
+      setSearch('');
+    }
+  };
+
+  // Check if there's a next domain
+  const hasNextDomain = allDomains.findIndex(d => d.id === activeDomain.id) < allDomains.length - 1;
+
   // Helper function to get control answer for FrameworkRequirementsView
   const getControlAnswer = (controlId: string) => {
     const response = getResponse(controlId);
@@ -1349,62 +1366,100 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
 
                 let globalIndex = 0;
 
-                return sortedDomainIds.map((domainId) => {
-                  const domainMeta = allDomains.find(d => (d.id as string) === domainId);
-                  const domainControls = groupedControls[domainId] || [];
+                return (
+                  <>
+                    {sortedDomainIds.map((domainId, domainIndex) => {
+                      const domainMeta = allDomains.find(d => (d.id as string) === domainId);
+                      const domainControls = groupedControls[domainId] || [];
+                      const nextDomainId = sortedDomainIds[domainIndex + 1];
+                      const nextDomainMeta = nextDomainId ? allDomains.find(d => (d.id as string) === nextDomainId) : null;
 
-                  return (
-                    <div key={domainId} className="space-y-3">
-                      {/* Domain Header */}
-                      <div className="flex items-center gap-3 pt-4 first:pt-0">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${domainMeta?.color || '#6B7280'}15` }}
-                        >
-                          <div style={{ color: domainMeta?.color || '#6B7280' }}>
-                            <DomainIcon domainId={domainId} />
+                      return (
+                        <div key={domainId} className="space-y-3">
+                          {/* Domain Header */}
+                          <div className="flex items-center gap-3 pt-4 first:pt-0" id={`domain-${domainId}`}>
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: `${domainMeta?.color || '#6B7280'}15` }}
+                            >
+                              <div style={{ color: domainMeta?.color || '#6B7280' }}>
+                                <DomainIcon domainId={domainId} />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-sm font-semibold text-slate-700 dark:text-steel-300">
+                                {domainMeta?.title || domainId}
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-steel-500">
+                                {domainControls.length} control{domainControls.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-slate-700 dark:text-steel-300">
-                            {domainMeta?.title || domainId}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-steel-500">
-                            {domainControls.length} control{domainControls.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Domain Controls */}
-                      {domainControls.map((control) => {
-                        const idx = globalIndex++;
-                        return (
-                          <motion.div
-                            key={control.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.02 }}
-                          >
-                            <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  );
-                });
+                          {/* Domain Controls */}
+                          {domainControls.map((control) => {
+                            const idx = globalIndex++;
+                            return (
+                              <motion.div
+                                key={control.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.02 }}
+                              >
+                                <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
+                              </motion.div>
+                            );
+                          })}
+
+                          {/* Next Domain Button */}
+                          {nextDomainMeta && (
+                            <div className="pt-4 pb-2">
+                              <button
+                                onClick={() => {
+                                  const el = document.getElementById(`domain-${nextDomainId}`);
+                                  if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                  }
+                                }}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-steel-800 dark:hover:bg-steel-700 text-slate-700 dark:text-steel-300 rounded-lg font-medium transition-colors border border-slate-200 dark:border-steel-700"
+                              >
+                                <span>Next: {nextDomainMeta.title}</span>
+                                <ChevronRight className="w-5 h-5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                );
               })()
             ) : (
               // Regular domain view (no grouping needed - already filtered by domain)
-              controls.map((control, i) => (
-                <motion.div
-                  key={control.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.02 }}
-                >
-                  <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
-                </motion.div>
-              ))
+              <>
+                {controls.map((control, i) => (
+                  <motion.div
+                    key={control.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.02 }}
+                  >
+                    <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
+                  </motion.div>
+                ))}
+                {/* Next Domain Button */}
+                {hasNextDomain && controls.length > 0 && (
+                  <div className="pt-6 border-t border-slate-200 dark:border-steel-700 mt-6">
+                    <button
+                      onClick={handleNextDomain}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-accent-600 dark:hover:bg-accent-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      <span>Next: {allDomains[allDomains.findIndex(d => d.id === activeDomain.id) + 1]?.title}</span>
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
