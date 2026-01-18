@@ -562,14 +562,39 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
       setLastSyncedAt(new Date().toISOString());
 
       // Sync existing "yes" answers to Evidence Repository
+      // Ensure evidence repository context is set
+      const dbOrgId = complianceDb.getOrganizationId();
+      const dbUserId = complianceDb.getUserId();
+      if (dbOrgId && dbUserId) {
+        evidenceRepository.setContext(dbOrgId, dbUserId);
+      }
+
       if (evidenceRepository.isAvailable()) {
         const yesResponses = Object.values(responsesFromDb).filter(r => r.answer === 'yes');
         console.log(`[Evidence Sync] Found ${yesResponses.length} "yes" responses to sync`);
-        for (const response of yesResponses) {
+        console.log(`[Evidence Sync] OrgId: ${dbOrgId}, UserId: ${dbUserId}`);
+
+        // Only sync first 10 to avoid overwhelming the database
+        const toSync = yesResponses.slice(0, 10);
+        console.log(`[Evidence Sync] Will sync first ${toSync.length} responses`);
+
+        let created = 0;
+        let skipped = 0;
+        let failed = 0;
+
+        for (const response of toSync) {
           const control = allControls.find(c => c.id === response.controlId);
-          if (control) {
+          if (!control) {
+            console.log(`[Evidence Sync] Control not found: ${response.controlId}`);
+            skipped++;
+            continue;
+          }
+
+          try {
             // Check if evidence already exists for this control
             const existingEvidence = await evidenceRepository.getEvidenceForControl(response.controlId);
+            console.log(`[Evidence Sync] Control ${response.controlId}: ${existingEvidence.length} existing evidence items`);
+
             if (existingEvidence.length === 0) {
               const result = await evidenceRepository.createEvidence({
                 controlId: response.controlId,
@@ -582,12 +607,21 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
               });
               if (!result.success) {
                 console.error(`[Evidence Sync] Failed to create evidence for ${response.controlId}:`, result.error);
+                failed++;
               } else {
                 console.log(`[Evidence Sync] Created evidence for ${response.controlId}`);
+                created++;
               }
+            } else {
+              skipped++;
             }
+          } catch (err) {
+            console.error(`[Evidence Sync] Exception for ${response.controlId}:`, err);
+            failed++;
           }
         }
+
+        console.log(`[Evidence Sync] Complete: ${created} created, ${skipped} skipped, ${failed} failed`);
       } else {
         console.log('[Evidence Sync] Evidence repository not available');
       }
