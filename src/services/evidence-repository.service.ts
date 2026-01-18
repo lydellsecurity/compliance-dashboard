@@ -249,7 +249,7 @@ class EvidenceRepositoryService {
             created_by,
             approved_by,
             approved_at,
-            evidence_files (
+            evidence_files!evidence_version_id (
               id,
               filename,
               original_name,
@@ -302,7 +302,7 @@ class EvidenceRepositoryService {
             created_by,
             approved_by,
             approved_at,
-            evidence_files (
+            evidence_files!evidence_version_id (
               id,
               filename,
               original_name,
@@ -647,7 +647,7 @@ class EvidenceRepositoryService {
           created_by,
           approved_by,
           approved_at,
-          evidence_files (
+          evidence_files!evidence_version_id (
             id,
             filename,
             original_name,
