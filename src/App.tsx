@@ -41,6 +41,7 @@ import FrameworkRequirementsView from './components/FrameworkRequirementsView';
 import EvidenceRepository from './components/EvidenceRepository';
 import AuditorRequirementView from './components/AuditorRequirementView';
 import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
+import ControlWorkstationWrapper from './components/ControlWorkstation/ControlWorkstationWrapper';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
@@ -54,7 +55,7 @@ type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence'
 // ============================================================================
 
 const ComplianceContext = createContext<UseComplianceReturn | null>(null);
-const useComplianceContext = () => {
+export const useComplianceContext = () => {
   const ctx = useContext(ComplianceContext);
   if (!ctx) throw new Error('useComplianceContext must be used within ComplianceProvider');
   return ctx;
@@ -1068,7 +1069,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
   const [smartFilter, setSmartFilter] = useState<'all' | 'quick-fix' | 'needs-evidence' | 'critical-gaps'>('all');
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
-  const [viewMode, setViewMode] = useState<'controls' | 'requirements' | 'auditor'>('requirements');
+  const [viewMode, setViewMode] = useState<'controls' | 'requirements' | 'auditor' | 'workstation'>('workstation');
   const [showRequirementWizard, setShowRequirementWizard] = useState(false);
 
   // Scroll to top when active domain changes
@@ -1207,6 +1208,53 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             onClose={() => setRemediationControl(null)}
           />
         )}
+      </div>
+    );
+  }
+
+  // Show Control Workstation (new Control-Centric view)
+  if (viewMode === 'workstation') {
+    return (
+      <div className="space-y-4">
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Control Assessment
+            </h2>
+            <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
+              Control-Centric View
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500 dark:text-steel-400">View Mode:</span>
+            <div className="flex items-center bg-slate-100 dark:bg-steel-700 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('workstation')}
+                className="px-3 py-1.5 rounded text-sm font-medium transition-colors bg-white dark:bg-steel-600 shadow-sm text-slate-900 dark:text-white"
+              >
+                Control Workstation
+              </button>
+              <button
+                onClick={() => setViewMode('requirements')}
+                className="px-3 py-1.5 rounded text-sm font-medium transition-colors text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-white"
+              >
+                Framework View
+              </button>
+              <button
+                onClick={() => setViewMode('controls')}
+                className="px-3 py-1.5 rounded text-sm font-medium transition-colors text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-white"
+              >
+                Legacy View
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Control Workstation */}
+        <ControlWorkstationWrapper
+          initialDomain={initialDomain}
+        />
       </div>
     );
   }
