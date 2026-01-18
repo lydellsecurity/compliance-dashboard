@@ -60,7 +60,10 @@ const useComplianceContext = () => {
 };
 
 const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const compliance = useCompliance();
+  // Get the current organization from context to pass to useCompliance
+  // This ensures data is saved to the correct organization in Supabase
+  const { currentOrg } = useOrganization();
+  const compliance = useCompliance({ organizationId: currentOrg?.id });
   return <ComplianceContext.Provider value={compliance}>{children}</ComplianceContext.Provider>;
 };
 

@@ -361,7 +361,9 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const orgId = session.user.user_metadata?.organization_id;
+        // Use the organizationId from options (OrganizationContext) if available,
+        // otherwise fall back to user_metadata
+        const orgId = organizationId || session.user.user_metadata?.organization_id;
         setSupabaseUser({ id: session.user.id, organization_id: orgId });
         if (orgId) {
           complianceDb.setContext(orgId, session.user.id);
@@ -372,7 +374,9 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const orgId = session.user.user_metadata?.organization_id;
+        // Use the organizationId from options (OrganizationContext) if available,
+        // otherwise fall back to user_metadata
+        const orgId = organizationId || session.user.user_metadata?.organization_id;
         setSupabaseUser({ id: session.user.id, organization_id: orgId });
         if (orgId) {
           complianceDb.setContext(orgId, session.user.id);
@@ -383,7 +387,20 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [organizationId]);
+
+  // Update database context when organizationId changes (from OrganizationContext)
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase || !organizationId) return;
+
+    // Get the current user to update the context
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && organizationId) {
+        complianceDb.setContext(organizationId, session.user.id);
+        setSupabaseUser(prev => prev ? { ...prev, organization_id: organizationId } : null);
+      }
+    });
+  }, [organizationId]);
 
   // Monitor online status
   useEffect(() => {
@@ -400,11 +417,13 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   }, []);
 
   // Load data from Supabase when user is authenticated
+  // Use organizationId from options (OrganizationContext) if available
   useEffect(() => {
-    if (supabaseUser?.organization_id && isOnline && complianceDb.isAvailable()) {
+    const effectiveOrgId = organizationId || supabaseUser?.organization_id;
+    if (effectiveOrgId && isOnline && complianceDb.isAvailable()) {
       loadFromSupabase();
     }
-  }, [supabaseUser?.organization_id, isOnline]);
+  }, [organizationId, supabaseUser?.organization_id, isOnline]);
 
   // ============================================================================
   // SUPABASE DATA LOADING
@@ -831,14 +850,32 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     }
 
     // Sync to Supabase in background
-    if (complianceDb.isAvailable() && isOnline) {
+    // Check if database context is properly set before attempting sync
+    const dbOrgId = complianceDb.getOrganizationId();
+    const dbUserId = complianceDb.getUserId();
+
+    if (complianceDb.isAvailable() && isOnline && dbOrgId && dbUserId) {
       complianceDb.saveUserResponse({
         control_id: controlId,
         answer,
         evidence_note: '',
         remediation_plan: existingResponse?.remediationPlan || '',
         status: 'complete',
-      }).catch(console.error);
+      }).then(result => {
+        if (!result) {
+          console.warn('Supabase sync: saveUserResponse returned null - data saved locally only');
+        }
+      }).catch(err => {
+        console.error('Supabase sync failed:', err);
+      });
+    } else if (complianceDb.isAvailable() && isOnline) {
+      // Supabase is available but context is not set - this is the bug we're fixing
+      console.warn('Supabase sync skipped: organization context not set', {
+        isAvailable: complianceDb.isAvailable(),
+        isOnline,
+        organizationId: dbOrgId,
+        userId: dbUserId,
+      });
     }
   }, [responsesObj, allControls, supabaseUser?.id, isOnline]);
 
@@ -860,11 +897,16 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     });
 
     // Sync to Supabase in background
-    if (complianceDb.isAvailable() && isOnline) {
+    const dbOrgId = complianceDb.getOrganizationId();
+    const dbUserId = complianceDb.getUserId();
+
+    if (complianceDb.isAvailable() && isOnline && dbOrgId && dbUserId) {
       complianceDb.saveUserResponse({
         control_id: controlId,
         remediation_plan: plan,
-      }).catch(console.error);
+      }).catch(err => {
+        console.error('Supabase sync failed (remediation):', err);
+      });
     }
   }, [isOnline]);
 
