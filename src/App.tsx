@@ -2274,6 +2274,7 @@ const AppContent: React.FC = () => {
                   onOpenMonitoringDashboard={() => setShowMonitoringDashboard(true)}
                   onOpenAlertConfiguration={() => setShowAlertConfiguration(true)}
                   onOpenCloudVerification={() => setShowCloudVerification(true)}
+                  onOpenAdmin={() => setActiveTab('admin')}
                 />
               </motion.div>
             )}

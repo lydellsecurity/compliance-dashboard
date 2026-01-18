@@ -16,6 +16,7 @@ import {
   ChevronRight, Monitor, AlertTriangle, CheckCircle2, XCircle,
   RefreshCw, Zap, Database, Lock, Globe, Mail, MessageSquare,
   Webhook, ToggleLeft, ToggleRight, Clock, TrendingUp, GitCompare,
+  UserCog, Users, CreditCard, Key, ExternalLink,
 } from 'lucide-react';
 import RegulatoryVersionControl from './RegulatoryVersionControl';
 import {
@@ -28,12 +29,13 @@ import { awsConnector } from '../services/cloud-integrations/aws-connector.servi
 // TYPES
 // ============================================================================
 
-type SettingsSection = 'overview' | 'monitoring' | 'integrations' | 'alerts' | 'notifications' | 'organization' | 'regulatory';
+type SettingsSection = 'overview' | 'monitoring' | 'integrations' | 'alerts' | 'notifications' | 'organization' | 'regulatory' | 'admin';
 
 interface SettingsProps {
   onOpenMonitoringDashboard: () => void;
   onOpenAlertConfiguration: () => void;
   onOpenCloudVerification: () => void;
+  onOpenAdmin: () => void;
 }
 
 // ============================================================================
@@ -48,6 +50,7 @@ const SECTIONS: { id: SettingsSection; label: string; icon: React.ReactNode; des
   { id: 'notifications', label: 'Notifications', icon: <Mail className="w-5 h-5" />, description: 'Email, Slack, and webhook settings' },
   { id: 'organization', label: 'Organization', icon: <Building2 className="w-5 h-5" />, description: 'Company settings and preferences' },
   { id: 'regulatory', label: 'Regulatory Updates', icon: <GitCompare className="w-5 h-5" />, description: 'Track framework changes and compliance drift' },
+  { id: 'admin', label: 'Admin', icon: <UserCog className="w-5 h-5" />, description: 'Team, billing, security, and audit logs' },
 ];
 
 // ============================================================================
@@ -775,6 +778,94 @@ const RegulatorySection: React.FC = () => {
 };
 
 // ============================================================================
+// ADMIN SECTION
+// ============================================================================
+
+const AdminSection: React.FC<{ onOpenAdmin: () => void }> = ({ onOpenAdmin }) => {
+  const adminFeatures = [
+    {
+      id: 'team',
+      icon: <Users className="w-6 h-6" />,
+      title: 'Team Management',
+      description: 'Invite members, assign roles, and manage access permissions',
+      color: 'bg-indigo-500/10 text-indigo-500',
+    },
+    {
+      id: 'billing',
+      icon: <CreditCard className="w-6 h-6" />,
+      title: 'Billing & Plans',
+      description: 'View current plan, usage metrics, and upgrade options',
+      color: 'bg-violet-500/10 text-violet-500',
+    },
+    {
+      id: 'security',
+      icon: <Key className="w-6 h-6" />,
+      title: 'Security Settings',
+      description: 'Configure MFA, session policies, and password requirements',
+      color: 'bg-amber-500/10 text-amber-500',
+    },
+    {
+      id: 'audit',
+      icon: <Clock className="w-6 h-6" />,
+      title: 'Audit Logs',
+      description: 'Review activity history and export compliance reports',
+      color: 'bg-slate-500/10 text-slate-500',
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-primary mb-1">Admin Settings</h2>
+          <p className="text-secondary">Manage your organization, team, and security settings</p>
+        </div>
+        <button onClick={onOpenAdmin} className="btn-primary">
+          <ExternalLink className="w-4 h-4" />
+          Open Admin Dashboard
+        </button>
+      </div>
+
+      {/* Admin Features Grid */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {adminFeatures.map(feature => (
+          <button
+            key={feature.id}
+            onClick={onOpenAdmin}
+            className="p-5 bg-slate-50 dark:bg-steel-800/50 rounded-xl border border-slate-200 dark:border-steel-700 text-left transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-accent-500/30"
+          >
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${feature.color}`}>
+                {feature.icon}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-primary mb-1">{feature.title}</h3>
+                <p className="text-sm text-secondary">{feature.description}</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-600 flex-shrink-0 mt-1" />
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Quick Stats */}
+      <div className="p-5 bg-accent-500/5 border border-accent-500/20 rounded-xl">
+        <div className="flex items-start gap-3">
+          <Shield className="w-5 h-5 text-accent-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-semibold text-primary mb-1">Admin Access Required</h4>
+            <p className="text-sm text-secondary">
+              Full admin settings including team management, billing, and audit logs are available in the dedicated Admin Dashboard.
+              Owner and Admin roles have access to all administrative features.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -828,6 +919,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
             {activeSection === 'notifications' && <NotificationsSection />}
             {activeSection === 'organization' && <OrganizationSection />}
             {activeSection === 'regulatory' && <RegulatorySection />}
+            {activeSection === 'admin' && <AdminSection onOpenAdmin={props.onOpenAdmin} />}
           </motion.div>
         </AnimatePresence>
       </div>
