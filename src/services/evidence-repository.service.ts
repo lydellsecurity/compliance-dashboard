@@ -836,12 +836,27 @@ class EvidenceRepositoryService {
     if (!supabase || !this.organizationId) return null;
 
     try {
+      // Query with columns that should exist after migrations
       const { data, error } = await supabase
         .from('evidence_items')
-        .select('id, status, type, source, created_at, retention_date')
+        .select('id, status, type, source, created_at, retention_date, valid_until')
         .eq('organization_id', this.organizationId);
 
-      if (error || !data) return null;
+      if (error) {
+        console.error('[EvidenceRepo] getStats error:', error);
+        // Return empty stats on error instead of null
+        return {
+          total: 0,
+          byStatus: { draft: 0, review: 0, final: 0 },
+          byType: {},
+          bySource: {},
+          pendingReview: 0,
+          expiringSoon: 0,
+          recentUploads: 0,
+        };
+      }
+
+      if (!data) return null;
 
       const now = new Date();
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -873,12 +888,14 @@ class EvidenceRepositoryService {
         // Count by type
         stats.byType[item.type] = (stats.byType[item.type] || 0) + 1;
 
-        // Count by source
-        stats.bySource[item.source] = (stats.bySource[item.source] || 0) + 1;
+        // Count by source (default to 'manual' if not set)
+        const source = item.source || 'manual';
+        stats.bySource[source] = (stats.bySource[source] || 0) + 1;
 
-        // Check for expiring evidence
-        if (item.retention_date) {
-          const retentionDate = new Date(item.retention_date);
+        // Check for expiring evidence (use retention_date or valid_until)
+        const expiryDate = item.retention_date || item.valid_until;
+        if (expiryDate) {
+          const retentionDate = new Date(expiryDate);
           if (retentionDate <= monthFromNow) {
             stats.expiringSoon++;
           }
