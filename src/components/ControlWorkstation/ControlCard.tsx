@@ -20,6 +20,8 @@ import {
   Shield,
   Info,
   Paperclip,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 import type { MasterControl, FrameworkId } from '../../constants/controls';
 import type { SatisfiedRequirement } from '../../services/control-mapping-engine';
@@ -76,6 +78,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
   onToggleExpand,
 }) => {
   const [isGeneratingPolicy, setIsGeneratingPolicy] = useState(false);
+  const [isStatusPaneCollapsed, setIsStatusPaneCollapsed] = useState(false);
 
   const isImplemented = currentAnswer === 'yes';
   const statusKey = currentAnswer || 'null';
@@ -230,9 +233,9 @@ const ControlCard: React.FC<ControlCardProps> = ({
             className="overflow-hidden"
           >
             <div className="border-t border-slate-200 dark:border-steel-700">
-              <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="p-5 flex gap-6">
                 {/* Left column: Assessment Workflow */}
-                <div className="space-y-4">
+                <div className={`space-y-4 transition-all duration-300 ${isStatusPaneCollapsed ? 'flex-1' : 'flex-1 lg:flex-[1]'}`}>
                   <AssessmentWorkflow
                     controlId={control.id}
                     controlTitle={control.title}
@@ -266,8 +269,57 @@ const ControlCard: React.FC<ControlCardProps> = ({
                   )}
                 </div>
 
-                {/* Right column: Requirement Transparency */}
-                <div>
+                {/* Right column: Requirement Transparency (Retractable) */}
+                <div className="hidden lg:flex flex-col">
+                  {/* Toggle button */}
+                  <button
+                    onClick={() => setIsStatusPaneCollapsed(!isStatusPaneCollapsed)}
+                    className={`
+                      self-start mb-3 flex items-center gap-2 px-3 py-1.5 rounded-lg
+                      text-xs font-medium transition-all duration-200
+                      ${isStatusPaneCollapsed
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50'
+                        : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 hover:bg-slate-200 dark:hover:bg-steel-600'
+                      }
+                    `}
+                  >
+                    {isStatusPaneCollapsed ? (
+                      <>
+                        <PanelRightOpen className="w-4 h-4" />
+                        Show Compliance
+                      </>
+                    ) : (
+                      <>
+                        <PanelRightClose className="w-4 h-4" />
+                        Hide
+                      </>
+                    )}
+                  </button>
+
+                  {/* Status Pane Content */}
+                  <AnimatePresence mode="wait">
+                    {!isStatusPaneCollapsed && (
+                      <motion.div
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: 'auto', opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="w-[400px]">
+                          <RequirementTransparency
+                            requirements={requirements}
+                            isImplemented={isImplemented}
+                            onViewFramework={onViewFramework}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Mobile: Always show status pane below */}
+                <div className="lg:hidden">
                   <RequirementTransparency
                     requirements={requirements}
                     isImplemented={isImplemented}
