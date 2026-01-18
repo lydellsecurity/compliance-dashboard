@@ -11,7 +11,7 @@ import {
   Info, AlertTriangle, Shield, FileText, Lock, Users, Paperclip,
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
-  Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown,
+  Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown, ClipboardList,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -1216,36 +1216,50 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   if (viewMode === 'workstation') {
     return (
       <div className="space-y-4">
-        {/* View Mode Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-              Control Assessment
+        {/* View Mode Toggle - Primary Toggle */}
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-steel-800/50 rounded-lg border border-slate-200 dark:border-steel-700">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              Assessment
             </h2>
-            <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
-              Control-Centric View
-            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500 dark:text-steel-400">View Mode:</span>
-            <div className="flex items-center bg-slate-100 dark:bg-steel-700 rounded-lg p-1">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-slate-600 dark:text-steel-400">View:</span>
+            <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
               <button
                 onClick={() => setViewMode('workstation')}
-                className="px-3 py-1.5 rounded text-sm font-medium transition-colors bg-white dark:bg-steel-600 shadow-sm text-slate-900 dark:text-white"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all bg-indigo-600 text-white shadow-sm"
+                title="Control-centric assessment workstation"
               >
-                Control Workstation
+                <ClipboardList className="w-4 h-4" />
+                <span className="whitespace-nowrap">Control Assessment</span>
               </button>
               <button
                 onClick={() => setViewMode('requirements')}
-                className="px-3 py-1.5 rounded text-sm font-medium transition-colors text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-white"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700"
+                title="View by framework requirements"
               >
-                Framework View
+                <FileText className="w-4 h-4" />
+                <span className="whitespace-nowrap">Framework View</span>
               </button>
+            </div>
+            <div className="h-6 w-px bg-slate-300 dark:bg-steel-600" />
+            <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
               <button
                 onClick={() => setViewMode('controls')}
-                className="px-3 py-1.5 rounded text-sm font-medium transition-colors text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-white"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700"
+                title="Legacy controls list view"
               >
-                Legacy View
+                <Shield className="w-4 h-4" />
+                <span className="whitespace-nowrap">Legacy</span>
+              </button>
+              <button
+                onClick={() => setViewMode('auditor')}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700"
+                title="Auditor view with coverage and gaps"
+              >
+                <Eye className="w-4 h-4" />
+                <span className="whitespace-nowrap">Auditor</span>
               </button>
             </div>
           </div>
@@ -1466,38 +1480,51 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           </div>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex gap-3">
-          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-steel-800 rounded-lg">
+        {/* View Mode Toggle - Primary Toggle */}
+        <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-steel-800/50 rounded-lg border border-slate-200 dark:border-steel-700">
+          <span className="text-sm font-medium text-slate-600 dark:text-steel-400">View:</span>
+          <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
+            <button
+              onClick={() => setViewMode('workstation')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700"
+              title="Control-centric assessment workstation"
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span className="whitespace-nowrap">Control Assessment</span>
+            </button>
             <button
               onClick={() => setViewMode('requirements')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'requirements'
-                  ? 'bg-white dark:bg-steel-700 text-indigo-600 dark:text-accent-400 shadow-sm'
-                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700'
               }`}
-              title="View framework requirements"
+              title="View by framework requirements"
             >
               <FileText className="w-4 h-4" />
-              <span className="whitespace-nowrap">Requirements</span>
+              <span className="whitespace-nowrap">Framework View</span>
             </button>
+          </div>
+          <div className="h-6 w-px bg-slate-300 dark:bg-steel-600" />
+          <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
             <button
               onClick={() => setViewMode('controls')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'controls'
-                  ? 'bg-white dark:bg-steel-700 text-indigo-600 dark:text-accent-400 shadow-sm'
-                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+                  ? 'bg-slate-600 text-white shadow-sm'
+                  : 'text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700'
               }`}
+              title="Legacy controls list view"
             >
               <Shield className="w-4 h-4" />
-              <span className="whitespace-nowrap">Controls</span>
+              <span className="whitespace-nowrap">Legacy</span>
             </button>
             <button
               onClick={() => setViewMode('auditor')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'auditor'
-                  ? 'bg-white dark:bg-steel-700 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700'
               }`}
               title="Auditor view with coverage and gaps"
             >
