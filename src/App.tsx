@@ -65,6 +65,14 @@ const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // This ensures data is saved to the correct organization in Supabase
   const { currentOrg } = useOrganization();
   const compliance = useCompliance({ organizationId: currentOrg?.id });
+
+  // Debug: log when getEvidenceFileCounts function reference changes
+  useEffect(() => {
+    // Test lookup for a known control ID
+    const testResult = compliance.getEvidenceFileCounts('GV-022');
+    console.log('[ComplianceProvider] getEvidenceFileCounts test for GV-022:', testResult);
+  }, [compliance.getEvidenceFileCounts]);
+
   return <ComplianceContext.Provider value={compliance}>{children}</ComplianceContext.Provider>;
 };
 
