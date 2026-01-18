@@ -6,8 +6,8 @@
  * controls map to each requirement.
  */
 
-import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle2, Circle, AlertCircle, Shield } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { ChevronDown, ChevronRight, CheckCircle2, Circle, AlertCircle, Shield, Upload, FileText, Trash2, Plus, X } from 'lucide-react';
 import type { FrameworkId, MasterControl } from '../constants/controls';
 import { FRAMEWORKS } from '../constants/controls';
 import { PCI_DSS_V4_REQUIREMENTS, countPCIDSSRequirements } from '../constants/pci-dss-requirements';
@@ -18,6 +18,60 @@ import { NIST_CSF_2_0, countNISTSubcategories } from '../constants/nist-csf-requ
 import { GDPR_REQUIREMENTS, countGDPRProvisions } from '../constants/gdpr-requirements';
 
 type ControlAnswer = 'yes' | 'no' | 'partial' | 'na' | null;
+
+// Evidence types for requirements view
+interface RequirementEvidence {
+  id: string;
+  requirementId: string;
+  frameworkId: FrameworkId;
+  name: string;
+  description: string;
+  evidenceType: string;
+  files: EvidenceFile[];
+  createdAt: string;
+  status: 'pending' | 'verified' | 'rejected';
+}
+
+interface EvidenceFile {
+  name: string;
+  size: number;
+  type: string;
+  dataUrl: string;
+}
+
+// Local storage key for evidence
+const EVIDENCE_STORAGE_KEY = 'framework-requirements-evidence';
+
+// Type for stored evidence (keyed by framework, then by requirement)
+type StoredEvidence = Partial<Record<FrameworkId, Record<string, RequirementEvidence[]>>>;
+
+// Load evidence from localStorage
+function loadEvidence(): StoredEvidence {
+  try {
+    const stored = localStorage.getItem(EVIDENCE_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+// Save evidence to localStorage
+function saveEvidence(evidence: StoredEvidence) {
+  try {
+    localStorage.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(evidence));
+  } catch (e) {
+    console.error('Failed to save evidence:', e);
+  }
+}
+
+// Format file size helper
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 interface FrameworkRequirementsViewProps {
   frameworkId: FrameworkId;
@@ -97,6 +151,349 @@ const StatusIcon: React.FC<{ status: 'implemented' | 'partial' | 'not_started' |
   }
 };
 
+// Evidence Panel Component
+const EvidencePanel: React.FC<{
+  requirementId: string;
+  frameworkId: FrameworkId;
+  evidence: RequirementEvidence[];
+  onAddEvidence: (evidence: Omit<RequirementEvidence, 'id' | 'createdAt'>) => void;
+  onRemoveEvidence: (evidenceId: string) => void;
+  onClose: () => void;
+}> = ({ requirementId, frameworkId, evidence, onAddEvidence, onRemoveEvidence, onClose }) => {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEvidence, setNewEvidence] = useState({
+    name: '',
+    description: '',
+    evidenceType: 'Documentation',
+  });
+  const [uploadedFiles, setUploadedFiles] = useState<EvidenceFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+    'text/plain',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+  ];
+
+  const EVIDENCE_TYPES = [
+    'Documentation',
+    'Policy',
+    'Procedure',
+    'Screenshot',
+    'Configuration Export',
+    'Audit Log',
+    'Test Results',
+    'Certificate',
+    'Report',
+    'Other',
+  ];
+
+  const processFiles = async (files: FileList | File[]) => {
+    setUploadError(null);
+    const fileArray = Array.from(files);
+    const newFiles: EvidenceFile[] = [];
+
+    for (const file of fileArray) {
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadError(`File "${file.name}" exceeds 10MB limit`);
+        continue;
+      }
+
+      if (!ALLOWED_TYPES.includes(file.type) && !file.name.endsWith('.csv')) {
+        setUploadError(`File type "${file.type || 'unknown'}" is not supported`);
+        continue;
+      }
+
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+
+        newFiles.push({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          dataUrl,
+        });
+      } catch {
+        setUploadError(`Failed to read file "${file.name}"`);
+      }
+    }
+
+    if (newFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+      if (!newEvidence.name && newFiles.length === 1) {
+        setNewEvidence(prev => ({ ...prev, name: newFiles[0].name.replace(/\.[^/.]+$/, '') }));
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
+  const removeUploadedFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = () => {
+    if (!newEvidence.name) return;
+
+    onAddEvidence({
+      requirementId,
+      frameworkId,
+      name: newEvidence.name,
+      description: newEvidence.description,
+      evidenceType: newEvidence.evidenceType,
+      files: uploadedFiles,
+      status: 'pending',
+    });
+
+    setNewEvidence({ name: '', description: '', evidenceType: 'Documentation' });
+    setUploadedFiles([]);
+    setShowAddForm(false);
+  };
+
+  const handleCancel = () => {
+    setNewEvidence({ name: '', description: '', evidenceType: 'Documentation' });
+    setUploadedFiles([]);
+    setUploadError(null);
+    setShowAddForm(false);
+  };
+
+  return (
+    <div className="bg-slate-50 dark:bg-steel-800/50 border-t border-slate-200 dark:border-steel-700 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-steel-100 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-indigo-600 dark:text-accent-400" />
+          Evidence for {requirementId}
+        </h4>
+        <button
+          onClick={onClose}
+          className="p-1 text-slate-400 hover:text-slate-600 dark:text-steel-500 dark:hover:text-steel-300"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Existing Evidence */}
+      {evidence.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {evidence.map(ev => (
+            <div
+              key={ev.id}
+              className="p-3 bg-white dark:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-900 dark:text-steel-100">{ev.name}</span>
+                    <span className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-400 rounded">
+                      {ev.evidenceType}
+                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      ev.status === 'verified' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                      ev.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                      'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                    }`}>
+                      {ev.status}
+                    </span>
+                  </div>
+                  {ev.description && (
+                    <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">{ev.description}</p>
+                  )}
+                  {ev.files.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {ev.files.map((file, idx) => {
+                        const isImage = file.dataUrl.startsWith('data:image/');
+                        return (
+                          <a
+                            key={idx}
+                            href={file.dataUrl}
+                            download={file.name}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 dark:bg-steel-700 rounded text-indigo-600 dark:text-accent-400 hover:bg-slate-200 dark:hover:bg-steel-600"
+                          >
+                            {isImage ? (
+                              <img src={file.dataUrl} alt="" className="w-4 h-4 object-cover rounded" />
+                            ) : (
+                              <FileText className="w-3 h-3" />
+                            )}
+                            {file.name}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => onRemoveEvidence(ev.id)}
+                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Evidence Form */}
+      {showAddForm ? (
+        <div className="p-4 bg-white dark:bg-steel-800 rounded-lg border border-indigo-200 dark:border-accent-500/30 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="text"
+              value={newEvidence.name}
+              onChange={e => setNewEvidence(prev => ({ ...prev, name: e.target.value }))}
+              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-slate-900 dark:text-steel-100 text-sm"
+              placeholder="Evidence name..."
+            />
+            <select
+              value={newEvidence.evidenceType}
+              onChange={e => setNewEvidence(prev => ({ ...prev, evidenceType: e.target.value }))}
+              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-slate-900 dark:text-steel-100 text-sm"
+            >
+              {EVIDENCE_TYPES.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <textarea
+            value={newEvidence.description}
+            onChange={e => setNewEvidence(prev => ({ ...prev, description: e.target.value }))}
+            rows={2}
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-steel-900 text-slate-900 dark:text-steel-100 text-sm"
+            placeholder="Description (optional)..."
+          />
+
+          {/* File Upload Area */}
+          <div
+            className={`relative border-2 border-dashed rounded-lg p-4 transition-colors ${
+              isDragging
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
+                : 'border-slate-300 dark:border-steel-600 hover:border-indigo-400 dark:hover:border-accent-500'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.gif,.webp"
+              onChange={handleFileChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <div className="text-center">
+              <Upload className={`w-6 h-6 mx-auto mb-1 ${
+                isDragging ? 'text-indigo-500' : 'text-slate-400 dark:text-steel-500'
+              }`} />
+              <p className="text-xs font-medium text-slate-700 dark:text-steel-300">
+                {isDragging ? 'Drop files here' : 'Drag & drop or click to upload'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-steel-400">
+                PDF, Word, Excel, CSV, images (max 10MB)
+              </p>
+            </div>
+          </div>
+
+          {uploadError && (
+            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400 text-xs">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              {uploadError}
+            </div>
+          )}
+
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-1">
+              {uploadedFiles.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-steel-900 rounded-lg text-xs"
+                >
+                  <FileText className="w-4 h-4 text-slate-400" />
+                  <span className="flex-1 truncate text-slate-700 dark:text-steel-300">{file.name}</span>
+                  <span className="text-slate-400">{formatFileSize(file.size)}</span>
+                  <button
+                    onClick={() => removeUploadedFile(idx)}
+                    className="p-0.5 text-slate-400 hover:text-red-500"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSubmit}
+              disabled={!newEvidence.name}
+              className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Add Evidence{uploadedFiles.length > 0 ? ` (${uploadedFiles.length} file${uploadedFiles.length > 1 ? 's' : ''})` : ''}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2 text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="w-full py-2 border-2 border-dashed border-slate-300 dark:border-steel-600 rounded-lg text-slate-500 dark:text-steel-400 hover:border-indigo-400 dark:hover:border-accent-500 hover:text-indigo-600 dark:hover:text-accent-400 transition-colors text-sm flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Evidence
+        </button>
+      )}
+    </div>
+  );
+};
+
 // Collapsible requirement item component
 const RequirementItemComponent: React.FC<{
   item: RequirementItem;
@@ -107,11 +504,19 @@ const RequirementItemComponent: React.FC<{
   onControlClick?: (controlId: string) => void;
   expandedIds: Set<string>;
   toggleExpanded: (id: string) => void;
-}> = ({ item, depth, frameworkId, controls, getControlAnswer, onControlClick, expandedIds, toggleExpanded }) => {
+  evidencePanelId: string | null;
+  setEvidencePanelId: (id: string | null) => void;
+  evidence: Record<string, RequirementEvidence[]>;
+  onAddEvidence: (evidence: Omit<RequirementEvidence, 'id' | 'createdAt'>) => void;
+  onRemoveEvidence: (evidenceId: string) => void;
+}> = ({ item, depth, frameworkId, controls, getControlAnswer, onControlClick, expandedIds, toggleExpanded, evidencePanelId, setEvidencePanelId, evidence, onAddEvidence, onRemoveEvidence }) => {
   const isExpanded = expandedIds.has(item.id);
   const hasChildren = item.children && item.children.length > 0;
+  const isLeafNode = !hasChildren;
   const { status, mappedControls } = getRequirementStatus(item.id, frameworkId, controls, getControlAnswer);
   const frameworkColor = FRAMEWORK_COLORS[frameworkId];
+  const requirementEvidence = evidence[item.id] || [];
+  const showEvidencePanel = evidencePanelId === item.id;
 
   return (
     <div className="border-b border-slate-100 dark:border-steel-700 last:border-b-0">
@@ -147,6 +552,13 @@ const RequirementItemComponent: React.FC<{
                 Optional
               </span>
             )}
+            {/* Evidence badge for leaf nodes */}
+            {isLeafNode && requirementEvidence.length > 0 && (
+              <span className="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded flex items-center gap-1">
+                <FileText className="w-3 h-3" />
+                {requirementEvidence.length}
+              </span>
+            )}
           </div>
           {item.description && (
             <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">{item.description}</p>
@@ -178,16 +590,48 @@ const RequirementItemComponent: React.FC<{
           )}
         </div>
 
-        <div className="flex-shrink-0 text-xs text-slate-400 dark:text-steel-500">
-          {mappedControls.length > 0 ? (
-            <span className={status === 'implemented' ? 'text-green-500' : status === 'partial' ? 'text-amber-500' : ''}>
-              {mappedControls.filter(c => getControlAnswer(c.id) === 'yes').length}/{mappedControls.length}
-            </span>
-          ) : (
-            <span className="text-slate-300 dark:text-steel-600">—</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Add Evidence button for leaf nodes */}
+          {isLeafNode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEvidencePanelId(showEvidencePanel ? null : item.id);
+              }}
+              className={`text-xs px-2 py-1 rounded flex items-center gap-1 transition-colors ${
+                showEvidencePanel
+                  ? 'bg-indigo-100 dark:bg-accent-500/20 text-indigo-700 dark:text-accent-300'
+                  : 'bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-400 hover:bg-indigo-50 dark:hover:bg-accent-500/10 hover:text-indigo-600 dark:hover:text-accent-400'
+              }`}
+              title="Add evidence"
+            >
+              <Upload className="w-3 h-3" />
+              Evidence
+            </button>
           )}
+          <div className="text-xs text-slate-400 dark:text-steel-500">
+            {mappedControls.length > 0 ? (
+              <span className={status === 'implemented' ? 'text-green-500' : status === 'partial' ? 'text-amber-500' : ''}>
+                {mappedControls.filter(c => getControlAnswer(c.id) === 'yes').length}/{mappedControls.length}
+              </span>
+            ) : (
+              <span className="text-slate-300 dark:text-steel-600">—</span>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Evidence Panel */}
+      {showEvidencePanel && (
+        <EvidencePanel
+          requirementId={item.id}
+          frameworkId={frameworkId}
+          evidence={requirementEvidence}
+          onAddEvidence={onAddEvidence}
+          onRemoveEvidence={onRemoveEvidence}
+          onClose={() => setEvidencePanelId(null)}
+        />
+      )}
 
       {/* Render children when expanded */}
       {hasChildren && isExpanded && (
@@ -203,6 +647,11 @@ const RequirementItemComponent: React.FC<{
               onControlClick={onControlClick}
               expandedIds={expandedIds}
               toggleExpanded={toggleExpanded}
+              evidencePanelId={evidencePanelId}
+              setEvidencePanelId={setEvidencePanelId}
+              evidence={evidence}
+              onAddEvidence={onAddEvidence}
+              onRemoveEvidence={onRemoveEvidence}
             />
           ))}
         </div>
@@ -365,6 +814,11 @@ export const FrameworkRequirementsView: React.FC<FrameworkRequirementsViewProps>
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandAll, setExpandAll] = useState(false);
+  const [evidencePanelId, setEvidencePanelId] = useState<string | null>(null);
+  const [evidence, setEvidence] = useState<Record<string, RequirementEvidence[]>>(() => {
+    const all = loadEvidence();
+    return all[frameworkId] || {};
+  });
 
   const frameworkMeta = FRAMEWORKS.find(f => f.id === frameworkId);
   const frameworkColor = FRAMEWORK_COLORS[frameworkId];
@@ -374,6 +828,51 @@ export const FrameworkRequirementsView: React.FC<FrameworkRequirementsViewProps>
     () => calculateProgress(requirements, frameworkId, controls, getControlAnswer),
     [requirements, frameworkId, controls, getControlAnswer]
   );
+
+  // Evidence handlers
+  const handleAddEvidence = (newEvidence: Omit<RequirementEvidence, 'id' | 'createdAt'>) => {
+    const evidenceItem: RequirementEvidence = {
+      ...newEvidence,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setEvidence(prev => {
+      const reqEvidence = prev[newEvidence.requirementId] || [];
+      const updated = {
+        ...prev,
+        [newEvidence.requirementId]: [...reqEvidence, evidenceItem],
+      };
+
+      // Save to localStorage
+      const all = loadEvidence();
+      all[frameworkId] = updated;
+      saveEvidence(all);
+
+      return updated;
+    });
+  };
+
+  const handleRemoveEvidence = (evidenceId: string) => {
+    setEvidence(prev => {
+      const updated: Record<string, RequirementEvidence[]> = {};
+      for (const [reqId, items] of Object.entries(prev)) {
+        updated[reqId] = items.filter(e => e.id !== evidenceId);
+      }
+
+      // Save to localStorage
+      const all = loadEvidence();
+      all[frameworkId] = updated;
+      saveEvidence(all);
+
+      return updated;
+    });
+  };
+
+  // Count total evidence items
+  const totalEvidenceCount = useMemo(() => {
+    return Object.values(evidence).reduce((sum, items) => sum + items.length, 0);
+  }, [evidence]);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds(prev => {
@@ -426,6 +925,12 @@ export const FrameworkRequirementsView: React.FC<FrameworkRequirementsViewProps>
               </h2>
               <p className="text-sm text-slate-500 dark:text-steel-400">
                 {totalCount} requirements • Framework-centric view
+                {totalEvidenceCount > 0 && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+                    <FileText className="w-3 h-3" />
+                    {totalEvidenceCount} evidence
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -483,6 +988,11 @@ export const FrameworkRequirementsView: React.FC<FrameworkRequirementsViewProps>
             onControlClick={onControlClick}
             expandedIds={expandedIds}
             toggleExpanded={toggleExpanded}
+            evidencePanelId={evidencePanelId}
+            setEvidencePanelId={setEvidencePanelId}
+            evidence={evidence}
+            onAddEvidence={handleAddEvidence}
+            onRemoveEvidence={handleRemoveEvidence}
           />
         ))}
       </div>
