@@ -421,6 +421,13 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
   const response = getResponse(control.id);
   const evidenceCounts = getEvidenceFileCounts(control.id);
 
+  // Debug: Log first control to check ID format match (only once)
+  useEffect(() => {
+    if (control.id === 'AC-1' || control.id === 'MCE-AC-1') {
+      console.log(`[ProtocolCard Debug] Control ID: "${control.id}", evidenceCounts:`, evidenceCounts);
+    }
+  }, [control.id, evidenceCounts]);
+
   useEffect(() => { setLocalRemediation(response?.remediationPlan || ''); }, [response?.remediationPlan]);
 
   useEffect(() => {

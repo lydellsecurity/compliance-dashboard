@@ -1174,11 +1174,18 @@ class EvidenceRepositoryService {
 
       if (!data) return result;
 
+      console.log(`[EvidenceRepo] getEvidenceCountsByControl: ${data.length} evidence items found`);
+
       // Group by control_id and count files
       const counts: Record<string, { evidenceCount: number; fileCount: number }> = {};
+      let nullControlIds = 0;
 
       for (const item of data) {
-        const controlId = item.control_id as string;
+        const controlId = item.control_id as string | null;
+        if (!controlId) {
+          nullControlIds++;
+          continue; // Skip items with null control_id
+        }
         if (!counts[controlId]) {
           counts[controlId] = { evidenceCount: 0, fileCount: 0 };
         }
@@ -1200,6 +1207,13 @@ class EvidenceRepositoryService {
           hasFiles: count.fileCount > 0,
         });
       }
+
+      // Debug: log summary and sample control IDs
+      if (nullControlIds > 0) {
+        console.warn(`[EvidenceRepo] ${nullControlIds} evidence items have null control_id`);
+      }
+      const sampleIds = Array.from(result.keys()).slice(0, 5);
+      console.log(`[EvidenceRepo] getEvidenceCountsByControl result: ${result.size} unique controls. Sample IDs:`, sampleIds);
 
       return result;
     } catch (err) {

@@ -443,11 +443,15 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         const counts = await evidenceRepository.getEvidenceCountsByControl();
         setEvidenceFileCounts(counts);
 
-        // Debug: show breakdown of counts
+        // Debug: show breakdown of counts and sample control IDs
         let withFiles = 0;
         let withoutFiles = 0;
         let totalFiles = 0;
-        counts.forEach((count) => {
+        const sampleControlIds: string[] = [];
+        counts.forEach((count, controlId) => {
+          if (sampleControlIds.length < 5) {
+            sampleControlIds.push(controlId);
+          }
           if (count.hasFiles) {
             withFiles++;
             totalFiles += count.fileCount;
@@ -456,6 +460,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
           }
         });
         console.log(`[Evidence Counts] Loaded: ${counts.size} controls total, ${withFiles} with files (${totalFiles} files), ${withoutFiles} without files`);
+        console.log(`[Evidence Counts] Sample control IDs from DB:`, sampleControlIds);
       } catch (err) {
         console.error('[Evidence Counts] Initial load failed:', err);
       }
