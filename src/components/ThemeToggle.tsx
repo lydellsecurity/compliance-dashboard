@@ -32,8 +32,8 @@ function getInitialTheme(): Theme {
     }
   }
 
-  // Default to dark mode for consistency with the dashboard
-  return 'dark';
+  // Default to light mode for clean corporate look
+  return 'light';
 }
 
 export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {

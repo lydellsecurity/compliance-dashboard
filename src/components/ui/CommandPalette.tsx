@@ -33,6 +33,8 @@ import {
   HelpCircle,
   Command,
   ArrowRight,
+  Filter,
+  Clock,
 } from 'lucide-react';
 
 // ============================================================================
@@ -53,6 +55,8 @@ export interface CommandItem {
 
 export type CommandCategory =
   | 'navigation'
+  | 'controls'
+  | 'domains'
   | 'actions'
   | 'settings'
   | 'help';
@@ -70,9 +74,11 @@ interface CommandPaletteProps {
 
 const CATEGORY_CONFIG: Record<CommandCategory, { label: string; order: number }> = {
   navigation: { label: 'Navigation', order: 1 },
-  actions: { label: 'Actions', order: 2 },
-  settings: { label: 'Settings', order: 3 },
-  help: { label: 'Help', order: 4 },
+  controls: { label: 'Controls', order: 2 },
+  domains: { label: 'Domains', order: 3 },
+  actions: { label: 'Actions', order: 4 },
+  settings: { label: 'Settings', order: 5 },
+  help: { label: 'Help', order: 6 },
 };
 
 // ============================================================================
@@ -133,6 +139,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const groupedCommands = useMemo(() => {
     const groups: Record<CommandCategory, CommandItem[]> = {
       navigation: [],
+      controls: [],
+      domains: [],
       actions: [],
       settings: [],
       help: [],
@@ -349,10 +357,33 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 // HOOK FOR COMMAND PALETTE
 // ============================================================================
 
+// Control interface for search (matches MasterControl from constants/controls.ts)
+export interface SearchableControl {
+  id: string;
+  domain: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  riskLevel?: 'critical' | 'high' | 'medium' | 'low';
+}
+
+// Domain info for filtering
+export interface SearchableDomain {
+  id: string;
+  title: string;
+  color: string;
+  controlCount: number;
+}
+
 interface UseCommandPaletteOptions {
   onNavigate?: (tab: string) => void;
   onToggleTheme?: () => void;
   onSignOut?: () => void;
+  controls?: SearchableControl[];
+  domains?: SearchableDomain[];
+  onSelectControl?: (controlId: string) => void;
+  onFilterDomain?: (domainId: string) => void;
+  recentControls?: string[]; // IDs of recently viewed controls
 }
 
 export function useCommandPalette(options: UseCommandPaletteOptions = {}) {
@@ -538,7 +569,72 @@ export function useCommandPalette(options: UseCommandPaletteOptions = {}) {
       },
     ];
 
-    return [...navCommands, ...settingsCommands, ...helpCommands];
+    // Generate control search commands
+    const controlCommands: CommandItem[] = (options.controls || [])
+      .slice(0, 50) // Limit to first 50 controls in palette for performance
+      .map((control) => {
+        // Determine icon color based on risk level
+        const riskColors: Record<string, string> = {
+          critical: 'text-red-500',
+          high: 'text-orange-500',
+          medium: 'text-yellow-500',
+          low: 'text-green-500',
+        };
+        const iconColor = riskColors[control.riskLevel || 'medium'] || 'text-slate-400';
+
+        return {
+          id: `control-${control.id}`,
+          title: control.title,
+          description: `${control.id} • ${control.domain}`,
+          icon: <Shield className={`w-4 h-4 ${iconColor}`} />,
+          category: 'controls' as CommandCategory,
+          keywords: [
+            control.id,
+            control.domain,
+            ...control.keywords,
+            control.riskLevel || '',
+          ],
+          action: () => options.onSelectControl?.(control.id),
+        };
+      });
+
+    // Generate domain filter commands
+    const domainCommands: CommandItem[] = (options.domains || []).map((domain) => ({
+      id: `domain-${domain.id}`,
+      title: `Filter: ${domain.title}`,
+      description: `${domain.controlCount} controls`,
+      icon: <Filter className="w-4 h-4" style={{ color: domain.color }} />,
+      category: 'domains' as CommandCategory,
+      keywords: [domain.id, domain.title.toLowerCase(), 'filter', 'domain'],
+      action: () => options.onFilterDomain?.(domain.id),
+    }));
+
+    // Recent controls get priority
+    const recentControlCommands: CommandItem[] = (options.recentControls || [])
+      .slice(0, 5)
+      .map((controlId) => {
+        const control = options.controls?.find((c) => c.id === controlId);
+        if (!control) return null;
+        return {
+          id: `recent-${control.id}`,
+          title: control.title,
+          description: `Recently viewed • ${control.id}`,
+          icon: <Clock className="w-4 h-4 text-violet-500" />,
+          category: 'controls' as CommandCategory,
+          keywords: ['recent', control.id, control.title],
+          action: () => options.onSelectControl?.(control.id),
+        };
+      })
+      .filter(Boolean) as CommandItem[];
+
+    return [
+      ...navCommands,
+      ...recentControlCommands,
+      ...controlCommands,
+      ...domainCommands,
+      ...settingsCommands,
+      ...helpCommands,
+    ];
   }, [options]);
 
   return {

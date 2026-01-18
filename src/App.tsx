@@ -4,7 +4,7 @@
  * Midnight & Steel Theme
  */
 
-import React, { useState, useMemo, createContext, useContext, useRef, useEffect } from 'react';
+import React, { useState, useMemo, createContext, useContext, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
@@ -420,15 +420,40 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
 // PROTOCOL CARD (Control Assessment)
 // ============================================================================
 
-const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
+const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void; onDropEvidence?: (controlId: string, files: File[]) => void }> = ({ control, onOpenRemediation, onDropEvidence }) => {
   const { answerControl, getResponse, updateRemediation, evidenceFileCounts } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
   const [localRemediation, setLocalRemediation] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const response = getResponse(control.id);
   // Access the object directly - this creates a dependency on the object reference
   const evidenceCounts = evidenceFileCounts[control.id];
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0 && onDropEvidence) {
+      onDropEvidence(control.id, files);
+    }
+  };
 
   useEffect(() => { setLocalRemediation(response?.remediationPlan || ''); }, [response?.remediationPlan]);
 
@@ -484,8 +509,20 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`protocol-card ${riskIndicatorClass}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`protocol-card ${riskIndicatorClass} ${isDragOver ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-midnight-900 bg-indigo-50/50 dark:bg-indigo-900/20' : ''} transition-all`}
     >
+      {/* Drop zone overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center z-10 pointer-events-none">
+          <div className="flex flex-col items-center gap-2 text-indigo-600 dark:text-indigo-400">
+            <Paperclip className="w-8 h-8" />
+            <span className="text-sm font-medium">Drop files to upload</span>
+          </div>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -663,7 +700,36 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
 // ============================================================================
 
 const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomainMeta) => void }> = ({ onNavigate }) => {
-  const { frameworkProgress, stats, criticalGaps, domainProgress, allDomains } = useComplianceContext();
+  const { frameworkProgress, stats, criticalGaps, domainProgress, allDomains, allControls, getResponse } = useComplianceContext();
+
+  // Get next 3 tasks - prioritize critical gaps, then high-risk unanswered
+  const nextTasks = useMemo(() => {
+    const tasks: Array<{ control: MasterControl; reason: string; priority: 'critical' | 'high' | 'medium' }> = [];
+
+    // First: Critical gaps (answered 'no')
+    criticalGaps
+      .filter(c => c.riskLevel === 'critical')
+      .slice(0, 2)
+      .forEach(c => tasks.push({ control: c, reason: 'Critical gap needs attention', priority: 'critical' }));
+
+    // Then: High-risk unanswered controls
+    if (tasks.length < 3) {
+      allControls
+        .filter(c => !getResponse(c.id)?.answer && c.riskLevel === 'critical')
+        .slice(0, 3 - tasks.length)
+        .forEach(c => tasks.push({ control: c, reason: 'Critical control not assessed', priority: 'high' }));
+    }
+
+    // Fill remaining with high-risk gaps
+    if (tasks.length < 3) {
+      criticalGaps
+        .filter(c => c.riskLevel === 'high' && !tasks.some(t => t.control.id === c.id))
+        .slice(0, 3 - tasks.length)
+        .forEach(c => tasks.push({ control: c, reason: 'High priority gap', priority: 'medium' }));
+    }
+
+    return tasks.slice(0, 3);
+  }, [criticalGaps, allControls, getResponse]);
 
   return (
     <motion.div
@@ -676,7 +742,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-steel-100">Dashboard</h1>
-          <p className="text-slate-500 dark:text-steel-400 mt-1">{stats.totalControls} controls across 4 frameworks</p>
+          <p className="text-slate-500 dark:text-steel-400 mt-1">{stats.totalControls} controls across {frameworkProgress.length} frameworks</p>
         </div>
         <button
           onClick={() => generatePDF(frameworkProgress, stats, criticalGaps)}
@@ -689,60 +755,148 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
 
       {/* Bento Grid - Premium Layout */}
       <div className="grid grid-cols-12 gap-5">
-        {/* Overall Compliance Score - Large Card */}
+        {/* Overall Compliance Score - Big Number */}
         <motion.div
-          className="col-span-12 lg:col-span-4"
+          className="col-span-12 lg:col-span-5"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.05 }}
         >
-          <Card className="p-6 h-full">
-            <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-6">Overall Compliance</h2>
-            <div className="flex justify-center mb-6">
-              <CircularGauge
-                percentage={stats.assessmentPercentage}
-                size={140}
-                strokeWidth={4}
-                color="#4f46e5"
-                label="Assessed"
-                count={`${stats.answeredControls}/${stats.totalControls} controls`}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-auto">
-              <div className="p-4 bg-emerald-50 dark:bg-status-success/10 rounded-lg">
-                <div className="text-2xl font-semibold text-emerald-600 dark:text-status-success tracking-tight">{stats.compliantControls}</div>
-                <div className="text-xs font-medium text-emerald-600/70 dark:text-status-success/70 uppercase tracking-wide mt-1">Compliant</div>
+          <Card className="p-6 h-full bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-midnight-800 border-indigo-100 dark:border-indigo-900/50">
+            <h2 className="text-sm font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-4">Overall Compliance</h2>
+            <div className="flex items-center gap-6">
+              <div className="flex-shrink-0">
+                <CircularGauge
+                  percentage={stats.assessmentPercentage}
+                  size={120}
+                  strokeWidth={6}
+                  color="#4f46e5"
+                  label=""
+                  count=""
+                />
               </div>
-              <div className="p-4 bg-amber-50 dark:bg-status-warning/10 rounded-lg">
-                <div className="text-2xl font-semibold text-amber-600 dark:text-status-warning tracking-tight">{stats.remainingControls}</div>
-                <div className="text-xs font-medium text-amber-600/70 dark:text-status-warning/70 uppercase tracking-wide mt-1">Remaining</div>
+              <div className="flex-1">
+                <div className="text-5xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">
+                  {stats.assessmentPercentage}%
+                </div>
+                <div className="text-slate-600 dark:text-steel-400 mt-1">
+                  {stats.answeredControls} of {stats.totalControls} controls assessed
+                </div>
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <span className="text-sm text-slate-600 dark:text-steel-400">{stats.compliantControls} Compliant</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-sm text-slate-600 dark:text-steel-400">{stats.gapControls} Gaps</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
         </motion.div>
 
-        {/* Framework Progress - Side by Side Cards */}
+        {/* Your Next 3 Tasks */}
         <motion.div
-          className="col-span-12 lg:col-span-8"
+          className="col-span-12 lg:col-span-7"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.1 }}
         >
           <Card className="p-6 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-500" />
+                Your Next 3 Tasks
+              </h2>
+              <button
+                onClick={() => onNavigate('assessment')}
+                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                View all
+              </button>
+            </div>
+            {nextTasks.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-emerald-50 dark:bg-status-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-status-success" />
+                  </div>
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">All caught up!</p>
+                  <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">No critical tasks pending</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {nextTasks.map((task, i) => {
+                  const domain = allDomains.find(d => (d.id as string) === (task.control.domain as string));
+                  const priorityColors = {
+                    critical: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+                    high: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
+                    medium: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
+                  };
+                  return (
+                    <motion.button
+                      key={task.control.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + i * 0.05 }}
+                      onClick={() => domain && onNavigate('assessment', domain)}
+                      className={`w-full p-4 rounded-xl border text-left transition-all duration-200 hover:shadow-md group ${priorityColors[task.priority]}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                          task.priority === 'critical' ? 'bg-red-500' : task.priority === 'high' ? 'bg-orange-500' : 'bg-amber-500'
+                        }`}>
+                          {i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-mono text-slate-500 dark:text-steel-500">{task.control.id}</span>
+                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                              task.priority === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' :
+                              task.priority === 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' :
+                              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                            }`}>
+                              {task.control.riskLevel.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-slate-800 dark:text-steel-200 truncate">{task.control.title}</p>
+                          <p className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">{task.reason}</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </motion.div>
+
+        {/* Framework Progress - Side by Side Cards */}
+        <motion.div
+          className="col-span-12"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.15 }}
+        >
+          <Card className="p-6">
             <h2 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-6">Framework Progress</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {frameworkProgress.map((fw, i) => (
                 <motion.div
                   key={fw.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.15 + i * 0.05, duration: 0.2 }}
+                  transition={{ delay: 0.2 + i * 0.05, duration: 0.2 }}
                   className="flex flex-col items-center"
                 >
                   <CircularGauge
                     percentage={fw.percentage}
-                    size={88}
-                    strokeWidth={3}
+                    size={80}
+                    strokeWidth={4}
                     color={FRAMEWORK_COLORS[fw.id] || fw.color}
                     label={fw.name}
                     count={`${fw.completed}/${fw.total}`}
@@ -907,11 +1061,12 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
 // ============================================================================
 
 const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ initialDomain }) => {
-  const { allDomains, domainProgress, getControlsByDomain, allControls, getResponse, getEvidenceByControlId } = useComplianceContext();
+  const { allDomains, domainProgress, getControlsByDomain, allControls, getResponse, getEvidenceByControlId, evidenceFileCounts } = useComplianceContext();
   const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || allDomains[0]);
   const [search, setSearch] = useState('');
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
+  const [smartFilter, setSmartFilter] = useState<'all' | 'quick-fix' | 'needs-evidence' | 'critical-gaps'>('all');
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
   const [viewMode, setViewMode] = useState<'controls' | 'requirements' | 'auditor'>('requirements');
   const [showRequirementWizard, setShowRequirementWizard] = useState(false);
@@ -939,6 +1094,27 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
     return response?.answer || null;
   };
 
+  // Calculate smart filter counts
+  const smartFilterCounts = useMemo(() => {
+    const quickFix = allControls.filter(c => {
+      const response = getResponse(c.id);
+      return response?.answer === 'no' && c.riskLevel !== 'critical';
+    }).length;
+
+    const needsEvidence = allControls.filter(c => {
+      const response = getResponse(c.id);
+      const counts = evidenceFileCounts[c.id];
+      return response?.answer === 'yes' && (!counts || !counts.hasFiles);
+    }).length;
+
+    const criticalGaps = allControls.filter(c => {
+      const response = getResponse(c.id);
+      return response?.answer === 'no' && c.riskLevel === 'critical';
+    }).length;
+
+    return { quickFix, needsEvidence, criticalGaps };
+  }, [allControls, getResponse, evidenceFileCounts]);
+
   const controls = useMemo(() => {
     let filtered = allControls;
 
@@ -947,6 +1123,25 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
       filtered = filtered.filter(c =>
         c.frameworkMappings.some(m => m.frameworkId === selectedFramework)
       );
+    }
+
+    // Apply smart filter
+    if (smartFilter !== 'all') {
+      filtered = filtered.filter(c => {
+        const response = getResponse(c.id);
+        const counts = evidenceFileCounts[c.id];
+
+        switch (smartFilter) {
+          case 'quick-fix':
+            return response?.answer === 'no' && c.riskLevel !== 'critical';
+          case 'needs-evidence':
+            return response?.answer === 'yes' && (!counts || !counts.hasFiles);
+          case 'critical-gaps':
+            return response?.answer === 'no' && c.riskLevel === 'critical';
+          default:
+            return true;
+        }
+      });
     }
 
     // Then filter by search or domain
@@ -959,13 +1154,13 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
       );
     }
 
-    // If framework is selected, show all controls for that framework (not filtered by domain)
-    if (selectedFramework !== 'all') {
+    // If framework is selected or smart filter is active, show all matching controls
+    if (selectedFramework !== 'all' || smartFilter !== 'all') {
       return filtered;
     }
 
     return getControlsByDomain(activeDomain.id as string);
-  }, [activeDomain.id, search, selectedFramework, allControls, getControlsByDomain]);
+  }, [activeDomain.id, search, selectedFramework, smartFilter, allControls, getControlsByDomain, getResponse, evidenceFileCounts]);
 
   const selectedFrameworkMeta = selectedFramework !== 'all'
     ? FRAMEWORKS.find(f => f.id === selectedFramework)
@@ -1161,7 +1356,70 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             )}
           </div>
 
-          {/* View Mode Toggle */}
+          {/* Smart Filters */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSmartFilter(smartFilter === 'quick-fix' ? 'all' : 'quick-fix')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                smartFilter === 'quick-fix'
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                  : 'bg-white dark:bg-steel-900 text-slate-600 dark:text-steel-400 border border-slate-200 dark:border-steel-700 hover:border-emerald-300 dark:hover:border-emerald-700'
+              }`}
+              title="Controls that can be resolved with AI Policy Generator"
+            >
+              <Sparkles className="w-4 h-4" />
+              Quick Fix
+              {smartFilterCounts.quickFix > 0 && (
+                <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                  smartFilter === 'quick-fix' ? 'bg-emerald-200 dark:bg-emerald-800' : 'bg-slate-100 dark:bg-steel-800'
+                }`}>
+                  {smartFilterCounts.quickFix}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setSmartFilter(smartFilter === 'needs-evidence' ? 'all' : 'needs-evidence')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                smartFilter === 'needs-evidence'
+                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                  : 'bg-white dark:bg-steel-900 text-slate-600 dark:text-steel-400 border border-slate-200 dark:border-steel-700 hover:border-amber-300 dark:hover:border-amber-700'
+              }`}
+              title="Compliant controls missing evidence files"
+            >
+              <Paperclip className="w-4 h-4" />
+              Needs Evidence
+              {smartFilterCounts.needsEvidence > 0 && (
+                <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                  smartFilter === 'needs-evidence' ? 'bg-amber-200 dark:bg-amber-800' : 'bg-slate-100 dark:bg-steel-800'
+                }`}>
+                  {smartFilterCounts.needsEvidence}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setSmartFilter(smartFilter === 'critical-gaps' ? 'all' : 'critical-gaps')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                smartFilter === 'critical-gaps'
+                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700'
+                  : 'bg-white dark:bg-steel-900 text-slate-600 dark:text-steel-400 border border-slate-200 dark:border-steel-700 hover:border-red-300 dark:hover:border-red-700'
+              }`}
+              title="Critical controls marked as non-compliant"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              Critical Gaps
+              {smartFilterCounts.criticalGaps > 0 && (
+                <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                  smartFilter === 'critical-gaps' ? 'bg-red-200 dark:bg-red-800' : 'bg-slate-100 dark:bg-steel-800'
+                }`}>
+                  {smartFilterCounts.criticalGaps}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex gap-3">
           <div className="flex gap-1 p-1 bg-slate-100 dark:bg-steel-800 rounded-lg">
             <button
               onClick={() => setViewMode('requirements')}
@@ -1884,7 +2142,7 @@ const AppContent: React.FC = () => {
   const ir = useIncidentResponse();
   const { currentOrg } = useOrganization();
   const { user } = useAuth();
-  const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress } = compliance;
+  const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress, allControls, allDomains, getResponse: _getResponse, evidenceFileCounts: _evidenceFileCounts } = compliance;
 
   // Use actual user ID from auth, fallback for offline/development mode
   const currentUserId = user?.id || 'anonymous-user';
@@ -1899,6 +2157,46 @@ const AppContent: React.FC = () => {
   const [showAlertConfiguration, setShowAlertConfiguration] = useState(false);
   const [showCloudVerification, setShowCloudVerification] = useState(false);
 
+  // Control detail drawer state (will be used when ControlDetailDrawer is wired up)
+  const [_selectedControlId, setSelectedControlId] = useState<string | null>(null);
+  const [recentControls, setRecentControls] = useState<string[]>(() => {
+    // Load from localStorage
+    const stored = localStorage.getItem('recentControls');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Track recent controls
+  const handleSelectControl = useCallback((controlId: string) => {
+    setSelectedControlId(controlId);
+    setRecentControls(prev => {
+      const filtered = prev.filter(id => id !== controlId);
+      const updated = [controlId, ...filtered].slice(0, 10); // Keep last 10
+      localStorage.setItem('recentControls', JSON.stringify(updated));
+      return updated;
+    });
+    // Switch to assessment tab if not already there
+    setActiveTab('assessment');
+  }, []);
+
+  // Prepare controls and domains for command palette
+  const searchableControls = useMemo(() =>
+    allControls.map(c => ({
+      id: c.id,
+      domain: c.domain,
+      title: c.title,
+      description: c.description,
+      keywords: c.keywords || [],
+      riskLevel: c.riskLevel,
+    })), [allControls]);
+
+  const searchableDomains = useMemo(() =>
+    allDomains.map(d => ({
+      id: d.id,
+      title: d.title,
+      color: d.color,
+      controlCount: allControls.filter(c => c.domain === d.id).length,
+    })), [allDomains, allControls]);
+
   // Command palette for quick navigation
   const { isOpen: commandPaletteOpen, setIsOpen: setCommandPaletteOpen, commands } = useCommandPalette({
     onNavigate: (tab) => setActiveTab(tab as TabId),
@@ -1911,6 +2209,17 @@ const AppContent: React.FC = () => {
       // Will be handled by auth context
       window.location.href = '/';
     },
+    controls: searchableControls,
+    domains: searchableDomains,
+    onSelectControl: handleSelectControl,
+    onFilterDomain: (domainId) => {
+      const domain = allDomains.find(d => d.id === domainId);
+      if (domain) {
+        setSelectedDomain(domain);
+        setActiveTab('assessment');
+      }
+    },
+    recentControls,
   });
 
   // Get alert counts from monitoring service
@@ -1961,7 +2270,7 @@ const AppContent: React.FC = () => {
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         commands={commands}
-        placeholder="Search commands... (navigation, actions, settings)"
+        placeholder="Search controls, domains, or commands..."
       />
 
       {/* Command Center Sidebar */}
