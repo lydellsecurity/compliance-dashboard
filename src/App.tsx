@@ -11,7 +11,7 @@ import {
   Info, AlertTriangle, Shield, Upload, FileText, Lock, Users,
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe, ExternalLink,
-  Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown,
+  Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown, GitCompare,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -40,6 +40,7 @@ import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
 import AuditorRequirementView from './components/AuditorRequirementView';
 import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
+import RegulatoryVersionControl from './components/RegulatoryVersionControl';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
@@ -641,6 +642,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
 
 const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomainMeta) => void }> = ({ onNavigate }) => {
   const { frameworkProgress, stats, criticalGaps, domainProgress, allDomains } = useComplianceContext();
+  const [showRegulatoryUpdates, setShowRegulatoryUpdates] = useState(false);
 
   return (
     <motion.div
@@ -873,6 +875,46 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
               );
             })}
           </div>
+        </Card>
+      </motion.div>
+
+      {/* Regulatory Updates Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.3 }}
+      >
+        <Card className="overflow-hidden">
+          <button
+            onClick={() => setShowRegulatoryUpdates(!showRegulatoryUpdates)}
+            className="w-full p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-steel-800/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-violet-100 dark:bg-violet-500/10 rounded-lg flex items-center justify-center">
+                <GitCompare className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-steel-200">Regulatory Updates & Version Control</h2>
+                <p className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">Track framework changes, compliance drift, and requirement updates</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-slate-400 dark:text-steel-500 transition-transform ${showRegulatoryUpdates ? 'rotate-180' : ''}`} />
+          </button>
+          <AnimatePresence>
+            {showRegulatoryUpdates && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="border-t border-slate-200 dark:border-steel-700"
+              >
+                <div className="p-6">
+                  <RegulatoryVersionControl />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
       </motion.div>
     </motion.div>
