@@ -565,24 +565,18 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
       // Ensure evidence repository context is set
       const dbOrgId = complianceDb.getOrganizationId();
       const dbUserId = complianceDb.getUserId();
-      if (dbOrgId && dbUserId) {
-        evidenceRepository.setContext(dbOrgId, dbUserId);
-      }
 
-      if (evidenceRepository.isAvailable()) {
+      if (evidenceRepository.isAvailable() && dbOrgId && dbUserId) {
+        evidenceRepository.setContext(dbOrgId, dbUserId);
         const yesResponses = Object.values(responsesFromDb).filter(r => r.answer === 'yes');
         console.log(`[Evidence Sync] Found ${yesResponses.length} "yes" responses to sync`);
         console.log(`[Evidence Sync] OrgId: ${dbOrgId}, UserId: ${dbUserId}`);
-
-        // Only sync first 10 to avoid overwhelming the database
-        const toSync = yesResponses.slice(0, 10);
-        console.log(`[Evidence Sync] Will sync first ${toSync.length} responses`);
 
         let created = 0;
         let skipped = 0;
         let failed = 0;
 
-        for (const response of toSync) {
+        for (const response of yesResponses) {
           const control = allControls.find(c => c.id === response.controlId);
           if (!control) {
             console.log(`[Evidence Sync] Control not found: ${response.controlId}`);
@@ -623,7 +617,11 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
         console.log(`[Evidence Sync] Complete: ${created} created, ${skipped} skipped, ${failed} failed`);
       } else {
-        console.log('[Evidence Sync] Evidence repository not available');
+        console.log('[Evidence Sync] Evidence repository not available or missing context:', {
+          isAvailable: evidenceRepository.isAvailable(),
+          hasOrgId: !!dbOrgId,
+          hasUserId: !!dbUserId,
+        });
       }
     } catch (error) {
       console.error('Error loading from Supabase:', error);
@@ -909,7 +907,14 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         }
 
         // Create evidence item in Evidence Repository (if not already exists)
-        if (evidenceRepository.isAvailable() && isOnline) {
+        // Get organization context from complianceDb which should already be set
+        const evidenceOrgId = complianceDb.getOrganizationId();
+        const evidenceUserId = complianceDb.getUserId();
+
+        if (evidenceRepository.isAvailable() && isOnline && evidenceOrgId && evidenceUserId) {
+          // Ensure evidence repository has the correct context
+          evidenceRepository.setContext(evidenceOrgId, evidenceUserId);
+
           evidenceRepository.getEvidenceForControl(controlId).then(async existingEvidence => {
             // Only create if no evidence exists for this control
             if (existingEvidence.length === 0) {
@@ -927,10 +932,17 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
               } else {
                 console.log(`[Evidence] Created evidence for ${controlId}`);
               }
+            } else {
+              console.log(`[Evidence] Evidence already exists for ${controlId}:`, existingEvidence.length, 'items');
             }
           }).catch(err => console.error('[Evidence] Error checking existing evidence:', err));
         } else {
-          console.log('[Evidence] Repository not available or offline');
+          console.log('[Evidence] Repository not available, offline, or missing context:', {
+            isAvailable: evidenceRepository.isAvailable(),
+            isOnline,
+            hasOrgId: !!evidenceOrgId,
+            hasUserId: !!evidenceUserId,
+          });
         }
       }
     }
