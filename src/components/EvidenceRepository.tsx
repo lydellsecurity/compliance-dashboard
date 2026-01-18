@@ -36,6 +36,7 @@ import {
   Check,
   MoreVertical,
   ExternalLink,
+  Paperclip,
 } from 'lucide-react';
 import {
   evidenceRepository,
@@ -570,6 +571,10 @@ const EvidenceCard: React.FC<{
   const menuRef = useRef<HTMLDivElement>(null);
   const statusStyle = STATUS_COLORS[evidence.status];
 
+  // Calculate file count from current version
+  const currentVersion = evidence.versions.find(v => v.version === evidence.currentVersion);
+  const fileCount = currentVersion?.files?.length || 0;
+
   // Close menu on outside click
   useEffect(() => {
     if (!showMenu) return;
@@ -605,9 +610,28 @@ const EvidenceCard: React.FC<{
             <h3 className="font-medium text-slate-900 dark:text-steel-100 line-clamp-1">
               {evidence.title}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-steel-400">
-              {evidence.controlId}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 dark:text-steel-400">
+                {evidence.controlId}
+              </span>
+              {fileCount > 0 ? (
+                <span
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded"
+                  title={`${fileCount} file${fileCount !== 1 ? 's' : ''} attached`}
+                >
+                  <Paperclip className="w-2.5 h-2.5" />
+                  {fileCount}
+                </span>
+              ) : (
+                <span
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 dark:bg-steel-800 text-slate-400 dark:text-steel-500 border border-slate-200 dark:border-steel-700 rounded"
+                  title="No files attached"
+                >
+                  <Paperclip className="w-2.5 h-2.5" />
+                  0
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="relative" ref={menuRef}>
