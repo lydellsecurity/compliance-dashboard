@@ -639,9 +639,9 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
   ): ComplianceReport => {
     const engagement = engagements.find(e => e.id === engagementId);
     if (!engagement) throw new Error('Engagement not found');
-    
+
     const now = new Date().toISOString();
-    
+
     // Calculate framework scores based on compliance data
     const frameworkScores = compliance.frameworkProgress
       .filter(fp => engagement.frameworksInScope.includes(fp.id))
@@ -652,27 +652,125 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
         controlsCompliant: fp.completed - fp.gaps,
         gaps: fp.gaps,
       }));
-    
+
     // Calculate overall score
     const overallScore = frameworkScores.length > 0
       ? Math.round(frameworkScores.reduce((sum, fs) => sum + fs.score, 0) / frameworkScores.length)
       : 0;
-    
-    // Get critical findings from gaps
-    const criticalFindings = compliance.criticalGaps
-      .slice(0, 5)
-      .map(gap => `${gap.id}: ${gap.title} - ${gap.riskLevel.toUpperCase()} risk`);
-    
-    // Generate recommendations
-    const recommendations = compliance.criticalGaps
-      .slice(0, 3)
-      .map(gap => gap.remediationTip);
-    
+
+    // Generate report-type specific content
+    let criticalFindings: string[] = [];
+    let recommendations: string[] = [];
+    let title = '';
+
+    switch (reportType) {
+      case 'executive_summary':
+        // High-level overview for leadership - focus on key metrics and business impact
+        title = `${engagement.clientName} - Executive Summary`;
+        criticalFindings = [
+          `Overall compliance score: ${overallScore}% across ${frameworkScores.length} framework(s)`,
+          `${frameworkScores.reduce((sum, fs) => sum + fs.gaps, 0)} total control gaps identified`,
+          ...compliance.criticalGaps
+            .filter(g => g.riskLevel === 'critical' || g.riskLevel === 'high')
+            .slice(0, 3)
+            .map(gap => `High priority: ${gap.title}`),
+        ].filter(Boolean);
+        recommendations = [
+          overallScore < 70 ? 'Immediate action required to address critical compliance gaps' : null,
+          frameworkScores.some(fs => fs.gaps > 5) ? 'Consider allocating additional resources to frameworks with significant gaps' : null,
+          'Schedule quarterly compliance reviews to maintain certification readiness',
+          'Implement automated monitoring for continuous compliance tracking',
+        ].filter((r): r is string => r !== null).slice(0, 4);
+        break;
+
+      case 'detailed_assessment':
+        // Comprehensive control-by-control analysis
+        title = `${engagement.clientName} - Detailed Assessment Report`;
+        criticalFindings = compliance.criticalGaps
+          .slice(0, 10)
+          .map(gap => `[${gap.id}] ${gap.title} - Risk: ${gap.riskLevel.toUpperCase()} - ${gap.domain || 'General'}`);
+        recommendations = compliance.criticalGaps
+          .slice(0, 6)
+          .map(gap => `${gap.id}: ${gap.remediationTip}`);
+        break;
+
+      case 'gap_analysis':
+        // Focus on compliance gaps and remediation priorities
+        title = `${engagement.clientName} - Gap Analysis Report`;
+        const gapsByRisk = {
+          critical: compliance.criticalGaps.filter(g => g.riskLevel === 'critical'),
+          high: compliance.criticalGaps.filter(g => g.riskLevel === 'high'),
+          medium: compliance.criticalGaps.filter(g => g.riskLevel === 'medium'),
+        };
+        criticalFindings = [
+          `Critical Risk Gaps (${gapsByRisk.critical.length}): Require immediate remediation`,
+          ...gapsByRisk.critical.slice(0, 3).map(g => `  - ${g.id}: ${g.title}`),
+          `High Risk Gaps (${gapsByRisk.high.length}): Address within 30 days`,
+          ...gapsByRisk.high.slice(0, 3).map(g => `  - ${g.id}: ${g.title}`),
+          `Medium Risk Gaps (${gapsByRisk.medium.length}): Address within 90 days`,
+        ].filter(Boolean);
+        recommendations = [
+          gapsByRisk.critical.length > 0 ? `Prioritize ${gapsByRisk.critical.length} critical gaps for immediate remediation` : null,
+          'Create a remediation roadmap with assigned owners and deadlines',
+          'Implement compensating controls where full remediation is not immediately possible',
+          'Schedule follow-up assessment in 30 days to verify gap closure',
+          ...gapsByRisk.critical.slice(0, 2).map(g => g.remediationTip),
+        ].filter((r): r is string => r !== null);
+        break;
+
+      case 'incident_report':
+        // Post-incident findings and security recommendations
+        title = `${engagement.clientName} - Incident Response Report`;
+        const securityGaps = compliance.criticalGaps.filter(g =>
+          g.domain?.toLowerCase().includes('security') ||
+          g.domain?.toLowerCase().includes('access') ||
+          g.domain?.toLowerCase().includes('monitoring')
+        );
+        criticalFindings = [
+          `Security posture assessment: ${overallScore >= 70 ? 'Adequate' : 'Needs Improvement'}`,
+          `${securityGaps.length} security-related control gaps identified`,
+          ...securityGaps.slice(0, 5).map(gap => `Security gap: ${gap.title} (${gap.riskLevel})`),
+        ];
+        recommendations = [
+          'Conduct thorough incident post-mortem with all stakeholders',
+          'Update incident response procedures based on lessons learned',
+          'Implement additional monitoring and alerting for affected systems',
+          'Review and update access controls and authentication mechanisms',
+          ...securityGaps.slice(0, 2).map(g => g.remediationTip),
+        ].filter((r): r is string => r !== null);
+        break;
+
+      case 'remediation_status':
+        // Progress on addressing identified gaps
+        title = `${engagement.clientName} - Remediation Status Report`;
+        const totalGaps = compliance.criticalGaps.length;
+        const completedControls = frameworkScores.reduce((sum, fs) => sum + fs.controlsCompliant, 0);
+        const totalControls = frameworkScores.reduce((sum, fs) => sum + fs.controlsAssessed, 0);
+        criticalFindings = [
+          `Remediation Progress: ${totalControls > 0 ? Math.round((completedControls / totalControls) * 100) : 0}% complete`,
+          `Controls Addressed: ${completedControls} of ${totalControls}`,
+          `Remaining Gaps: ${totalGaps}`,
+          `Estimated completion: ${totalGaps <= 5 ? 'On track' : totalGaps <= 15 ? 'At risk' : 'Behind schedule'}`,
+          ...compliance.criticalGaps
+            .filter(g => g.riskLevel === 'critical')
+            .slice(0, 3)
+            .map(g => `Outstanding critical: ${g.title}`),
+        ];
+        recommendations = [
+          totalGaps > 10 ? 'Consider additional resources to accelerate remediation' : null,
+          'Maintain weekly status updates on high-priority items',
+          'Document all remediation actions for audit trail',
+          'Verify remediation effectiveness through testing',
+          'Update risk register with current status',
+        ].filter((r): r is string => r !== null);
+        break;
+    }
+
     const report: ComplianceReport = {
       id: generateUUID(),
       engagementId,
       reportType,
-      title: `${engagement.clientName} - ${reportType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+      title,
       generatedAt: now,
       periodStart: engagement.startDate,
       periodEnd: now,
@@ -687,7 +785,7 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
       createdBy: 'system',
       approvedBy: null,
     };
-    
+
     setReports(prev => [report, ...prev]);
     return report;
   }, [engagements]);
