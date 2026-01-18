@@ -886,7 +886,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
-  const [viewMode, setViewMode] = useState<'controls' | 'requirements'>('controls');
+  const [viewMode, setViewMode] = useState<'controls' | 'requirements'>('requirements');
   const [showRequirementWizard, setShowRequirementWizard] = useState(false);
 
   // Helper function to get control answer for FrameworkRequirementsView
@@ -1115,13 +1115,13 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             )}
           </div>
 
-          {/* Requirement Assessment Wizard Button */}
+          {/* Control Assessment Wizard Button */}
           <button
             onClick={() => setShowRequirementWizard(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent hover:from-indigo-600 hover:to-purple-600 transition-all shadow-sm"
           >
-            <Target className="w-4 h-4" />
-            <span className="text-sm font-medium whitespace-nowrap">Requirement Wizard</span>
+            <Shield className="w-4 h-4" />
+            <span className="text-sm font-medium whitespace-nowrap">Control Wizard</span>
           </button>
         </div>
 
