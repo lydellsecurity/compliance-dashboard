@@ -39,6 +39,7 @@ interface ControlCardProps {
   evidenceCount: number;
   onAnswerChange: (controlId: string, answer: AssessmentAnswer) => void;
   onGeneratePolicy: (controlId: string) => void;
+  onGenerateAIPolicy: (controlId: string) => void;
   onUploadEvidence: (controlId: string, files: File[]) => void;
   onLinkEvidence: (controlId: string, url: string, description: string) => void;
   onViewEvidence: (controlId: string) => void;
@@ -70,6 +71,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
   evidenceCount,
   onAnswerChange,
   onGeneratePolicy,
+  onGenerateAIPolicy,
   onUploadEvidence,
   onLinkEvidence,
   onViewEvidence,
@@ -78,6 +80,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
   onToggleExpand,
 }) => {
   const [isGeneratingPolicy, setIsGeneratingPolicy] = useState(false);
+  const [isGeneratingAIPolicy, setIsGeneratingAIPolicy] = useState(false);
   const [isStatusPaneCollapsed, setIsStatusPaneCollapsed] = useState(false);
 
   const isImplemented = currentAnswer === 'yes';
@@ -117,6 +120,15 @@ const ControlCard: React.FC<ControlCardProps> = ({
       await onGeneratePolicy(control.id);
     } finally {
       setIsGeneratingPolicy(false);
+    }
+  };
+
+  const handleGenerateAIPolicy = async () => {
+    setIsGeneratingAIPolicy(true);
+    try {
+      await onGenerateAIPolicy(control.id);
+    } finally {
+      setIsGeneratingAIPolicy(false);
     }
   };
 
@@ -245,10 +257,12 @@ const ControlCard: React.FC<ControlCardProps> = ({
                     remediationTip={control.remediationTip}
                     onAnswerChange={(answer) => onAnswerChange(control.id, answer)}
                     onGeneratePolicy={handleGeneratePolicy}
+                    onGenerateAIPolicy={handleGenerateAIPolicy}
                     onUploadEvidence={(files) => onUploadEvidence(control.id, files)}
                     onLinkEvidence={(url, desc) => onLinkEvidence(control.id, url, desc)}
                     onViewEvidence={() => onViewEvidence(control.id)}
                     isGeneratingPolicy={isGeneratingPolicy}
+                    isGeneratingAIPolicy={isGeneratingAIPolicy}
                   />
 
                   {/* Why It Matters */}

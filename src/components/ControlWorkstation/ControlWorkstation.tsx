@@ -48,6 +48,7 @@ interface ControlWorkstationProps {
   // Callbacks
   onAnswerChange: (controlId: string, answer: AssessmentAnswer) => void;
   onGeneratePolicy: (controlId: string) => Promise<void>;
+  onGenerateAIPolicy: (controlId: string) => Promise<void>;
   onUploadEvidence: (controlId: string, files: File[]) => void;
   onLinkEvidence: (controlId: string, url: string, description: string) => void;
   onViewEvidence: (controlId: string) => void;
@@ -78,6 +79,7 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
   getResponse,
   getEvidenceCount,
   onAnswerChange,
+  onGenerateAIPolicy,
   onGeneratePolicy,
   onUploadEvidence,
   onLinkEvidence,
@@ -490,6 +492,7 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
                         evidenceCount={evidence?.fileCount || 0}
                         onAnswerChange={onAnswerChange}
                         onGeneratePolicy={onGeneratePolicy}
+                        onGenerateAIPolicy={onGenerateAIPolicy}
                         onUploadEvidence={onUploadEvidence}
                         onLinkEvidence={onLinkEvidence}
                         onViewEvidence={onViewEvidence}

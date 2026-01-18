@@ -14,6 +14,7 @@ import {
   Circle,
   AlertTriangle,
   BookOpen,
+  Sparkles,
   Upload,
   Link,
   Clock,
@@ -33,10 +34,12 @@ interface AssessmentWorkflowProps {
   remediationTip: string;
   onAnswerChange: (answer: AssessmentAnswer) => void;
   onGeneratePolicy: () => void;
+  onGenerateAIPolicy: () => void;
   onUploadEvidence: (files: File[]) => void;
   onLinkEvidence: (url: string, description: string) => void;
   onViewEvidence: () => void;
   isGeneratingPolicy?: boolean;
+  isGeneratingAIPolicy?: boolean;
 }
 
 const ANSWER_OPTIONS: { value: AssessmentAnswer; label: string; icon: React.ReactNode; color: string; bgColor: string }[] = [
@@ -79,10 +82,12 @@ const AssessmentWorkflow: React.FC<AssessmentWorkflowProps> = ({
   remediationTip,
   onAnswerChange,
   onGeneratePolicy,
+  onGenerateAIPolicy,
   onUploadEvidence,
   onLinkEvidence,
   onViewEvidence,
   isGeneratingPolicy = false,
+  isGeneratingAIPolicy = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -195,29 +200,56 @@ const AssessmentWorkflow: React.FC<AssessmentWorkflowProps> = ({
               </div>
             </div>
 
-            {/* Control Guidance Button */}
-            <button
-              onClick={onGeneratePolicy}
-              disabled={isGeneratingPolicy}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGeneratingPolicy ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  >
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {/* Control Guidance Button */}
+              <button
+                onClick={onGeneratePolicy}
+                disabled={isGeneratingPolicy}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 dark:bg-steel-700 hover:bg-slate-200 dark:hover:bg-steel-600 text-slate-700 dark:text-steel-200 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPolicy ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    >
+                      <BookOpen className="w-4 h-4" />
+                    </motion.div>
+                    Loading...
+                  </>
+                ) : (
+                  <>
                     <BookOpen className="w-4 h-4" />
-                  </motion.div>
-                  Loading Guidance...
-                </>
-              ) : (
-                <>
-                  <BookOpen className="w-4 h-4" />
-                  Control Guidance
-                </>
-              )}
-            </button>
+                    Control Guidance
+                  </>
+                )}
+              </button>
+
+              {/* Generate AI Policy Button */}
+              <button
+                onClick={onGenerateAIPolicy}
+                disabled={isGeneratingAIPolicy}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingAIPolicy ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </motion.div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate AI Policy
+                  </>
+                )}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

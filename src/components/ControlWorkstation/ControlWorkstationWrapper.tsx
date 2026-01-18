@@ -11,7 +11,8 @@ import { X, Upload, Link } from 'lucide-react';
 import { useComplianceContext } from '../../App';
 import ControlWorkstation from './ControlWorkstation';
 import RemediationEngine from '../RemediationEngine';
-import type { FrameworkId, ComplianceDomainMeta } from '../../constants/controls';
+import { AIPolicyModal } from '../AIPolicyGenerator';
+import type { FrameworkId, ComplianceDomainMeta, MasterControl } from '../../constants/controls';
 
 interface ControlWorkstationWrapperProps {
   initialDomain?: ComplianceDomainMeta;
@@ -110,6 +111,7 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
   // Modal states
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
   const [evidenceModalControl, setEvidenceModalControl] = useState<{ id: string; title: string } | null>(null);
+  const [aiPolicyControl, setAIPolicyControl] = useState<MasterControl | null>(null);
 
   // Get response wrapper that returns the expected format
   const getResponseWrapper = useCallback((controlId: string) => {
@@ -133,11 +135,19 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
     }
   }, [answerControl]);
 
-  // Handle generate policy
+  // Handle generate policy (opens guidance modal)
   const handleGeneratePolicy = useCallback(async (controlId: string) => {
     const control = compliance.allControls.find(c => c.id === controlId);
     if (control) {
       setRemediationControl({ id: controlId, title: control.title });
+    }
+  }, [compliance.allControls]);
+
+  // Handle generate AI policy (opens AI policy generator)
+  const handleGenerateAIPolicy = useCallback(async (controlId: string) => {
+    const control = compliance.allControls.find(c => c.id === controlId);
+    if (control) {
+      setAIPolicyControl(control);
     }
   }, [compliance.allControls]);
 
@@ -173,6 +183,7 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
           getEvidenceCount={getEvidenceCountWrapper}
           onAnswerChange={handleAnswerChange}
           onGeneratePolicy={handleGeneratePolicy}
+          onGenerateAIPolicy={handleGenerateAIPolicy}
           onUploadEvidence={handleUploadEvidence}
           onLinkEvidence={handleLinkEvidence}
           onViewEvidence={handleViewEvidence}
@@ -199,6 +210,14 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
           onClose={() => setEvidenceModalControl(null)}
         />
       )}
+
+      {/* AI Policy Generator Modal */}
+      <AIPolicyModal
+        control={aiPolicyControl}
+        isOpen={!!aiPolicyControl}
+        onClose={() => setAIPolicyControl(null)}
+        organizationName="LYDELL SECURITY"
+      />
     </>
   );
 };
