@@ -38,6 +38,7 @@ import VendorRiskManagement from './components/VendorRiskManagement';
 import QuestionnaireAutomation from './components/QuestionnaireAutomation';
 import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
+import AuditorRequirementView from './components/AuditorRequirementView';
 import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
 import { monitoringService } from './services/continuous-monitoring.service';
 import type { Incident } from './types/incident.types';
@@ -886,7 +887,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false);
   const [remediationControl, setRemediationControl] = useState<{ id: string; title: string } | null>(null);
-  const [viewMode, setViewMode] = useState<'controls' | 'requirements'>('requirements');
+  const [viewMode, setViewMode] = useState<'controls' | 'requirements' | 'auditor'>('requirements');
   const [showRequirementWizard, setShowRequirementWizard] = useState(false);
 
   // Helper function to get control answer for FrameworkRequirementsView
@@ -1142,6 +1143,18 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               <Shield className="w-4 h-4" />
               <span className="whitespace-nowrap">Controls</span>
             </button>
+            <button
+              onClick={() => setViewMode('auditor')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'auditor'
+                  ? 'bg-white dark:bg-steel-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+              }`}
+              title="Auditor view with coverage and gaps"
+            >
+              <Eye className="w-4 h-4" />
+              <span className="whitespace-nowrap">Auditor</span>
+            </button>
           </div>
         </div>
 
@@ -1234,17 +1247,47 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           />
         )}
 
+        {/* Auditor Requirement View */}
+        {selectedFramework !== 'all' && viewMode === 'auditor' && (
+          <AuditorRequirementView
+            frameworkId={selectedFramework}
+            controls={allControls}
+            getControlAnswer={getControlAnswer}
+            onControlClick={(controlId) => {
+              const control = allControls.find(c => c.id === controlId);
+              if (control) {
+                handleOpenRemediation(controlId, control.title);
+              }
+            }}
+            onGapClick={(requirementId) => {
+              console.log('Gap clicked:', requirementId);
+              // TODO: Open gap resolution modal
+            }}
+          />
+        )}
+
         {/* Requirements View - No Framework Selected Prompt */}
-        {selectedFramework === 'all' && viewMode === 'requirements' && (
+        {selectedFramework === 'all' && (viewMode === 'requirements' || viewMode === 'auditor') && (
           <Card className="p-8 text-center">
-            <div className="w-16 h-16 bg-indigo-50 dark:bg-accent-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-indigo-600 dark:text-accent-400" />
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+              viewMode === 'auditor'
+                ? 'bg-purple-50 dark:bg-purple-500/10'
+                : 'bg-indigo-50 dark:bg-accent-500/10'
+            }`}>
+              {viewMode === 'auditor' ? (
+                <Eye className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              ) : (
+                <FileText className="w-8 h-8 text-indigo-600 dark:text-accent-400" />
+              )}
             </div>
             <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-2">
               Select a Framework
             </h3>
             <p className="text-slate-500 dark:text-steel-400 mb-6 max-w-md mx-auto">
-              Choose a compliance framework to view its requirements structure and track evidence against specific requirements.
+              {viewMode === 'auditor'
+                ? 'Choose a compliance framework to view requirement coverage, gaps, and evidence status from an auditor perspective.'
+                : 'Choose a compliance framework to view its requirements structure and track evidence against specific requirements.'
+              }
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               {FRAMEWORKS.map(fw => (
