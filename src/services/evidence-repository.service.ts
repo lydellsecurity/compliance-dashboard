@@ -535,22 +535,30 @@ class EvidenceRepositoryService {
         versionId = newVersion.id;
       }
 
-      // Create file record
+      // Create file record - include both FK columns for compatibility
       const { data: fileRecord, error: fileError } = await supabase
         .from('evidence_files')
         .insert({
           evidence_version_id: versionId,
+          version_id: versionId, // Also set legacy FK column
           filename,
           original_name: file.name,
+          original_filename: file.name, // Also set legacy column name
           mime_type: file.type,
           size: file.size,
+          size_bytes: file.size, // Also set legacy column name
           url: urlData.publicUrl,
+          storage_path: filename, // Set storage path
           uploaded_by: this.userId,
+          uploaded_at: new Date().toISOString(),
         })
-        .select()
+        .select('id')
         .single();
 
-      if (fileError) throw fileError;
+      if (fileError) {
+        console.error('[EvidenceRepo] Failed to create file record:', fileError);
+        throw fileError;
+      }
 
       // Update evidence timestamp
       await supabase
