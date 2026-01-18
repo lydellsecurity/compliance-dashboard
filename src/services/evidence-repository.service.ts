@@ -141,6 +141,11 @@ class EvidenceRepositoryService {
     this.userId = userId;
   }
 
+  clearContext(): void {
+    this.organizationId = null;
+    this.userId = null;
+  }
+
   isAvailable(): boolean {
     return isSupabaseConfigured();
   }

@@ -12,6 +12,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { rateLimiter, RateLimitError } from '../utils/rateLimiter';
 import { isValidEmail, validatePassword, sanitizeEmail } from '../utils/validation';
 import { auditLog } from './audit-log.service';
+import { evidenceRepository } from './evidence-repository.service';
 
 // ============================================================================
 // TYPES
@@ -175,6 +176,7 @@ class AuthService {
 
     auditLog.auth.logout(userEmail);
     auditLog.clearContext();
+    evidenceRepository.clearContext();
 
     return { success: true };
   }
