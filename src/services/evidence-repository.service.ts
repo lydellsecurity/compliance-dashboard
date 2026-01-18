@@ -453,6 +453,16 @@ class EvidenceRepositoryService {
   // ---------------------------------------------------------------------------
 
   /**
+   * Compute SHA-256 hash of a file
+   */
+  private async computeFileHash(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
    * Upload a file to an evidence item
    */
   async uploadFile(
@@ -465,6 +475,9 @@ class EvidenceRepositoryService {
     }
 
     try {
+      // Compute file hash for integrity checking
+      const checksum = await this.computeFileHash(file);
+
       // Get current evidence to determine version
       const { data: evidence } = await supabase
         .from('evidence_items')
@@ -552,6 +565,7 @@ class EvidenceRepositoryService {
           size_bytes: file.size, // Also set legacy column name
           url: urlData.publicUrl,
           storage_path: filename, // Set storage path
+          checksum_sha256: checksum, // Required: file integrity hash
           uploaded_by: this.userId,
           uploaded_at: new Date().toISOString(),
         })
