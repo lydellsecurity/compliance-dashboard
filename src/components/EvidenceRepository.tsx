@@ -113,6 +113,8 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+  const [uploadTargetEvidence, setUploadTargetEvidence] = useState<EvidenceItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Initialize service and load evidence
@@ -447,6 +449,10 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
                   setSelectedEvidence(item);
                   setShowVersionHistory(true);
                 }}
+                onUploadFile={() => {
+                  setUploadTargetEvidence(item);
+                  setShowFileUploadModal(true);
+                }}
               />
             ))}
           </div>
@@ -472,6 +478,24 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
           <VersionHistoryModal
             evidence={selectedEvidence}
             onClose={() => setShowVersionHistory(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* File Upload Modal for existing evidence */}
+      <AnimatePresence>
+        {showFileUploadModal && uploadTargetEvidence && (
+          <FileUploadModal
+            evidence={uploadTargetEvidence}
+            onClose={() => {
+              setShowFileUploadModal(false);
+              setUploadTargetEvidence(null);
+            }}
+            onSuccess={() => {
+              loadEvidence();
+              setShowFileUploadModal(false);
+              setUploadTargetEvidence(null);
+            }}
           />
         )}
       </AnimatePresence>
@@ -516,7 +540,8 @@ const EvidenceCard: React.FC<{
   onReject: () => void;
   onDelete: () => void;
   onViewHistory: () => void;
-}> = ({ evidence, onClick, onApprove, onReject, onDelete, onViewHistory }) => {
+  onUploadFile: () => void;
+}> = ({ evidence, onClick, onApprove, onReject, onDelete, onViewHistory, onUploadFile }) => {
   const [showMenu, setShowMenu] = useState(false);
   const statusStyle = STATUS_COLORS[evidence.status];
 
@@ -565,6 +590,16 @@ const EvidenceCard: React.FC<{
                 className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-midnight-800 rounded-lg shadow-lg border border-slate-200 dark:border-steel-700 py-1 z-10"
                 onClick={(e) => e.stopPropagation()}
               >
+                <button
+                  onClick={() => {
+                    onUploadFile();
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload Files
+                </button>
                 <button
                   onClick={() => {
                     onViewHistory();
@@ -848,6 +883,264 @@ const UploadModal: React.FC<{
             >
               {uploading && <RefreshCw className="w-4 h-4 animate-spin" />}
               {uploading ? 'Uploading...' : 'Add Evidence'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const FileUploadModal: React.FC<{
+  evidence: EvidenceItem;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ evidence, onClose, onSuccess }) => {
+  const [files, setFiles] = useState<File[]>([]);
+  const [notes, setNotes] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, 'pending' | 'uploading' | 'done' | 'error'>>({});
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFiles(prev => [...prev, ...newFiles]);
+      // Initialize progress for new files
+      const newProgress: Record<string, 'pending' | 'uploading' | 'done' | 'error'> = {};
+      newFiles.forEach(f => { newProgress[f.name] = 'pending'; });
+      setUploadProgress(prev => ({ ...prev, ...newProgress }));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    setFiles(prev => [...prev, ...droppedFiles]);
+    const newProgress: Record<string, 'pending' | 'uploading' | 'done' | 'error'> = {};
+    droppedFiles.forEach(f => { newProgress[f.name] = 'pending'; });
+    setUploadProgress(prev => ({ ...prev, ...newProgress }));
+  };
+
+  const removeFile = (fileName: string) => {
+    setFiles(prev => prev.filter(f => f.name !== fileName));
+    setUploadProgress(prev => {
+      const newProgress = { ...prev };
+      delete newProgress[fileName];
+      return newProgress;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (files.length === 0) return;
+
+    setUploading(true);
+    let successCount = 0;
+
+    for (const file of files) {
+      setUploadProgress(prev => ({ ...prev, [file.name]: 'uploading' }));
+      try {
+        const result = await evidenceRepository.uploadFile(evidence.id, file, notes || undefined);
+        if (result.success) {
+          setUploadProgress(prev => ({ ...prev, [file.name]: 'done' }));
+          successCount++;
+        } else {
+          setUploadProgress(prev => ({ ...prev, [file.name]: 'error' }));
+        }
+      } catch {
+        setUploadProgress(prev => ({ ...prev, [file.name]: 'error' }));
+      }
+    }
+
+    setUploading(false);
+
+    if (successCount > 0) {
+      // Small delay to show success state before closing
+      setTimeout(() => {
+        onSuccess();
+      }, 500);
+    }
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) return <Image className="w-4 h-4" />;
+    if (file.type === 'application/pdf') return <FileText className="w-4 h-4" />;
+    if (file.type === 'application/json') return <FileJson className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="w-full max-w-lg bg-white dark:bg-midnight-800 rounded-xl shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
+              Upload Files
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-steel-400 mt-0.5">
+              {evidence.title}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-600 dark:text-steel-500 dark:hover:text-steel-300 rounded"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Evidence info */}
+          <div className="p-3 bg-slate-50 dark:bg-steel-800/50 rounded-lg">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="px-2 py-0.5 text-xs font-mono bg-slate-200 dark:bg-steel-700 text-slate-600 dark:text-steel-300 rounded">
+                {evidence.controlId}
+              </span>
+              <span className="text-slate-500 dark:text-steel-400">•</span>
+              <span className="text-slate-600 dark:text-steel-400">Version {evidence.currentVersion}</span>
+            </div>
+          </div>
+
+          {/* Drop zone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              isDragging
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                : 'border-slate-200 dark:border-steel-700 hover:border-slate-300 dark:hover:border-steel-600'
+            }`}
+          >
+            <input
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              id="evidence-file-upload"
+            />
+            <label
+              htmlFor="evidence-file-upload"
+              className="cursor-pointer"
+            >
+              <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-indigo-500' : 'text-slate-400 dark:text-steel-500'}`} />
+              <p className="text-sm text-slate-600 dark:text-steel-400">
+                <span className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+                  Click to upload
+                </span>{' '}
+                or drag and drop
+              </p>
+              <p className="text-xs text-slate-400 dark:text-steel-500 mt-1">
+                PDF, images, documents up to 10MB each
+              </p>
+            </label>
+          </div>
+
+          {/* File list */}
+          {files.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-auto">
+              {files.map((file) => (
+                <div
+                  key={file.name}
+                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-steel-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 bg-white dark:bg-steel-700 rounded-lg text-slate-500 dark:text-steel-400">
+                      {getFileIcon(file)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-700 dark:text-steel-300 truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-steel-500">
+                        {formatFileSize(file.size)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {uploadProgress[file.name] === 'uploading' && (
+                      <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin" />
+                    )}
+                    {uploadProgress[file.name] === 'done' && (
+                      <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    )}
+                    {uploadProgress[file.name] === 'error' && (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    {!uploading && (
+                      <button
+                        type="button"
+                        onClick={() => removeFile(file.name)}
+                        className="p-1 text-slate-400 hover:text-red-500 dark:text-steel-500 dark:hover:text-red-400 rounded"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1">
+              Version Notes (optional)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100 text-sm"
+              placeholder="Describe the files being uploaded..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={uploading}
+              className="px-4 py-2 text-slate-600 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={uploading || files.length === 0}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              {uploading && <RefreshCw className="w-4 h-4 animate-spin" />}
+              {uploading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
             </button>
           </div>
         </form>
