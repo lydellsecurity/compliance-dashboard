@@ -8,7 +8,7 @@ import React, { useState, useMemo, createContext, useContext, useRef, useEffect 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X, Plus,
-  Info, AlertTriangle, Shield, FileText, Lock, Users,
+  Info, AlertTriangle, Shield, FileText, Lock, Users, Paperclip,
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
   Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown,
@@ -413,13 +413,14 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
 // ============================================================================
 
 const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
-  const { answerControl, getResponse, updateRemediation, getEvidenceByControlId } = useComplianceContext();
+  const { answerControl, getResponse, updateRemediation, getEvidenceByControlId, getEvidenceFileCounts } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
   const [localRemediation, setLocalRemediation] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const response = getResponse(control.id);
   const evidence = getEvidenceByControlId(control.id);
+  const evidenceCounts = getEvidenceFileCounts(control.id);
 
   useEffect(() => { setLocalRemediation(response?.remediationPlan || ''); }, [response?.remediationPlan]);
 
@@ -483,11 +484,24 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
             <span className="px-2 py-0.5 text-xs font-mono font-semibold bg-slate-200 dark:bg-steel-800 text-secondary rounded">
               {control.id}
             </span>
-            {evidence && (
-              <span className="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success border border-status-success/20" title="Evidence ID">
-                {evidence.id.slice(0, 12)}...
+            {/* Evidence Upload Indicator */}
+            {evidenceCounts?.hasFiles ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded"
+                title={`${evidenceCounts.fileCount} file${evidenceCounts.fileCount !== 1 ? 's' : ''} uploaded`}
+              >
+                <Paperclip className="w-3 h-3" />
+                {evidenceCounts.fileCount}
               </span>
-            )}
+            ) : evidence ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded"
+                title="Evidence record exists but no files uploaded"
+              >
+                <Paperclip className="w-3 h-3" />
+                <span className="opacity-60">0</span>
+              </span>
+            ) : null}
             <span className={`badge ${control.riskLevel === 'critical' ? 'badge-risk' : control.riskLevel === 'high' ? 'badge-warning' : control.riskLevel === 'medium' ? 'badge-info' : 'badge-neutral'}`}>
               {control.riskLevel.charAt(0).toUpperCase() + control.riskLevel.slice(1)}
             </span>

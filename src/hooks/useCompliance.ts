@@ -272,6 +272,8 @@ export interface UseComplianceReturn {
   getEvidenceByControlId: (controlId: string) => EvidenceRecord | undefined;
   updateEvidence: (evidenceId: string, updates: Partial<EvidenceRecord>) => void;
   getAllEvidence: () => EvidenceRecord[];
+  getEvidenceFileCounts: (controlId: string) => { evidenceCount: number; fileCount: number; hasFiles: boolean } | undefined;
+  refreshEvidenceCounts: () => Promise<void>;
   
   // Custom Controls
   customControls: CustomControl[];
@@ -351,6 +353,9 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   // Supabase integration state
   const [supabaseUser, setSupabaseUser] = useState<{ id: string; organization_id?: string } | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Evidence file counts for UI indicators
+  const [evidenceFileCounts, setEvidenceFileCounts] = useState<Map<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>>(new Map());
 
   // ============================================================================
   // SUPABASE AUTHENTICATION LISTENER
@@ -616,6 +621,11 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         }
 
         console.log(`[Evidence Sync] Complete: ${created} created, ${skipped} skipped, ${failed} failed`);
+
+        // Load evidence file counts for UI indicators
+        const counts = await evidenceRepository.getEvidenceCountsByControl();
+        setEvidenceFileCounts(counts);
+        console.log(`[Evidence Counts] Loaded counts for ${counts.size} controls`);
       } else {
         console.log('[Evidence Sync] Evidence repository not available or missing context:', {
           isAvailable: evidenceRepository.isAvailable(),
@@ -1056,6 +1066,22 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     return Array.from(evidence.values());
   }, [evidence]);
 
+  const getEvidenceFileCounts = useCallback((controlId: string): { evidenceCount: number; fileCount: number; hasFiles: boolean } | undefined => {
+    return evidenceFileCounts.get(controlId);
+  }, [evidenceFileCounts]);
+
+  const refreshEvidenceCounts = useCallback(async (): Promise<void> => {
+    if (!evidenceRepository.isAvailable()) return;
+
+    try {
+      const counts = await evidenceRepository.getEvidenceCountsByControl();
+      setEvidenceFileCounts(counts);
+      console.log(`[Evidence Counts] Refreshed counts for ${counts.size} controls`);
+    } catch (err) {
+      console.error('[Evidence Counts] Refresh failed:', err);
+    }
+  }, []);
+
   // ============================================================================
   // CUSTOM CONTROL ACTIONS
   // ============================================================================
@@ -1261,7 +1287,9 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     getEvidenceByControlId,
     updateEvidence,
     getAllEvidence,
-    
+    getEvidenceFileCounts,
+    refreshEvidenceCounts,
+
     // Custom Controls
     customControls: customControls.filter(c => c.isActive),
     addCustomControl,

@@ -1138,6 +1138,77 @@ class EvidenceRepositoryService {
   }
 
   // ---------------------------------------------------------------------------
+  // EVIDENCE COUNTS BY CONTROL
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get evidence file counts grouped by control ID.
+   * Returns a map of controlId -> { evidenceCount, fileCount, hasFiles }
+   * Efficient single query for displaying evidence status indicators on controls.
+   */
+  async getEvidenceCountsByControl(): Promise<Map<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>> {
+    const result = new Map<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>();
+
+    if (!supabase || !this.organizationId) {
+      return result;
+    }
+
+    try {
+      // Query evidence items with file counts
+      const { data, error } = await supabase
+        .from('evidence_items')
+        .select(`
+          control_id,
+          evidence_versions (
+            evidence_files!evidence_version_id (
+              id
+            )
+          )
+        `)
+        .eq('organization_id', this.organizationId);
+
+      if (error) {
+        console.error('[EvidenceRepo] getEvidenceCountsByControl error:', error);
+        return result;
+      }
+
+      if (!data) return result;
+
+      // Group by control_id and count files
+      const counts: Record<string, { evidenceCount: number; fileCount: number }> = {};
+
+      for (const item of data) {
+        const controlId = item.control_id as string;
+        if (!counts[controlId]) {
+          counts[controlId] = { evidenceCount: 0, fileCount: 0 };
+        }
+        counts[controlId].evidenceCount++;
+
+        // Count files across all versions
+        const versions = (item.evidence_versions as { evidence_files?: { id: string }[] }[]) || [];
+        for (const version of versions) {
+          const files = version.evidence_files || [];
+          counts[controlId].fileCount += files.length;
+        }
+      }
+
+      // Convert to Map with hasFiles flag
+      for (const [controlId, count] of Object.entries(counts)) {
+        result.set(controlId, {
+          evidenceCount: count.evidenceCount,
+          fileCount: count.fileCount,
+          hasFiles: count.fileCount > 0,
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.error('[EvidenceRepo] getEvidenceCountsByControl exception:', err);
+      return result;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // CLEANUP / MAINTENANCE
   // ---------------------------------------------------------------------------
 
