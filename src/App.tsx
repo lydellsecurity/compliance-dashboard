@@ -1115,25 +1115,38 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             )}
           </div>
 
-          {/* Control Assessment View Button */}
-          <button
-            onClick={() => {
-              // If no framework selected, prompt to select one first
-              if (selectedFramework === 'all') {
-                setShowFrameworkDropdown(true);
-              } else {
-                setViewMode('controls');
-              }
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all shadow-sm ${
-              viewMode === 'controls' && selectedFramework !== 'all'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent'
-                : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent hover:from-indigo-600 hover:to-purple-600'
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            <span className="text-sm font-medium whitespace-nowrap">Control View</span>
-          </button>
+          {/* View Mode Toggle */}
+          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-steel-800 rounded-lg">
+            <button
+              onClick={() => {
+                if (selectedFramework === 'all') {
+                  setShowFrameworkDropdown(true);
+                } else {
+                  setViewMode('requirements');
+                }
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'requirements' && selectedFramework !== 'all'
+                  ? 'bg-white dark:bg-steel-700 text-indigo-600 dark:text-accent-400 shadow-sm'
+                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+              }`}
+              title={selectedFramework === 'all' ? 'Select a framework first' : 'View framework requirements'}
+            >
+              <FileText className="w-4 h-4" />
+              <span className="whitespace-nowrap">Requirements</span>
+            </button>
+            <button
+              onClick={() => setViewMode('controls')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'controls' || selectedFramework === 'all'
+                  ? 'bg-white dark:bg-steel-700 text-indigo-600 dark:text-accent-400 shadow-sm'
+                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              <span className="whitespace-nowrap">Controls</span>
+            </button>
+          </div>
         </div>
 
         {/* Framework Filter Active Banner */}
@@ -1170,41 +1183,13 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               </button>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex gap-2 p-1 bg-white/50 dark:bg-steel-800/50 rounded-lg w-fit">
-              <button
-                onClick={() => setViewMode('controls')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  viewMode === 'controls'
-                    ? 'bg-white dark:bg-steel-700 text-slate-900 dark:text-steel-100 shadow-sm'
-                    : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <Shield className="w-4 h-4" />
-                  Controls View
-                </span>
-              </button>
-              <button
-                onClick={() => setViewMode('requirements')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  viewMode === 'requirements'
-                    ? 'bg-white dark:bg-steel-700 text-slate-900 dark:text-steel-100 shadow-sm'
-                    : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200'
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <FileText className="w-4 h-4" />
-                  Requirements View
-                </span>
-              </button>
-            </div>
-
-            {viewMode === 'controls' && (
-              <p className="text-xs text-slate-500 dark:text-steel-500 mt-2">
-                {controls.length} controls mapped to this framework
-              </p>
-            )}
+            {/* Info text based on view mode */}
+            <p className="text-xs text-slate-500 dark:text-steel-500">
+              {viewMode === 'controls'
+                ? `${controls.length} controls mapped to this framework`
+                : 'Viewing framework requirements with evidence tracking'
+              }
+            </p>
           </div>
         )}
 
