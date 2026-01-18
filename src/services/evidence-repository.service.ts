@@ -535,10 +535,11 @@ class EvidenceRepositoryService {
         versionId = newVersion.id;
       }
 
-      // Create file record - include both FK columns for compatibility
+      // Create file record - include all FK columns for compatibility
       const { data: fileRecord, error: fileError } = await supabase
         .from('evidence_files')
         .insert({
+          evidence_id: evidenceId, // Required: direct FK to evidence_items
           evidence_version_id: versionId,
           version_id: versionId, // Also set legacy FK column
           filename,
