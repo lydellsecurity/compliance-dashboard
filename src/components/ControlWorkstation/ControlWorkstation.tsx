@@ -22,6 +22,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  PanelTopClose,
+  PanelTopOpen,
 } from 'lucide-react';
 import type { FrameworkId } from '../../constants/controls';
 import {
@@ -92,7 +94,7 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [expandedControlId, setExpandedControlId] = useState<string | null>(null);
-  // const [showFilters, setShowFilters] = useState(false); // Reserved for future filter panel
+  const [isStatusPaneCollapsed, setIsStatusPaneCollapsed] = useState(false);
 
   // Get all data
   const allControls = mapping.getAllControls();
@@ -233,101 +235,208 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header with Progress Ring */}
-        <div className="px-6 py-4 bg-white dark:bg-steel-800 border-b border-slate-200 dark:border-steel-700">
-          <div className="flex items-start gap-6">
-            {/* Master Progress Ring */}
-            <MasterProgressRing
-              percentage={globalStats.overallPercentage}
-              totalControls={globalStats.totalControls}
-              implementedControls={globalStats.implementedControls}
-              inProgressControls={globalStats.inProgressControls}
-              frameworkStats={globalStats.frameworkStats}
-              className="flex-shrink-0"
-            />
+        <div className="bg-white dark:bg-steel-800 border-b border-slate-200 dark:border-steel-700">
+          {/* Collapsible Status Pane */}
+          <AnimatePresence mode="wait">
+            {!isStatusPaneCollapsed && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="px-6 py-4">
+                  <div className="flex items-start gap-6">
+                    {/* Master Progress Ring */}
+                    <MasterProgressRing
+                      percentage={globalStats.overallPercentage}
+                      totalControls={globalStats.totalControls}
+                      implementedControls={globalStats.implementedControls}
+                      inProgressControls={globalStats.inProgressControls}
+                      frameworkStats={globalStats.frameworkStats}
+                      className="flex-shrink-0"
+                    />
 
-            {/* Search & Filters */}
-            <div className="flex-1 space-y-4">
-              {/* Search bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search controls by ID, title, or keyword..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-steel-750 border border-slate-200 dark:border-steel-600 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+                    {/* Search & Filters */}
+                    <div className="flex-1 space-y-4">
+                      {/* Search bar */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search controls by ID, title, or keyword..."
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-steel-750 border border-slate-200 dark:border-steel-600 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
 
-              {/* Filter bar */}
-              <div className="flex items-center gap-3 flex-wrap">
-                {/* Quick filters */}
-                {FILTER_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setFilterType(option.value)}
-                    className={`
-                      flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                      ${filterType === option.value
-                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
-                        : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 hover:bg-slate-200 dark:hover:bg-steel-600'
-                      }
-                    `}
-                  >
-                    {option.icon}
-                    {option.label}
-                    <span className={`
-                      px-1.5 py-0.5 text-xs rounded-full
-                      ${filterType === option.value
-                        ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200'
-                        : 'bg-slate-200 dark:bg-steel-600 text-slate-500 dark:text-steel-400'
-                      }
-                    `}>
-                      {filterCounts[option.value]}
-                    </span>
-                  </button>
-                ))}
+                      {/* Filter bar */}
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {/* Quick filters */}
+                        {FILTER_OPTIONS.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => setFilterType(option.value)}
+                            className={`
+                              flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                              ${filterType === option.value
+                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                                : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 hover:bg-slate-200 dark:hover:bg-steel-600'
+                              }
+                            `}
+                          >
+                            {option.icon}
+                            {option.label}
+                            <span className={`
+                              px-1.5 py-0.5 text-xs rounded-full
+                              ${filterType === option.value
+                                ? 'bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200'
+                                : 'bg-slate-200 dark:bg-steel-600 text-slate-500 dark:text-steel-400'
+                              }
+                            `}>
+                              {filterCounts[option.value]}
+                            </span>
+                          </button>
+                        ))}
+
+                        {/* Framework filter */}
+                        <div className="relative ml-auto">
+                          <select
+                            value={selectedFramework}
+                            onChange={(e) => setSelectedFramework(e.target.value as FrameworkId | 'all')}
+                            className="appearance-none pl-3 pr-8 py-1.5 bg-white dark:bg-steel-800 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-700 dark:text-steel-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          >
+                            <option value="all">All Frameworks</option>
+                            {allFrameworks.map(fw => (
+                              <option key={fw.id} value={fw.id}>{fw.name}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
+
+                        {/* View toggle */}
+                        <div className="flex items-center bg-slate-100 dark:bg-steel-700 rounded-lg p-1">
+                          <button
+                            onClick={() => setViewMode('list')}
+                            className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-steel-600 shadow-sm' : ''}`}
+                          >
+                            <List className="w-4 h-4 text-slate-600 dark:text-steel-300" />
+                          </button>
+                          <button
+                            onClick={() => setViewMode('grid')}
+                            className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-steel-600 shadow-sm' : ''}`}
+                          >
+                            <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-steel-300" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Collapsed state: Compact search bar + toggle */}
+          <div className={`px-6 ${isStatusPaneCollapsed ? 'py-3' : 'pb-3'} flex items-center gap-4`}>
+            {/* Toggle button */}
+            <button
+              onClick={() => setIsStatusPaneCollapsed(!isStatusPaneCollapsed)}
+              className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+                ${isStatusPaneCollapsed
+                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50'
+                  : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 hover:bg-slate-200 dark:hover:bg-steel-600'
+                }
+              `}
+            >
+              {isStatusPaneCollapsed ? (
+                <>
+                  <PanelTopOpen className="w-4 h-4" />
+                  Show Status
+                </>
+              ) : (
+                <>
+                  <PanelTopClose className="w-4 h-4" />
+                  Hide Status
+                </>
+              )}
+            </button>
+
+            {/* Compact search when collapsed */}
+            {isStatusPaneCollapsed && (
+              <div className="flex-1 flex items-center gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search controls..."
+                    className="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-steel-750 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Quick status badge */}
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium">
+                    {globalStats.overallPercentage}% Compliant
+                  </span>
+                  <span className="text-slate-500 dark:text-steel-400">
+                    {globalStats.implementedControls}/{globalStats.totalControls} controls
+                  </span>
+                </div>
 
                 {/* Framework filter */}
-                <div className="relative ml-auto">
+                <div className="relative">
                   <select
                     value={selectedFramework}
                     onChange={(e) => setSelectedFramework(e.target.value as FrameworkId | 'all')}
-                    className="appearance-none pl-3 pr-8 py-1.5 bg-white dark:bg-steel-800 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-700 dark:text-steel-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="appearance-none pl-3 pr-7 py-1.5 bg-white dark:bg-steel-800 border border-slate-200 dark:border-steel-600 rounded-lg text-xs text-slate-700 dark:text-steel-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="all">All Frameworks</option>
                     {allFrameworks.map(fw => (
                       <option key={fw.id} value={fw.id}>{fw.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
                 </div>
 
                 {/* View toggle */}
-                <div className="flex items-center bg-slate-100 dark:bg-steel-700 rounded-lg p-1">
+                <div className="flex items-center bg-slate-100 dark:bg-steel-700 rounded-lg p-0.5">
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-steel-600 shadow-sm' : ''}`}
+                    className={`p-1 rounded ${viewMode === 'list' ? 'bg-white dark:bg-steel-600 shadow-sm' : ''}`}
                   >
-                    <List className="w-4 h-4 text-slate-600 dark:text-steel-300" />
+                    <List className="w-3.5 h-3.5 text-slate-600 dark:text-steel-300" />
                   </button>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-steel-600 shadow-sm' : ''}`}
+                    className={`p-1 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-steel-600 shadow-sm' : ''}`}
                   >
-                    <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-steel-300" />
+                    <LayoutGrid className="w-3.5 h-3.5 text-slate-600 dark:text-steel-300" />
                   </button>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
