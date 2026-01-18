@@ -1061,6 +1061,95 @@ class EvidenceRepositoryService {
       updatedAt: data.updated_at as string,
     };
   }
+
+  // ---------------------------------------------------------------------------
+  // CLEANUP / MAINTENANCE
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Remove duplicate evidence items, keeping the oldest entry per control_id.
+   * Returns the number of duplicates removed.
+   */
+  async removeDuplicates(): Promise<{ removed: number; error?: string }> {
+    if (!supabase || !this.organizationId) {
+      return { removed: 0, error: 'Not configured' };
+    }
+
+    try {
+      console.log('[EvidenceRepo] Starting duplicate cleanup...');
+
+      // Get all evidence items for this organization
+      const { data: allEvidence, error: fetchError } = await supabase
+        .from('evidence_items')
+        .select('id, control_id, created_at')
+        .eq('organization_id', this.organizationId)
+        .order('created_at', { ascending: true });
+
+      if (fetchError) {
+        console.error('[EvidenceRepo] Fetch error:', fetchError);
+        return { removed: 0, error: fetchError.message };
+      }
+
+      if (!allEvidence || allEvidence.length === 0) {
+        console.log('[EvidenceRepo] No evidence items found');
+        return { removed: 0 };
+      }
+
+      console.log(`[EvidenceRepo] Found ${allEvidence.length} total evidence items`);
+
+      // Group by control_id, keeping track of which to keep (first/oldest) and which to delete
+      const byControlId: Record<string, string[]> = {};
+      for (const item of allEvidence) {
+        const controlId = item.control_id;
+        if (!byControlId[controlId]) {
+          byControlId[controlId] = [];
+        }
+        byControlId[controlId].push(item.id);
+      }
+
+      // Find duplicates (all entries after the first for each control_id)
+      const idsToDelete: string[] = [];
+      for (const controlId of Object.keys(byControlId)) {
+        const ids = byControlId[controlId];
+        if (ids.length > 1) {
+          // Keep the first (oldest), delete the rest
+          idsToDelete.push(...ids.slice(1));
+        }
+      }
+
+      console.log(`[EvidenceRepo] Found ${idsToDelete.length} duplicates to remove`);
+
+      if (idsToDelete.length === 0) {
+        return { removed: 0 };
+      }
+
+      // Delete in batches to avoid issues with large deletes
+      const BATCH_SIZE = 100;
+      let removed = 0;
+
+      for (let i = 0; i < idsToDelete.length; i += BATCH_SIZE) {
+        const batch = idsToDelete.slice(i, i + BATCH_SIZE);
+        const { error: deleteError } = await supabase
+          .from('evidence_items')
+          .delete()
+          .in('id', batch);
+
+        if (deleteError) {
+          console.error('[EvidenceRepo] Delete batch error:', deleteError);
+          return { removed, error: deleteError.message };
+        }
+
+        removed += batch.length;
+        console.log(`[EvidenceRepo] Deleted batch ${Math.floor(i / BATCH_SIZE) + 1}, total removed: ${removed}`);
+      }
+
+      console.log(`[EvidenceRepo] Cleanup complete: ${removed} duplicates removed`);
+      return { removed };
+    } catch (error) {
+      console.error('[EvidenceRepo] Cleanup exception:', error);
+      return { removed: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 // ============================================================================

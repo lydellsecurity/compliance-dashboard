@@ -116,6 +116,32 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
   const [showFileUploadModal, setShowFileUploadModal] = useState(false);
   const [uploadTargetEvidence, setUploadTargetEvidence] = useState<EvidenceItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+
+  // Handle duplicate cleanup
+  const handleCleanupDuplicates = async () => {
+    if (!confirm('This will remove duplicate evidence items, keeping the oldest entry for each control. Continue?')) {
+      return;
+    }
+
+    setIsCleaningUp(true);
+    try {
+      const result = await evidenceRepository.removeDuplicates();
+      if (result.error) {
+        alert(`Cleanup failed: ${result.error}`);
+      } else if (result.removed > 0) {
+        alert(`Removed ${result.removed} duplicate entries`);
+        loadEvidence();
+      } else {
+        alert('No duplicates found');
+      }
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      alert('Cleanup failed');
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
 
   // Initialize service and load evidence
   useEffect(() => {
@@ -251,13 +277,30 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
             Manage compliance evidence with version control and approval workflows
           </p>
         </div>
-        <button
-          onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Evidence
-        </button>
+        <div className="flex items-center gap-2">
+          {stats && stats.total > 200 && (
+            <button
+              onClick={handleCleanupDuplicates}
+              disabled={isCleaningUp}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors disabled:opacity-50"
+              title="Remove duplicate evidence entries"
+            >
+              {isCleaningUp ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              {isCleaningUp ? 'Cleaning...' : 'Remove Duplicates'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Evidence
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
