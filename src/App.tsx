@@ -66,12 +66,12 @@ const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { currentOrg } = useOrganization();
   const compliance = useCompliance({ organizationId: currentOrg?.id });
 
-  // Debug: log when getEvidenceFileCounts function reference changes
+  // Debug: log when evidenceFileCounts changes
   useEffect(() => {
     // Test lookup for a known control ID
-    const testResult = compliance.getEvidenceFileCounts('GV-022');
-    console.log('[ComplianceProvider] getEvidenceFileCounts test for GV-022:', testResult);
-  }, [compliance.getEvidenceFileCounts]);
+    const testResult = compliance.evidenceFileCounts['GV-022'];
+    console.log('[ComplianceProvider] evidenceFileCounts size:', Object.keys(compliance.evidenceFileCounts).length, ', GV-022:', testResult);
+  }, [compliance.evidenceFileCounts]);
 
   return <ComplianceContext.Provider value={compliance}>{children}</ComplianceContext.Provider>;
 };
@@ -421,20 +421,14 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
 // ============================================================================
 
 const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
-  const { answerControl, getResponse, updateRemediation, getEvidenceFileCounts } = useComplianceContext();
+  const { answerControl, getResponse, updateRemediation, evidenceFileCounts } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
   const [localRemediation, setLocalRemediation] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const response = getResponse(control.id);
-  const evidenceCounts = getEvidenceFileCounts(control.id);
-
-  // Debug: Log a few controls to check ID format match
-  useEffect(() => {
-    if (control.id === 'GV-022' || control.id === 'DP-001' || control.id === 'AC-001') {
-      console.log(`[ProtocolCard Debug] Control ID: "${control.id}", evidenceCounts:`, evidenceCounts);
-    }
-  }, [control.id, evidenceCounts]);
+  // Access the object directly - this creates a dependency on the object reference
+  const evidenceCounts = evidenceFileCounts[control.id];
 
   useEffect(() => { setLocalRemediation(response?.remediationPlan || ''); }, [response?.remediationPlan]);
 

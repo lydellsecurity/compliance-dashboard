@@ -255,24 +255,25 @@ export const COMPANY_DOMAIN: ComplianceDomainMeta = {
 export interface UseComplianceReturn {
   // State
   state: ComplianceState;
-  
+
   // Master Controls
   masterControls: MasterControl[];
   allControls: MasterControl[];
   getControlsByDomain: (domainId: string) => MasterControl[];
   getControlById: (controlId: string) => MasterControl | undefined;
-  
+
   // Control Responses
   answerControl: (controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => void;
   getResponse: (controlId: string) => ControlResponse | undefined;
   updateRemediation: (controlId: string, plan: string) => void;
-  
+
   // Evidence Management
   getEvidence: (evidenceId: string) => EvidenceRecord | undefined;
   getEvidenceByControlId: (controlId: string) => EvidenceRecord | undefined;
   updateEvidence: (evidenceId: string, updates: Partial<EvidenceRecord>) => void;
   getAllEvidence: () => EvidenceRecord[];
   getEvidenceFileCounts: (controlId: string) => { evidenceCount: number; fileCount: number; hasFiles: boolean } | undefined;
+  evidenceFileCounts: Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>;
   refreshEvidenceCounts: () => Promise<void>;
   
   // Custom Controls
@@ -354,8 +355,8 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   const [supabaseUser, setSupabaseUser] = useState<{ id: string; organization_id?: string } | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Evidence file counts for UI indicators
-  const [evidenceFileCounts, setEvidenceFileCounts] = useState<Map<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>>(new Map());
+  // Evidence file counts for UI indicators (using plain object for React reactivity)
+  const [evidenceFileCountsObj, setEvidenceFileCountsObj] = useState<Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>>({});
 
   // ============================================================================
   // SUPABASE AUTHENTICATION LISTENER
@@ -441,7 +442,13 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
       try {
         const counts = await evidenceRepository.getEvidenceCountsByControl();
-        setEvidenceFileCounts(counts);
+
+        // Convert Map to plain object for React reactivity
+        const countsObj: Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }> = {};
+        counts.forEach((value, key) => {
+          countsObj[key] = value;
+        });
+        setEvidenceFileCountsObj(countsObj);
 
         // Debug: show breakdown of counts and sample control IDs
         let withFiles = 0;
@@ -659,7 +666,11 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
         // Load evidence file counts for UI indicators
         const counts = await evidenceRepository.getEvidenceCountsByControl();
-        setEvidenceFileCounts(counts);
+        const countsObj: Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }> = {};
+        counts.forEach((value, key) => {
+          countsObj[key] = value;
+        });
+        setEvidenceFileCountsObj(countsObj);
         console.log(`[Evidence Counts] Loaded counts for ${counts.size} controls`);
       } else {
         console.log('[Evidence Sync] Evidence repository not available or missing context:', {
@@ -1102,20 +1113,19 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   }, [evidence]);
 
   const getEvidenceFileCounts = useCallback((controlId: string): { evidenceCount: number; fileCount: number; hasFiles: boolean } | undefined => {
-    const result = evidenceFileCounts.get(controlId);
-    // Debug: log lookups for specific control IDs
-    if (controlId === 'GV-022' || controlId === 'DP-001') {
-      console.log(`[getEvidenceFileCounts] Lookup "${controlId}": result =`, result, `(map size: ${evidenceFileCounts.size})`);
-    }
-    return result;
-  }, [evidenceFileCounts]);
+    return evidenceFileCountsObj[controlId];
+  }, [evidenceFileCountsObj]);
 
   const refreshEvidenceCounts = useCallback(async (): Promise<void> => {
     if (!evidenceRepository.isAvailable()) return;
 
     try {
       const counts = await evidenceRepository.getEvidenceCountsByControl();
-      setEvidenceFileCounts(counts);
+      const countsObj: Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }> = {};
+      counts.forEach((value, key) => {
+        countsObj[key] = value;
+      });
+      setEvidenceFileCountsObj(countsObj);
       console.log(`[Evidence Counts] Refreshed counts for ${counts.size} controls`);
     } catch (err) {
       console.error('[Evidence Counts] Refresh failed:', err);
@@ -1328,6 +1338,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     updateEvidence,
     getAllEvidence,
     getEvidenceFileCounts,
+    evidenceFileCounts: evidenceFileCountsObj,
     refreshEvidenceCounts,
 
     // Custom Controls
