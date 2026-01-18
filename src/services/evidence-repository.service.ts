@@ -277,7 +277,16 @@ class EvidenceRepositoryService {
    * Search evidence with filters
    */
   async searchEvidence(params: EvidenceSearchParams): Promise<EvidenceItem[]> {
-    if (!supabase || !this.organizationId) return [];
+    if (!supabase) {
+      console.log('[EvidenceRepo] searchEvidence: Supabase not configured');
+      return [];
+    }
+    if (!this.organizationId) {
+      console.log('[EvidenceRepo] searchEvidence: Organization ID not set');
+      return [];
+    }
+
+    console.log('[EvidenceRepo] searchEvidence:', { orgId: this.organizationId, params });
 
     try {
       let query = supabase
@@ -348,10 +357,20 @@ class EvidenceRepositoryService {
 
       const { data, error } = await query;
 
-      if (error || !data) return [];
+      if (error) {
+        console.error('[EvidenceRepo] searchEvidence error:', error);
+        return [];
+      }
 
+      if (!data) {
+        console.log('[EvidenceRepo] searchEvidence: No data returned');
+        return [];
+      }
+
+      console.log('[EvidenceRepo] searchEvidence: Found', data.length, 'items');
       return data.map((item) => this.mapToEvidenceItem(item));
-    } catch {
+    } catch (err) {
+      console.error('[EvidenceRepo] searchEvidence exception:', err);
       return [];
     }
   }

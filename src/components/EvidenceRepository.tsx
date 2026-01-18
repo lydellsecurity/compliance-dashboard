@@ -115,51 +115,76 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Initialize service
+  // Initialize service and load evidence
   useEffect(() => {
-    evidenceRepository.setContext(organizationId, userId);
-  }, [organizationId, userId]);
+    const initAndLoad = async () => {
+      // Set context first
+      console.log('[EvidenceRepo UI] Setting context:', { organizationId, userId });
+      evidenceRepository.setContext(organizationId, userId);
 
-  // Load evidence
+      // Then load evidence
+      setLoading(true);
+      try {
+        const params: EvidenceSearchParams = {
+          limit: 100,
+        };
+
+        if (controlFilter) {
+          params.controlId = controlFilter;
+        }
+        if (searchText) {
+          params.searchText = searchText;
+        }
+        if (filterType) {
+          params.type = filterType;
+        }
+        if (filterStatus) {
+          params.status = filterStatus;
+        }
+        if (filterSource) {
+          params.source = filterSource;
+        }
+
+        console.log('[EvidenceRepo UI] Loading evidence with params:', params);
+        const results = await evidenceRepository.searchEvidence(params);
+        console.log('[EvidenceRepo UI] Loaded evidence:', results.length, 'items');
+        setEvidence(results);
+
+        // Load stats
+        const statsData = await evidenceRepository.getStats();
+        setStats(statsData);
+      } catch (error) {
+        console.error('[EvidenceRepo UI] Failed to load evidence:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAndLoad();
+  }, [organizationId, userId, controlFilter, searchText, filterType, filterStatus, filterSource]);
+
+  // Reload function for manual refresh
   const loadEvidence = useCallback(async () => {
+    evidenceRepository.setContext(organizationId, userId);
     setLoading(true);
     try {
-      const params: EvidenceSearchParams = {
-        limit: 100,
-      };
-
-      if (controlFilter) {
-        params.controlId = controlFilter;
-      }
-      if (searchText) {
-        params.searchText = searchText;
-      }
-      if (filterType) {
-        params.type = filterType;
-      }
-      if (filterStatus) {
-        params.status = filterStatus;
-      }
-      if (filterSource) {
-        params.source = filterSource;
-      }
+      const params: EvidenceSearchParams = { limit: 100 };
+      if (controlFilter) params.controlId = controlFilter;
+      if (searchText) params.searchText = searchText;
+      if (filterType) params.type = filterType;
+      if (filterStatus) params.status = filterStatus;
+      if (filterSource) params.source = filterSource;
 
       const results = await evidenceRepository.searchEvidence(params);
       setEvidence(results);
-
-      // Load stats
       const statsData = await evidenceRepository.getStats();
       setStats(statsData);
     } catch (error) {
-      console.error('Failed to load evidence:', error);
+      console.error('[EvidenceRepo UI] Failed to load evidence:', error);
     } finally {
       setLoading(false);
     }
-  }, [controlFilter, searchText, filterType, filterStatus, filterSource]);
-
-  useEffect(() => {
-    loadEvidence();
-  }, [loadEvidence]);
+  }, [organizationId, userId, controlFilter, searchText, filterType, filterStatus, filterSource]);
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
