@@ -18,7 +18,7 @@ import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
 import IncidentDashboard from './components/IncidentDashboard';
 import IncidentDetail from './components/IncidentDetail';
-import ClientReporting from './components/ClientReporting';
+import ReportAnalyticsCenter from './components/ReportAnalyticsCenter';
 import RemediationEngine from './components/RemediationEngine';
 import TrustCenter from './components/TrustCenter';
 import CertificateGenerator from './components/CertificateGenerator';
@@ -2153,7 +2153,7 @@ const AppContent: React.FC = () => {
             )}
             {activeTab === 'reporting' && (
               <motion.div key="reporting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <ClientReporting compliance={compliance} ir={ir} />
+                <ReportAnalyticsCenter compliance={compliance} ir={ir} />
               </motion.div>
             )}
             {activeTab === 'evidence' && (
