@@ -15,8 +15,9 @@ import {
   Settings as SettingsIcon, Cloud, Bell, Activity, Shield, Building2,
   ChevronRight, Monitor, AlertTriangle, CheckCircle2, XCircle,
   RefreshCw, Zap, Database, Lock, Globe, Mail, MessageSquare,
-  Webhook, ToggleLeft, ToggleRight, Clock, TrendingUp,
+  Webhook, ToggleLeft, ToggleRight, Clock, TrendingUp, GitCompare,
 } from 'lucide-react';
+import RegulatoryVersionControl from './RegulatoryVersionControl';
 import {
   monitoringService,
   type AlertSeverity,
@@ -27,7 +28,7 @@ import { awsConnector } from '../services/cloud-integrations/aws-connector.servi
 // TYPES
 // ============================================================================
 
-type SettingsSection = 'overview' | 'monitoring' | 'integrations' | 'alerts' | 'notifications' | 'organization';
+type SettingsSection = 'overview' | 'monitoring' | 'integrations' | 'alerts' | 'notifications' | 'organization' | 'regulatory';
 
 interface SettingsProps {
   onOpenMonitoringDashboard: () => void;
@@ -46,6 +47,7 @@ const SECTIONS: { id: SettingsSection; label: string; icon: React.ReactNode; des
   { id: 'alerts', label: 'Alert Rules', icon: <Bell className="w-5 h-5" />, description: 'Configure alert thresholds and triggers' },
   { id: 'notifications', label: 'Notifications', icon: <Mail className="w-5 h-5" />, description: 'Email, Slack, and webhook settings' },
   { id: 'organization', label: 'Organization', icon: <Building2 className="w-5 h-5" />, description: 'Company settings and preferences' },
+  { id: 'regulatory', label: 'Regulatory Updates', icon: <GitCompare className="w-5 h-5" />, description: 'Track framework changes and compliance drift' },
 ];
 
 // ============================================================================
@@ -756,6 +758,23 @@ const OrganizationSection: React.FC = () => {
 };
 
 // ============================================================================
+// REGULATORY SECTION
+// ============================================================================
+
+const RegulatorySection: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-primary mb-1">Regulatory Updates & Version Control</h2>
+        <p className="text-secondary">Track framework version changes, compliance drift, and requirement updates</p>
+      </div>
+
+      <RegulatoryVersionControl />
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -808,6 +827,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
             {activeSection === 'alerts' && <AlertsSection onOpenConfiguration={props.onOpenAlertConfiguration} />}
             {activeSection === 'notifications' && <NotificationsSection />}
             {activeSection === 'organization' && <OrganizationSection />}
+            {activeSection === 'regulatory' && <RegulatorySection />}
           </motion.div>
         </AnimatePresence>
       </div>
