@@ -131,6 +131,7 @@ class EvidenceRepositoryService {
   private organizationId: string | null = null;
   private userId: string | null = null;
   private bucketName = 'evidence';
+  private deduplicationRan: Set<string> = new Set(); // Track per-org deduplication
 
   // ---------------------------------------------------------------------------
   // INITIALIZATION
@@ -139,6 +140,19 @@ class EvidenceRepositoryService {
   setContext(organizationId: string, userId: string): void {
     this.organizationId = organizationId;
     this.userId = userId;
+
+    // Run deduplication once per organization per session
+    if (organizationId && !this.deduplicationRan.has(organizationId)) {
+      this.deduplicationRan.add(organizationId);
+      // Run in background, don't block initialization
+      this.removeDuplicates().then(result => {
+        if (result.removed > 0) {
+          console.log(`[EvidenceRepo] Auto-cleanup: removed ${result.removed} duplicates`);
+        }
+      }).catch(err => {
+        console.error('[EvidenceRepo] Auto-cleanup error:', err);
+      });
+    }
   }
 
   clearContext(): void {
