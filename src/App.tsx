@@ -1115,13 +1115,24 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             )}
           </div>
 
-          {/* Control Assessment Wizard Button */}
+          {/* Control Assessment View Button */}
           <button
-            onClick={() => setShowRequirementWizard(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent hover:from-indigo-600 hover:to-purple-600 transition-all shadow-sm"
+            onClick={() => {
+              // If no framework selected, prompt to select one first
+              if (selectedFramework === 'all') {
+                setShowFrameworkDropdown(true);
+              } else {
+                setViewMode('controls');
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all shadow-sm ${
+              viewMode === 'controls' && selectedFramework !== 'all'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent'
+                : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent hover:from-indigo-600 hover:to-purple-600'
+            }`}
           >
             <Shield className="w-4 h-4" />
-            <span className="text-sm font-medium whitespace-nowrap">Control Wizard</span>
+            <span className="text-sm font-medium whitespace-nowrap">Control View</span>
           </button>
         </div>
 
