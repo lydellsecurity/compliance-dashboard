@@ -979,70 +979,72 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Domain Sidebar - Compliance Journey */}
-      <div className="w-64 flex-shrink-0 hidden lg:block">
-        <Card className="p-4 sticky top-4">
-          <div className="flex items-center gap-2 mb-4 px-1">
-            <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-steel-400">
-              Compliance Journey
-            </span>
-          </div>
-          <div className="space-y-1 max-h-[calc(100vh-180px)] overflow-y-auto">
-            {domainProgress.map((domain, idx) => {
-              const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
-              const isActive = (activeDomain.id as string) === domain.id && !search;
-              const complete = domain.percentage === 100 && domain.total > 0;
+      {/* Domain Sidebar - Compliance Journey (Controls View Only) */}
+      {viewMode === 'controls' && (
+        <div className="w-64 flex-shrink-0 hidden lg:block">
+          <Card className="p-4 sticky top-4">
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-steel-400">
+                Compliance Journey
+              </span>
+            </div>
+            <div className="space-y-1 max-h-[calc(100vh-180px)] overflow-y-auto">
+              {domainProgress.map((domain, idx) => {
+                const domainMeta = allDomains.find(d => (d.id as string) === domain.id);
+                const isActive = (activeDomain.id as string) === domain.id && !search;
+                const complete = domain.percentage === 100 && domain.total > 0;
 
-              return (
-                <button
-                  key={domain.id}
-                  onClick={() => { if (domainMeta) setActiveDomain(domainMeta); setSearch(''); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${isActive
-                    ? 'bg-indigo-50 dark:bg-accent-500/10 border border-indigo-200 dark:border-accent-500/30'
-                    : 'hover:bg-slate-50 dark:hover:bg-steel-800/50 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Step Number / Completion Indicator */}
-                    <div
-                      className={`w-7 h-7 flex items-center justify-center flex-shrink-0 rounded-lg text-xs font-semibold ${
-                        complete
-                          ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                          : isActive
-                            ? 'bg-indigo-100 dark:bg-accent-500/20 text-indigo-600 dark:text-accent-400'
-                            : 'bg-slate-100 dark:bg-steel-800 text-slate-500 dark:text-steel-400'
-                      }`}
-                    >
-                      {complete ? <Check className="w-3.5 h-3.5" /> : idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium truncate ${
-                          isActive
-                            ? 'text-indigo-700 dark:text-accent-400'
-                            : 'text-slate-700 dark:text-steel-300'
-                        }`}>
-                          {domain.title}
-                        </span>
+                return (
+                  <button
+                    key={domain.id}
+                    onClick={() => { if (domainMeta) setActiveDomain(domainMeta); setSearch(''); }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${isActive
+                      ? 'bg-indigo-50 dark:bg-accent-500/10 border border-indigo-200 dark:border-accent-500/30'
+                      : 'hover:bg-slate-50 dark:hover:bg-steel-800/50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Step Number / Completion Indicator */}
+                      <div
+                        className={`w-7 h-7 flex items-center justify-center flex-shrink-0 rounded-lg text-xs font-semibold ${
+                          complete
+                            ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : isActive
+                              ? 'bg-indigo-100 dark:bg-accent-500/20 text-indigo-600 dark:text-accent-400'
+                              : 'bg-slate-100 dark:bg-steel-800 text-slate-500 dark:text-steel-400'
+                        }`}
+                      >
+                        {complete ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 h-1 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10b981' : '#4f46e5' }}
-                          />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-sm font-medium truncate ${
+                            isActive
+                              ? 'text-indigo-700 dark:text-accent-400'
+                              : 'text-slate-700 dark:text-steel-300'
+                          }`}>
+                            {domain.title}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-500 dark:text-steel-500">{domain.answered}/{domain.total}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 h-1 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-300"
+                              style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10b981' : '#4f46e5' }}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-500 dark:text-steel-500">{domain.answered}/{domain.total}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-      </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-4">
@@ -1187,8 +1189,8 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           </div>
         )}
 
-        {/* Domain Header */}
-        {!search && !selectedFrameworkMeta && currentDomainProgress && (
+        {/* Domain Header (Controls View Only) */}
+        {viewMode === 'controls' && !search && !selectedFrameworkMeta && currentDomainProgress && (
           <Card className="p-5">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 dark:bg-accent-500/10">
@@ -1208,8 +1210,8 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           </Card>
         )}
 
-        {/* Search Results Info */}
-        {search && (
+        {/* Search Results Info (Controls View Only) */}
+        {viewMode === 'controls' && search && (
           <div className="p-4 bg-indigo-50 dark:bg-accent-500/10 border border-indigo-200 dark:border-accent-500/20 rounded-lg">
             <p className="text-indigo-700 dark:text-accent-400">
               Found <strong>{controls.length}</strong> controls matching "{search}"
