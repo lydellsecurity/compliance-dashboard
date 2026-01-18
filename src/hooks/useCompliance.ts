@@ -20,6 +20,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { complianceDb } from '../services/compliance-database.service';
+import { evidenceRepository } from '../services/evidence-repository.service';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {
   getOrgStorageKeys,
@@ -367,6 +368,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         setSupabaseUser({ id: session.user.id, organization_id: orgId });
         if (orgId) {
           complianceDb.setContext(orgId, session.user.id);
+          evidenceRepository.setContext(orgId, session.user.id);
         }
       }
     });
@@ -380,6 +382,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         setSupabaseUser({ id: session.user.id, organization_id: orgId });
         if (orgId) {
           complianceDb.setContext(orgId, session.user.id);
+          evidenceRepository.setContext(orgId, session.user.id);
         }
       } else {
         setSupabaseUser(null);
@@ -397,6 +400,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user && organizationId) {
         complianceDb.setContext(organizationId, session.user.id);
+        evidenceRepository.setContext(organizationId, session.user.id);
         setSupabaseUser(prev => prev ? { ...prev, organization_id: organizationId } : null);
       }
     });
@@ -556,6 +560,31 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
       }
 
       setLastSyncedAt(new Date().toISOString());
+
+      // Sync existing "yes" answers to Evidence Repository
+      if (evidenceRepository.isAvailable()) {
+        const yesResponses = Object.values(responsesFromDb).filter(r => r.answer === 'yes');
+        for (const response of yesResponses) {
+          const control = allControls.find(c => c.id === response.controlId);
+          if (control) {
+            // Check if evidence already exists for this control
+            const existingEvidence = await evidenceRepository.getEvidenceForControl(response.controlId);
+            if (existingEvidence.length === 0) {
+              await evidenceRepository.createEvidence({
+                controlId: response.controlId,
+                title: `${control.title} - Compliance Evidence`,
+                description: `Evidence supporting compliance with control ${response.controlId}: ${control.title}`,
+                type: 'assessment',
+                source: 'manual',
+                tags: ['auto-generated', 'assessment'],
+                frameworkMappings: control.frameworkMappings.map(m => m.frameworkId),
+              }).catch(err => {
+                console.error('Failed to sync evidence to repository:', err);
+              });
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error loading from Supabase:', error);
     } finally {
@@ -837,6 +866,26 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
               n.clauseTitle
             ).catch(console.error);
           });
+        }
+
+        // Create evidence item in Evidence Repository (if not already exists)
+        if (evidenceRepository.isAvailable() && isOnline) {
+          evidenceRepository.getEvidenceForControl(controlId).then(existingEvidence => {
+            // Only create if no evidence exists for this control
+            if (existingEvidence.length === 0) {
+              evidenceRepository.createEvidence({
+                controlId,
+                title: `${control.title} - Compliance Evidence`,
+                description: `Evidence supporting compliance with control ${controlId}: ${control.title}`,
+                type: 'assessment',
+                source: 'manual',
+                tags: ['auto-generated', 'assessment'],
+                frameworkMappings: control.frameworkMappings.map(m => m.frameworkId),
+              }).catch(err => {
+                console.error('Failed to create evidence in repository:', err);
+              });
+            }
+          }).catch(console.error);
         }
       }
     }
