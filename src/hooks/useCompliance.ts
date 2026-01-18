@@ -434,6 +434,23 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     }
   }, [organizationId, supabaseUser?.organization_id, isOnline]);
 
+  // Load evidence file counts separately (ensures they're loaded even if evidence sync is skipped)
+  useEffect(() => {
+    const loadCounts = async () => {
+      if (!evidenceRepository.isAvailable() || !organizationId) return;
+
+      try {
+        const counts = await evidenceRepository.getEvidenceCountsByControl();
+        setEvidenceFileCounts(counts);
+        console.log(`[Evidence Counts] Initial load: ${counts.size} controls with evidence`);
+      } catch (err) {
+        console.error('[Evidence Counts] Initial load failed:', err);
+      }
+    };
+
+    loadCounts();
+  }, [organizationId]);
+
   // ============================================================================
   // SUPABASE DATA LOADING
   // ============================================================================
