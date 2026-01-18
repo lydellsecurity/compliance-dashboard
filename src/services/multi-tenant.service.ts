@@ -1079,6 +1079,37 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
 
   private mapToTenant(data: Record<string, unknown>): Tenant {
+    // Deep merge settings with defaults to ensure all nested properties exist
+    const rawSettings = data.settings as Partial<TenantSettings> | undefined;
+    const settings: TenantSettings = {
+      timezone: rawSettings?.timezone ?? DEFAULT_TENANT_SETTINGS.timezone,
+      dateFormat: rawSettings?.dateFormat ?? DEFAULT_TENANT_SETTINGS.dateFormat,
+      defaultFramework: rawSettings?.defaultFramework ?? DEFAULT_TENANT_SETTINGS.defaultFramework,
+      notificationPreferences: {
+        emailDigest: rawSettings?.notificationPreferences?.emailDigest ?? DEFAULT_TENANT_SETTINGS.notificationPreferences.emailDigest,
+        slackAlerts: rawSettings?.notificationPreferences?.slackAlerts ?? DEFAULT_TENANT_SETTINGS.notificationPreferences.slackAlerts,
+        complianceDeadlines: rawSettings?.notificationPreferences?.complianceDeadlines ?? DEFAULT_TENANT_SETTINGS.notificationPreferences.complianceDeadlines,
+      },
+      securitySettings: {
+        mfaRequired: rawSettings?.securitySettings?.mfaRequired ?? DEFAULT_TENANT_SETTINGS.securitySettings.mfaRequired,
+        sessionTimeoutMinutes: rawSettings?.securitySettings?.sessionTimeoutMinutes ?? DEFAULT_TENANT_SETTINGS.securitySettings.sessionTimeoutMinutes,
+        ipWhitelist: rawSettings?.securitySettings?.ipWhitelist ?? DEFAULT_TENANT_SETTINGS.securitySettings.ipWhitelist,
+        passwordPolicy: {
+          minLength: rawSettings?.securitySettings?.passwordPolicy?.minLength ?? DEFAULT_TENANT_SETTINGS.securitySettings.passwordPolicy.minLength,
+          requireUppercase: rawSettings?.securitySettings?.passwordPolicy?.requireUppercase ?? DEFAULT_TENANT_SETTINGS.securitySettings.passwordPolicy.requireUppercase,
+          requireNumbers: rawSettings?.securitySettings?.passwordPolicy?.requireNumbers ?? DEFAULT_TENANT_SETTINGS.securitySettings.passwordPolicy.requireNumbers,
+          requireSymbols: rawSettings?.securitySettings?.passwordPolicy?.requireSymbols ?? DEFAULT_TENANT_SETTINGS.securitySettings.passwordPolicy.requireSymbols,
+          expirationDays: rawSettings?.securitySettings?.passwordPolicy?.expirationDays ?? DEFAULT_TENANT_SETTINGS.securitySettings.passwordPolicy.expirationDays,
+        },
+      },
+      complianceSettings: {
+        autoAssignOwners: rawSettings?.complianceSettings?.autoAssignOwners ?? DEFAULT_TENANT_SETTINGS.complianceSettings.autoAssignOwners,
+        requireEvidenceApproval: rawSettings?.complianceSettings?.requireEvidenceApproval ?? DEFAULT_TENANT_SETTINGS.complianceSettings.requireEvidenceApproval,
+        evidenceExpirationDays: rawSettings?.complianceSettings?.evidenceExpirationDays ?? DEFAULT_TENANT_SETTINGS.complianceSettings.evidenceExpirationDays,
+        assessmentSchedule: rawSettings?.complianceSettings?.assessmentSchedule ?? DEFAULT_TENANT_SETTINGS.complianceSettings.assessmentSchedule,
+      },
+    };
+
     return {
       id: data.id as string,
       name: data.name as string,
@@ -1087,7 +1118,7 @@ class MultiTenantService {
       status: data.status as TenantStatus,
       limits: (data.limits as TenantLimits) || PLAN_CONFIGS.free.limits,
       features: (data.features as TenantFeatures) || PLAN_CONFIGS.free.features,
-      settings: (data.settings as TenantSettings) || DEFAULT_TENANT_SETTINGS,
+      settings,
       branding: (data.branding as TenantBranding) || DEFAULT_BRANDING,
       billing: (data.billing as TenantBilling) || {
         customerId: null,
