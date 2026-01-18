@@ -428,6 +428,38 @@ const AddressableSpecificationHandler: React.FC<{
 };
 
 // ============================================
+// FILE UPLOAD HELPERS
+// ============================================
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  dataUrl: string;
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getFileIcon = (type: string): React.ReactNode => {
+  if (type.startsWith('image/')) {
+    return <FileText className="w-5 h-5 text-purple-500" />;
+  } else if (type === 'application/pdf') {
+    return <FileText className="w-5 h-5 text-red-500" />;
+  } else if (type.includes('spreadsheet') || type.includes('excel') || type.endsWith('.csv')) {
+    return <FileText className="w-5 h-5 text-green-500" />;
+  } else if (type.includes('document') || type.includes('word')) {
+    return <FileText className="w-5 h-5 text-blue-500" />;
+  }
+  return <FileText className="w-5 h-5 text-slate-400 dark:text-steel-500" />;
+};
+
+// ============================================
 // EVIDENCE SECTION
 // ============================================
 
@@ -443,6 +475,104 @@ const EvidenceSection: React.FC<{
     name: '',
     description: '',
   });
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB max
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+    'text/plain',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+  ];
+
+  const processFiles = async (files: FileList | File[]) => {
+    setUploadError(null);
+    const fileArray = Array.from(files);
+    const newFiles: UploadedFile[] = [];
+
+    for (const file of fileArray) {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadError(`File "${file.name}" exceeds 10MB limit`);
+        continue;
+      }
+
+      // Validate file type
+      if (!ALLOWED_TYPES.includes(file.type) && !file.name.endsWith('.csv')) {
+        setUploadError(`File type "${file.type || 'unknown'}" is not supported`);
+        continue;
+      }
+
+      // Read file as data URL
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+
+        newFiles.push({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          dataUrl,
+        });
+      } catch {
+        setUploadError(`Failed to read file "${file.name}"`);
+      }
+    }
+
+    if (newFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+      // Auto-fill name from first file if empty
+      if (!newEvidence.name && newFiles.length === 1) {
+        setNewEvidence(prev => ({ ...prev, name: newFiles[0].name.replace(/\.[^/.]+$/, '') }));
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
+  const removeUploadedFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleAdd = () => {
     if (!newEvidence.name || !newEvidence.evidenceType) return;
@@ -451,7 +581,7 @@ const EvidenceSection: React.FC<{
       evidenceType: newEvidence.evidenceType,
       name: newEvidence.name,
       description: newEvidence.description,
-      fileUrls: [],
+      fileUrls: uploadedFiles.map(f => f.dataUrl),
       verificationMethod: 'documentation',
       verifiedAt: null,
       verifiedBy: null,
@@ -459,6 +589,14 @@ const EvidenceSection: React.FC<{
     });
 
     setNewEvidence({ evidenceType: '', name: '', description: '' });
+    setUploadedFiles([]);
+    setShowAddForm(false);
+  };
+
+  const handleCancel = () => {
+    setNewEvidence({ evidenceType: '', name: '', description: '' });
+    setUploadedFiles([]);
+    setUploadError(null);
     setShowAddForm(false);
   };
 
@@ -525,16 +663,87 @@ const EvidenceSection: React.FC<{
             placeholder="Description..."
           />
 
+          {/* File Upload Area */}
+          <div
+            className={`relative border-2 border-dashed rounded-lg p-4 transition-colors ${
+              isDragging
+                ? 'border-indigo-500 bg-indigo-100 dark:bg-indigo-900/30'
+                : 'border-slate-300 dark:border-steel-600 hover:border-indigo-400 dark:hover:border-accent-500'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.gif,.webp"
+              onChange={handleFileChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <div className="text-center">
+              <Upload className={`w-8 h-8 mx-auto mb-2 ${
+                isDragging ? 'text-indigo-500' : 'text-slate-400 dark:text-steel-500'
+              }`} />
+              <p className="text-sm font-medium text-slate-700 dark:text-steel-300">
+                {isDragging ? 'Drop files here' : 'Drag & drop files or click to browse'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">
+                PDF, Word, Excel, CSV, images up to 10MB
+              </p>
+            </div>
+          </div>
+
+          {/* Upload Error */}
+          {uploadError && (
+            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {uploadError}
+            </div>
+          )}
+
+          {/* Uploaded Files List */}
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wider">
+                Attached Files ({uploadedFiles.length})
+              </p>
+              {uploadedFiles.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 p-2 bg-white dark:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700"
+                >
+                  {getFileIcon(file.type)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-steel-100 truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-steel-400">
+                      {formatFileSize(file.size)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removeUploadedFile(idx)}
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
               disabled={!newEvidence.name || !newEvidence.evidenceType}
               className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add
+              Add Evidence{uploadedFiles.length > 0 ? ` with ${uploadedFiles.length} file${uploadedFiles.length > 1 ? 's' : ''}` : ''}
             </button>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={handleCancel}
               className="px-4 py-2 text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200"
             >
               Cancel
@@ -549,23 +758,54 @@ const EvidenceSection: React.FC<{
           {existingEvidence.map(evidence => (
             <div
               key={evidence.id}
-              className="flex items-center gap-3 p-3 bg-white dark:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700"
+              className="p-3 bg-white dark:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700"
             >
-              <FileText className="w-5 h-5 text-slate-400 dark:text-steel-500" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-slate-900 dark:text-steel-100 truncate">
-                  {evidence.name}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-steel-400">
-                  {evidence.evidenceType} • {evidence.status}
-                </p>
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-slate-400 dark:text-steel-500" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-slate-900 dark:text-steel-100 truncate">
+                    {evidence.name}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-steel-400">
+                    {evidence.evidenceType} • {evidence.status}
+                  </p>
+                </div>
+                <button
+                  onClick={() => onRemove(evidence.id)}
+                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={() => onRemove(evidence.id)}
-                className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {/* Show attached files */}
+              {evidence.fileUrls && evidence.fileUrls.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-steel-700">
+                  <p className="text-xs text-slate-500 dark:text-steel-400 mb-1">
+                    {evidence.fileUrls.length} file{evidence.fileUrls.length > 1 ? 's' : ''} attached
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {evidence.fileUrls.map((url, idx) => {
+                      // Extract filename from data URL or use generic name
+                      const isImage = url.startsWith('data:image/');
+                      return (
+                        <a
+                          key={idx}
+                          href={url}
+                          download={`evidence-${idx + 1}`}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 dark:bg-steel-700 rounded text-indigo-600 dark:text-accent-400 hover:bg-slate-200 dark:hover:bg-steel-600"
+                        >
+                          {isImage ? (
+                            <img src={url} alt="" className="w-4 h-4 object-cover rounded" />
+                          ) : (
+                            <FileText className="w-3 h-3" />
+                          )}
+                          File {idx + 1}
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
