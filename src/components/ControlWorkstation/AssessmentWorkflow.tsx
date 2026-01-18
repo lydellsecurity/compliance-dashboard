@@ -3,7 +3,7 @@
  *
  * 3-phase assessment workflow:
  * Phase 1: Self-Assessment - Toggle for Implemented vs Not Started
- * Phase 2: AI Remediation - Generate policies with Claude
+ * Phase 2: Remediation Guidance - View control guidance and remediation tips
  * Phase 3: Evidence Linking - Drag-and-drop files or URLs
  */
 
@@ -13,7 +13,7 @@ import {
   CheckCircle,
   Circle,
   AlertTriangle,
-  Sparkles,
+  BookOpen,
   Upload,
   Link,
   Clock,
@@ -177,7 +177,7 @@ const AssessmentWorkflow: React.FC<AssessmentWorkflowProps> = ({
               <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-bold">
                 2
               </span>
-              AI Remediation
+              Remediation Guidance
             </h4>
 
             {/* Remediation tip */}
@@ -195,7 +195,7 @@ const AssessmentWorkflow: React.FC<AssessmentWorkflowProps> = ({
               </div>
             </div>
 
-            {/* Generate Policy Button */}
+            {/* Control Guidance Button */}
             <button
               onClick={onGeneratePolicy}
               disabled={isGeneratingPolicy}
@@ -207,14 +207,14 @@ const AssessmentWorkflow: React.FC<AssessmentWorkflowProps> = ({
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <BookOpen className="w-4 h-4" />
                   </motion.div>
-                  Generating Policy...
+                  Loading Guidance...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate Policy with Claude
+                  <BookOpen className="w-4 h-4" />
+                  Control Guidance
                 </>
               )}
             </button>
