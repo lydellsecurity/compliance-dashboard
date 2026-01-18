@@ -564,13 +564,14 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
       // Sync existing "yes" answers to Evidence Repository
       if (evidenceRepository.isAvailable()) {
         const yesResponses = Object.values(responsesFromDb).filter(r => r.answer === 'yes');
+        console.log(`[Evidence Sync] Found ${yesResponses.length} "yes" responses to sync`);
         for (const response of yesResponses) {
           const control = allControls.find(c => c.id === response.controlId);
           if (control) {
             // Check if evidence already exists for this control
             const existingEvidence = await evidenceRepository.getEvidenceForControl(response.controlId);
             if (existingEvidence.length === 0) {
-              await evidenceRepository.createEvidence({
+              const result = await evidenceRepository.createEvidence({
                 controlId: response.controlId,
                 title: `${control.title} - Compliance Evidence`,
                 description: `Evidence supporting compliance with control ${response.controlId}: ${control.title}`,
@@ -578,12 +579,17 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
                 source: 'manual',
                 tags: ['auto-generated', 'assessment'],
                 frameworkMappings: control.frameworkMappings.map(m => m.frameworkId),
-              }).catch(err => {
-                console.error('Failed to sync evidence to repository:', err);
               });
+              if (!result.success) {
+                console.error(`[Evidence Sync] Failed to create evidence for ${response.controlId}:`, result.error);
+              } else {
+                console.log(`[Evidence Sync] Created evidence for ${response.controlId}`);
+              }
             }
           }
         }
+      } else {
+        console.log('[Evidence Sync] Evidence repository not available');
       }
     } catch (error) {
       console.error('Error loading from Supabase:', error);
@@ -870,10 +876,10 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
         // Create evidence item in Evidence Repository (if not already exists)
         if (evidenceRepository.isAvailable() && isOnline) {
-          evidenceRepository.getEvidenceForControl(controlId).then(existingEvidence => {
+          evidenceRepository.getEvidenceForControl(controlId).then(async existingEvidence => {
             // Only create if no evidence exists for this control
             if (existingEvidence.length === 0) {
-              evidenceRepository.createEvidence({
+              const result = await evidenceRepository.createEvidence({
                 controlId,
                 title: `${control.title} - Compliance Evidence`,
                 description: `Evidence supporting compliance with control ${controlId}: ${control.title}`,
@@ -881,11 +887,16 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
                 source: 'manual',
                 tags: ['auto-generated', 'assessment'],
                 frameworkMappings: control.frameworkMappings.map(m => m.frameworkId),
-              }).catch(err => {
-                console.error('Failed to create evidence in repository:', err);
               });
+              if (!result.success) {
+                console.error(`[Evidence] Failed to create evidence for ${controlId}:`, result.error);
+              } else {
+                console.log(`[Evidence] Created evidence for ${controlId}`);
+              }
             }
-          }).catch(console.error);
+          }).catch(err => console.error('[Evidence] Error checking existing evidence:', err));
+        } else {
+          console.log('[Evidence] Repository not available or offline');
         }
       }
     }

@@ -166,11 +166,18 @@ class EvidenceRepositoryService {
     tags?: string[];
     frameworkMappings?: string[];
   }): Promise<EvidenceUploadResult> {
-    if (!supabase || !this.organizationId) {
-      return { success: false, error: 'Service not initialized' };
+    if (!supabase) {
+      console.error('[EvidenceRepo] Supabase not configured');
+      return { success: false, error: 'Supabase not configured' };
+    }
+    if (!this.organizationId) {
+      console.error('[EvidenceRepo] Organization ID not set');
+      return { success: false, error: 'Organization ID not set' };
     }
 
     try {
+      console.log('[EvidenceRepo] Creating evidence:', { controlId: data.controlId, orgId: this.organizationId });
+
       const { data: evidence, error } = await supabase
         .from('evidence_items')
         .insert({
@@ -189,21 +196,32 @@ class EvidenceRepositoryService {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[EvidenceRepo] Insert error:', error);
+        throw error;
+      }
+
+      console.log('[EvidenceRepo] Evidence created:', evidence.id);
 
       // Create initial version
-      await supabase
+      const { error: versionError } = await supabase
         .from('evidence_versions')
         .insert({
           evidence_id: evidence.id,
           version: 1,
+          version_number: 1,
           notes: 'Initial version',
           status: 'draft',
           created_by: this.userId,
         });
 
+      if (versionError) {
+        console.error('[EvidenceRepo] Version insert error:', versionError);
+      }
+
       return { success: true, evidenceId: evidence.id };
     } catch (error) {
+      console.error('[EvidenceRepo] Exception:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create evidence',
