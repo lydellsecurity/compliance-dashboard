@@ -6,7 +6,7 @@
  * This is the "Proof" view - what auditors see when verifying compliance.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -30,15 +30,23 @@ import {
   getFrameworkComplianceSummary,
   getRequirementProgress,
   getLeafRequirements,
+  setRequirementProgressContext,
   type FlatRequirement,
 } from '../services/control-requirement-mapping.service';
+import type { UserResponse } from '../constants/controls';
 
 type ControlAnswer = 'yes' | 'no' | 'partial' | 'na' | null;
+
+interface ControlResponseData {
+  answer: ControlAnswer;
+  evidenceUrls?: string[];
+}
 
 interface AuditorRequirementViewProps {
   frameworkId: FrameworkId;
   controls: MasterControl[];
   getControlAnswer: (controlId: string) => ControlAnswer;
+  getControlResponse?: (controlId: string) => ControlResponseData | undefined;
   onControlClick?: (controlId: string) => void;
   onGapClick?: (requirementId: string) => void;
 }
@@ -428,12 +436,50 @@ export const AuditorRequirementView: React.FC<AuditorRequirementViewProps> = ({
   frameworkId,
   controls,
   getControlAnswer,
+  getControlResponse: getControlResponseProp,
   onControlClick,
   onGapClick,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Set the context for requirement progress calculations
+  // This allows getRequirementProgress to access control data and answers
+  useEffect(() => {
+    // Build a function that returns UserResponse with evidence data
+    const buildUserResponse = (controlId: string): UserResponse | undefined => {
+      // Try to get full response data if available
+      const responseData = getControlResponseProp?.(controlId);
+      if (responseData) {
+        return {
+          controlId,
+          answer: responseData.answer,
+          notes: '',
+          evidenceUrls: responseData.evidenceUrls || [],
+          evidenceNotes: '',
+          answeredAt: null,
+        };
+      }
+
+      // Fall back to just the answer
+      const answer = getControlAnswer(controlId);
+      if (answer === null) return undefined;
+      return {
+        controlId,
+        answer,
+        notes: '',
+        evidenceUrls: [],
+        evidenceNotes: '',
+        answeredAt: null,
+      };
+    };
+
+    setRequirementProgressContext({
+      controls,
+      getControlAnswer: buildUserResponse,
+    });
+  }, [controls, getControlAnswer, getControlResponseProp]);
 
   const frameworkMeta = FRAMEWORKS.find((f) => f.id === frameworkId);
   const frameworkColor = FRAMEWORK_COLORS[frameworkId];

@@ -10,7 +10,7 @@
  * 4. Calculate coverage scores
  */
 
-import type { FrameworkId, MasterControl } from '../constants/controls';
+import type { FrameworkId, MasterControl, UserResponse } from '../constants/controls';
 import type {
   RequirementMapping,
   MappingStrength,
@@ -578,6 +578,72 @@ export function addDirectEvidenceToGap(
 }
 
 // ============================================
+// AUDITOR VIEW - CONTROL CONTEXT
+// ============================================
+
+/**
+ * Context for requirement progress calculation
+ * Allows passing control data and answer lookup function
+ */
+export interface RequirementProgressContext {
+  controls: MasterControl[];
+  getControlAnswer: (controlId: string) => UserResponse | undefined;
+}
+
+let _progressContext: RequirementProgressContext | null = null;
+
+/**
+ * Set the context for requirement progress calculations
+ * Call this before calling getRequirementProgress to ensure control data is available
+ */
+export function setRequirementProgressContext(context: RequirementProgressContext): void {
+  _progressContext = context;
+}
+
+/**
+ * Clear the requirement progress context
+ */
+export function clearRequirementProgressContext(): void {
+  _progressContext = null;
+}
+
+/**
+ * Convert control answer to implementation status
+ */
+function answerToImplementationStatus(answer: UserResponse['answer']): ControlImplementationStatus {
+  switch (answer) {
+    case 'yes':
+      return 'implemented';
+    case 'partial':
+      return 'in_progress';
+    case 'na':
+      return 'not_applicable';
+    case 'no':
+    case null:
+    default:
+      return 'not_started';
+  }
+}
+
+/**
+ * Calculate effective coverage based on control answer
+ * yes = 100%, partial = 50%, no/na/null = 0%
+ */
+function getAnswerCoverageMultiplier(answer: UserResponse['answer']): number {
+  switch (answer) {
+    case 'yes':
+      return 1.0;
+    case 'partial':
+      return 0.5;
+    case 'na':
+    case 'no':
+    case null:
+    default:
+      return 0;
+  }
+}
+
+// ============================================
 // AUDITOR VIEW
 // ============================================
 
@@ -594,33 +660,99 @@ export function getRequirementProgress(requirementId: string): RequirementProgre
   const gaps = loadGaps();
   const gap = gaps.find(g => g.requirementId === requirementId);
 
-  // Calculate coverage
-  const totalCoverage = calculateTotalCoverage(mappings);
+  // Build mapped controls from explicit mappings OR from control.frameworkMappings
+  const mappedControls: MappedControlSummary[] = [];
 
-  // Build mapped controls summary
-  const mappedControls: MappedControlSummary[] = mappings.map(m => ({
-    controlId: m.controlId,
-    controlCode: m.controlId, // Would need to look up actual control
-    controlTitle: 'Control', // Would need to look up
-    mappingStrength: m.mappingStrength,
-    coveragePercentage: m.coveragePercentage,
-    implementationStatus: 'not_started' as ControlImplementationStatus, // Would need to look up
-    evidenceCount: 0, // Would need to calculate
-    hasVerifiedEvidence: false, // Would need to check
-  }));
+  // First, add controls from explicit mappings
+  for (const m of mappings) {
+    const control = _progressContext?.controls.find(c => c.id === m.controlId);
+    const answer = _progressContext?.getControlAnswer(m.controlId);
+    const implementationStatus = answerToImplementationStatus(answer?.answer ?? null);
 
-  // Determine status
+    mappedControls.push({
+      controlId: m.controlId,
+      controlCode: control?.id || m.controlId,
+      controlTitle: control?.title || 'Control',
+      mappingStrength: m.mappingStrength,
+      coveragePercentage: m.coveragePercentage,
+      implementationStatus,
+      evidenceCount: answer?.evidenceUrls?.length || 0,
+      hasVerifiedEvidence: (answer?.evidenceUrls?.length || 0) > 0,
+    });
+  }
+
+  // If no explicit mappings, build virtual mappings from control.frameworkMappings
+  if (mappings.length === 0 && _progressContext) {
+    // Extract framework and clause from requirement ID (e.g., "SOC2-CC6.1" -> { framework: "SOC2", clause: "CC6.1" })
+    const match = requirementId.match(/^([A-Z0-9]+)-(.+)$/);
+    if (match) {
+      const [, frameworkId, clauseId] = match;
+
+      // Find all controls that map to this requirement
+      for (const control of _progressContext.controls) {
+        const frameworkMapping = control.frameworkMappings.find(
+          fm => fm.frameworkId === frameworkId && fm.clauseId === clauseId
+        );
+
+        if (frameworkMapping) {
+          const answer = _progressContext.getControlAnswer(control.id);
+          const implementationStatus = answerToImplementationStatus(answer?.answer ?? null);
+
+          mappedControls.push({
+            controlId: control.id,
+            controlCode: control.id,
+            controlTitle: control.title,
+            mappingStrength: 'partial' as MappingStrength,
+            coveragePercentage: 50, // Default for auto-mapped
+            implementationStatus,
+            evidenceCount: answer?.evidenceUrls?.length || 0,
+            hasVerifiedEvidence: (answer?.evidenceUrls?.length || 0) > 0,
+          });
+        }
+      }
+    }
+  }
+
+  // Calculate total coverage based on control implementation
+  let totalCoverage = 0;
+  if (mappedControls.length > 0) {
+    // Weight coverage by implementation status
+    let weightedCoverage = 0;
+    for (const mc of mappedControls) {
+      const answer = _progressContext?.getControlAnswer(mc.controlId);
+      const multiplier = getAnswerCoverageMultiplier(answer?.answer ?? null);
+      weightedCoverage += mc.coveragePercentage * multiplier;
+    }
+    // Calculate with diminishing returns
+    totalCoverage = Math.min(100, Math.round(weightedCoverage));
+  }
+
+  // Determine status based on control implementation
   let status: RequirementStatus = 'not_started';
+
   if (gap && gap.status !== 'resolved') {
     status = 'custom_gap';
-  } else if (totalCoverage >= 100) {
-    // Check if all controls are implemented
-    const allImplemented = mappedControls.every(
+  } else if (mappedControls.length === 0) {
+    status = 'not_started';
+  } else {
+    // Count implementation statuses
+    const implemented = mappedControls.filter(
       c => c.implementationStatus === 'implemented' || c.implementationStatus === 'verified'
-    );
-    status = allImplemented ? 'compliant' : 'in_progress';
-  } else if (totalCoverage > 0) {
-    status = 'partially_compliant';
+    ).length;
+    const inProgress = mappedControls.filter(c => c.implementationStatus === 'in_progress').length;
+    const notApplicable = mappedControls.filter(c => c.implementationStatus === 'not_applicable').length;
+    const total = mappedControls.length;
+
+    // All applicable controls are implemented
+    if (implemented === total - notApplicable && total > notApplicable) {
+      status = 'compliant';
+    } else if (implemented > 0 || inProgress > 0) {
+      status = totalCoverage >= 50 ? 'partially_compliant' : 'in_progress';
+    } else if (notApplicable === total) {
+      status = 'not_applicable';
+    } else {
+      status = 'not_started';
+    }
   }
 
   return {

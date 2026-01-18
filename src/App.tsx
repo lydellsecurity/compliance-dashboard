@@ -881,7 +881,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
 // ============================================================================
 
 const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ initialDomain }) => {
-  const { allDomains, domainProgress, getControlsByDomain, allControls, getResponse } = useComplianceContext();
+  const { allDomains, domainProgress, getControlsByDomain, allControls, getResponse, getEvidenceByControlId } = useComplianceContext();
   const [activeDomain, setActiveDomain] = useState<ComplianceDomainMeta>(initialDomain || allDomains[0]);
   const [search, setSearch] = useState('');
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId | 'all'>('all');
@@ -1253,6 +1253,16 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             frameworkId={selectedFramework}
             controls={allControls}
             getControlAnswer={getControlAnswer}
+            getControlResponse={(controlId) => {
+              const response = getResponse(controlId);
+              if (!response) return undefined;
+              // Get evidence URLs if available
+              const evidence = response.evidenceId ? getEvidenceByControlId(controlId) : undefined;
+              return {
+                answer: response.answer,
+                evidenceUrls: evidence?.fileUrls || [],
+              };
+            }}
             onControlClick={(controlId) => {
               const control = allControls.find(c => c.id === controlId);
               if (control) {
