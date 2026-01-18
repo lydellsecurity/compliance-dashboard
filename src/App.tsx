@@ -1329,7 +1329,72 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
                   {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
                 </p>
               </Card>
+            ) : selectedFramework !== 'all' || search ? (
+              // Group controls by domain when filtering by framework or searching
+              (() => {
+                // Group controls by domain
+                const groupedControls = controls.reduce((acc, control) => {
+                  const domainId = control.domain;
+                  if (!acc[domainId]) {
+                    acc[domainId] = [];
+                  }
+                  acc[domainId].push(control);
+                  return acc;
+                }, {} as Record<string, typeof controls>);
+
+                // Get domain order from allDomains
+                const sortedDomainIds = allDomains
+                  .map(d => d.id as string)
+                  .filter(id => groupedControls[id]);
+
+                let globalIndex = 0;
+
+                return sortedDomainIds.map((domainId) => {
+                  const domainMeta = allDomains.find(d => (d.id as string) === domainId);
+                  const domainControls = groupedControls[domainId] || [];
+
+                  return (
+                    <div key={domainId} className="space-y-3">
+                      {/* Domain Header */}
+                      <div className="flex items-center gap-3 pt-4 first:pt-0">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: `${domainMeta?.color || '#6B7280'}15` }}
+                        >
+                          <div style={{ color: domainMeta?.color || '#6B7280' }}>
+                            <DomainIcon domainId={domainId} />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-slate-700 dark:text-steel-300">
+                            {domainMeta?.title || domainId}
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-steel-500">
+                            {domainControls.length} control{domainControls.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Domain Controls */}
+                      {domainControls.map((control) => {
+                        const idx = globalIndex++;
+                        return (
+                          <motion.div
+                            key={control.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.02 }}
+                          >
+                            <ProtocolCard control={control} onOpenRemediation={handleOpenRemediation} />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  );
+                });
+              })()
             ) : (
+              // Regular domain view (no grouping needed - already filtered by domain)
               controls.map((control, i) => (
                 <motion.div
                   key={control.id}
