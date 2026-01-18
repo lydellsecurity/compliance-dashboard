@@ -413,13 +413,12 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
 // ============================================================================
 
 const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (controlId: string, controlTitle: string) => void }> = ({ control, onOpenRemediation }) => {
-  const { answerControl, getResponse, updateRemediation, getEvidenceByControlId, getEvidenceFileCounts } = useComplianceContext();
+  const { answerControl, getResponse, updateRemediation, getEvidenceFileCounts } = useComplianceContext();
   const [showInfo, setShowInfo] = useState(false);
   const [localRemediation, setLocalRemediation] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const response = getResponse(control.id);
-  const evidence = getEvidenceByControlId(control.id);
   const evidenceCounts = getEvidenceFileCounts(control.id);
 
   useEffect(() => { setLocalRemediation(response?.remediationPlan || ''); }, [response?.remediationPlan]);
@@ -493,7 +492,7 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
                 <Paperclip className="w-3 h-3" />
                 {evidenceCounts.fileCount}
               </span>
-            ) : evidence ? (
+            ) : evidenceCounts?.evidenceCount ? (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded"
                 title="Evidence record exists but no files uploaded"
