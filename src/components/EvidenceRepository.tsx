@@ -37,10 +37,13 @@ import {
   MoreVertical,
   ExternalLink,
   Paperclip,
+  Download,
+  Eye,
 } from 'lucide-react';
 import {
   evidenceRepository,
   type EvidenceItem,
+  type EvidenceFile,
   type EvidenceType,
   type EvidenceSource,
   type EvidenceStats,
@@ -116,6 +119,7 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showFileUploadModal, setShowFileUploadModal] = useState(false);
   const [uploadTargetEvidence, setUploadTargetEvidence] = useState<EvidenceItem | null>(null);
+  const [showFileManagement, setShowFileManagement] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Initialize service and load evidence
@@ -465,6 +469,7 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
                 evidence={item}
                 onClick={() => {
                   setSelectedEvidence(item);
+                  setShowFileManagement(true);
                   onEvidenceSelect?.(item);
                 }}
                 onApprove={() => handleApprove(item.id)}
@@ -520,6 +525,27 @@ const EvidenceRepository: React.FC<EvidenceRepositoryProps> = ({
               loadEvidence();
               setShowFileUploadModal(false);
               setUploadTargetEvidence(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* File Management Modal */}
+      <AnimatePresence>
+        {showFileManagement && selectedEvidence && (
+          <FileManagementModal
+            evidence={selectedEvidence}
+            onClose={() => {
+              setShowFileManagement(false);
+              setSelectedEvidence(null);
+            }}
+            onUploadMore={() => {
+              setShowFileManagement(false);
+              setUploadTargetEvidence(selectedEvidence);
+              setShowFileUploadModal(true);
+            }}
+            onFileDeleted={() => {
+              loadEvidence();
             }}
           />
         )}
@@ -1223,6 +1249,226 @@ const FileUploadModal: React.FC<{
             </button>
           </div>
         </form>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ============================================================================
+// FILE MANAGEMENT MODAL
+// ============================================================================
+
+const FileManagementModal: React.FC<{
+  evidence: EvidenceItem;
+  onClose: () => void;
+  onUploadMore: () => void;
+  onFileDeleted: () => void;
+}> = ({ evidence, onClose, onUploadMore, onFileDeleted }) => {
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  // Get all files from the current version
+  const currentVersion = evidence.versions.find(v => v.version === evidence.currentVersion);
+  const files: EvidenceFile[] = currentVersion?.files || [];
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith('image/')) return <Image className="w-5 h-5" />;
+    if (mimeType === 'application/pdf') return <FileText className="w-5 h-5" />;
+    if (mimeType.includes('json')) return <FileJson className="w-5 h-5" />;
+    return <File className="w-5 h-5" />;
+  };
+
+  const handleDelete = async (fileId: string) => {
+    setDeleting(fileId);
+    try {
+      const success = await evidenceRepository.deleteFile(fileId);
+      if (success) {
+        onFileDeleted();
+        setConfirmDelete(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete file:', err);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleDownload = async (file: EvidenceFile) => {
+    try {
+      const response = await fetch(file.url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to download file:', err);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="w-full max-w-2xl bg-white dark:bg-midnight-800 rounded-xl shadow-xl max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
+              Manage Files
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-steel-400">
+              {evidence.title} • {evidence.controlId}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 dark:text-steel-500 dark:hover:text-steel-300 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {files.length === 0 ? (
+            <div className="text-center py-12">
+              <Paperclip className="w-12 h-12 text-slate-300 dark:text-steel-600 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-slate-700 dark:text-steel-300 mb-1">
+                No files attached
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-steel-400 mb-4">
+                Upload files to provide evidence for this control
+              </p>
+              <button
+                onClick={onUploadMore}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                Upload Files
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {files.map((file) => (
+                <div
+                  key={file.id}
+                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-steel-800/50 rounded-lg border border-slate-200 dark:border-steel-700"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 bg-white dark:bg-steel-700 rounded-lg text-slate-500 dark:text-steel-400">
+                      {getFileIcon(file.mimeType)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 dark:text-steel-100 truncate">
+                        {file.originalName}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-steel-400">
+                        {formatFileSize(file.size)} • Uploaded {formatDate(file.uploadedAt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 ml-3">
+                    {/* View */}
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-slate-400 hover:text-indigo-600 dark:text-steel-500 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-700 transition-colors"
+                      title="View file"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </a>
+
+                    {/* Download */}
+                    <button
+                      onClick={() => handleDownload(file)}
+                      className="p-2 text-slate-400 hover:text-emerald-600 dark:text-steel-500 dark:hover:text-emerald-400 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-700 transition-colors"
+                      title="Download file"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+
+                    {/* Delete */}
+                    {confirmDelete === file.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDelete(file.id)}
+                          disabled={deleting === file.id}
+                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                          title="Confirm delete"
+                        >
+                          {deleting === file.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-steel-700 rounded-lg transition-colors"
+                          title="Cancel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDelete(file.id)}
+                        className="p-2 text-slate-400 hover:text-red-600 dark:text-steel-500 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-700 transition-colors"
+                        title="Delete file"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {files.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700">
+            <p className="text-sm text-slate-500 dark:text-steel-400">
+              {files.length} file{files.length !== 1 ? 's' : ''} • Version {evidence.currentVersion}
+            </p>
+            <button
+              onClick={onUploadMore}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              Upload More
+            </button>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
