@@ -34,7 +34,7 @@ import CloudVerification from './components/CloudVerification';
 import RemediationChat from './components/RemediationChat';
 import IntegrationHub from './components/IntegrationHub';
 import TenantAdmin from './components/TenantAdmin';
-import VendorRiskManagement from './components/VendorRiskManagement';
+import TPRMCenter from './components/TPRMCenter';
 import QuestionnaireAutomation from './components/QuestionnaireAutomation';
 import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
@@ -2196,7 +2196,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'vendors' && (
               <motion.div key="vendors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {currentOrg?.id ? (
-                  <VendorRiskManagement
+                  <TPRMCenter
                     organizationId={currentOrg.id}
                     userId={currentUserId}
                   />
