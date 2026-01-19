@@ -11,7 +11,14 @@ const THEME_KEY = 'compliance-dashboard-theme';
 function initializeTheme() {
   const root = document.documentElement;
 
-  // Only check the new theme key - ignore legacy key for fresh default
+  // Force reset to light mode as new default (one-time migration)
+  const MIGRATION_KEY = 'theme-migrated-v2';
+  if (!localStorage.getItem(MIGRATION_KEY)) {
+    localStorage.setItem(THEME_KEY, 'light');
+    localStorage.setItem(MIGRATION_KEY, 'true');
+  }
+
+  // Check stored theme preference
   const stored = localStorage.getItem(THEME_KEY);
   if (stored === 'dark') {
     root.classList.add('dark');
@@ -22,11 +29,6 @@ function initializeTheme() {
   // Default to light mode (corporate clean look)
   root.classList.add('light');
   root.classList.remove('dark');
-
-  // Set the key to ensure consistent behavior
-  if (!stored) {
-    localStorage.setItem(THEME_KEY, 'light');
-  }
 }
 
 initializeTheme();
