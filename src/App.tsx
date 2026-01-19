@@ -32,7 +32,7 @@ import AlertConfiguration from './components/AlertConfiguration';
 import CloudVerification from './components/CloudVerification';
 import RemediationChat from './components/RemediationChat';
 import IntegrationHub from './components/IntegrationHub';
-import TenantAdmin from './components/TenantAdmin';
+import OrgManagementSuite from './components/OrgManagementSuite';
 import TPRMCenter from './components/TPRMCenter';
 import QuestionnaireCenter from './components/QuestionnaireCenter';
 import OrganizationSetup from './components/OrganizationSetup';
@@ -2244,7 +2244,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'admin' && (
               <motion.div key="admin" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {currentOrg?.id ? (
-                  <TenantAdmin
+                  <OrgManagementSuite
                     tenantId={currentOrg.id}
                     userId={currentUserId}
                     userRole={currentOrg.role || 'member'}
