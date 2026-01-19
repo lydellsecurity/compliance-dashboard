@@ -22,6 +22,7 @@ const App = lazy(() => import('../App'));
 const PublicTrustCenter = lazy(() => import('../components/PublicTrustCenter'));
 const InviteAcceptPage = lazy(() => import('../components/InviteAcceptPage'));
 const AuditorPortalPage = lazy(() => import('../pages/AuditorPortalPage'));
+const IntegrationCallback = lazy(() => import('../components/IntegrationCallback'));
 
 // Loading component
 const LoadingScreen: React.FC = () => (
@@ -142,6 +143,15 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <App />
+          </ProtectedRoute>
+        ),
+      },
+      // OAuth Integration Callback (requires authentication)
+      {
+        path: 'integrations/callback',
+        element: (
+          <ProtectedRoute>
+            <IntegrationCallback />
           </ProtectedRoute>
         ),
       },
