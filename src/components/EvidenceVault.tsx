@@ -81,24 +81,24 @@ const EVIDENCE_SOURCE_ICONS: Record<EvidenceSource, React.ReactNode> = {
 };
 
 const STATUS_STYLES: Record<EvidenceStatus, { bg: string; text: string; border: string }> = {
-  draft: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
-  review: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  final: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  draft: { bg: 'bg-slate-100 dark:bg-steel-800', text: 'text-slate-700 dark:text-steel-300', border: 'border-slate-200 dark:border-steel-700' },
+  review: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800' },
+  final: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800' },
 };
 
 const FRESHNESS_STYLES: Record<FreshnessStatus, { bg: string; text: string; icon: React.ReactNode }> = {
-  fresh: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: <CheckCircle className="w-3.5 h-3.5" /> },
-  expiring_soon: { bg: 'bg-amber-50', text: 'text-amber-700', icon: <Timer className="w-3.5 h-3.5" /> },
-  stale: { bg: 'bg-orange-50', text: 'text-orange-700', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
-  expired: { bg: 'bg-red-50', text: 'text-red-700', icon: <AlertCircle className="w-3.5 h-3.5" /> },
+  fresh: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', icon: <CheckCircle className="w-3.5 h-3.5" /> },
+  expiring_soon: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', icon: <Timer className="w-3.5 h-3.5" /> },
+  stale: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-700 dark:text-orange-400', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+  expired: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', icon: <AlertCircle className="w-3.5 h-3.5" /> },
 };
 
 // Note: INTEGRITY_STYLES will be used when file integrity UI is expanded
 const _INTEGRITY_STYLES: Record<IntegrityStatus, { bg: string; text: string; icon: React.ReactNode }> = {
-  verified: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
-  corrupted: { bg: 'bg-red-50', text: 'text-red-700', icon: <AlertCircle className="w-3.5 h-3.5" /> },
-  missing: { bg: 'bg-orange-50', text: 'text-orange-700', icon: <Unlink className="w-3.5 h-3.5" /> },
-  unchecked: { bg: 'bg-slate-50', text: 'text-slate-600', icon: <Clock className="w-3.5 h-3.5" /> },
+  verified: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+  corrupted: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', icon: <AlertCircle className="w-3.5 h-3.5" /> },
+  missing: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-700 dark:text-orange-400', icon: <Unlink className="w-3.5 h-3.5" /> },
+  unchecked: { bg: 'bg-slate-50 dark:bg-steel-800', text: 'text-slate-600 dark:text-steel-400', icon: <Clock className="w-3.5 h-3.5" /> },
 };
 void _INTEGRITY_STYLES;
 
@@ -217,28 +217,28 @@ const EvidenceVault: React.FC<EvidenceVaultProps> = ({
 
   return (
     <div
-      className="h-full flex flex-col bg-slate-50"
+      className="h-full flex flex-col bg-slate-50 dark:bg-midnight-950"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
+      <div className="bg-white dark:bg-midnight-900 border-b border-slate-200 dark:border-steel-800 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <Lock className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-slate-900">Evidence Vault</h1>
-              <p className="text-sm text-slate-500">Autonomous artifact lifecycle management</p>
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-steel-100">Evidence Vault</h1>
+              <p className="text-sm text-slate-500 dark:text-steel-400">Autonomous artifact lifecycle management</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -260,8 +260,8 @@ const EvidenceVault: React.FC<EvidenceVaultProps> = ({
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === tab
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400'
+                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800'
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -325,11 +325,11 @@ const EvidenceVault: React.FC<EvidenceVaultProps> = ({
             <motion.div
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              className="bg-white rounded-2xl p-8 shadow-2xl border-2 border-dashed border-indigo-500"
+              className="bg-white dark:bg-midnight-900 rounded-2xl p-8 shadow-2xl border-2 border-dashed border-indigo-500"
             >
               <Upload className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
-              <p className="text-xl font-semibold text-slate-900">Drop files to upload</p>
-              <p className="text-slate-500 mt-2">Files will be added as new evidence</p>
+              <p className="text-xl font-semibold text-slate-900 dark:text-steel-100">Drop files to upload</p>
+              <p className="text-slate-500 dark:text-steel-400 mt-2">Files will be added as new evidence</p>
             </motion.div>
           </motion.div>
         )}
@@ -380,13 +380,13 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"
+        className="lg:col-span-2 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Integrity Status</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-1">{metrics.integrityPercentage}%</p>
-            <p className="text-sm text-slate-500 mt-1">Files verified as authentic</p>
+            <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Integrity Status</h3>
+            <p className="text-3xl font-bold text-slate-900 dark:text-steel-100 mt-1">{metrics.integrityPercentage}%</p>
+            <p className="text-sm text-slate-500 dark:text-steel-400 mt-1">Files verified as authentic</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
             <ShieldCheck className="w-6 h-6 text-emerald-600" />
@@ -394,21 +394,21 @@ const BentoGridDashboard: React.FC<{
         </div>
 
         <div className="grid grid-cols-4 gap-4">
-          <div className="text-center p-3 bg-emerald-50 rounded-xl">
-            <p className="text-2xl font-bold text-emerald-700">{metrics.verifiedFiles}</p>
+          <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{metrics.verifiedFiles}</p>
             <p className="text-xs text-emerald-600">Verified</p>
           </div>
-          <div className="text-center p-3 bg-red-50 rounded-xl">
-            <p className="text-2xl font-bold text-red-700">{metrics.corruptedFiles}</p>
+          <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+            <p className="text-2xl font-bold text-red-700 dark:text-red-400">{metrics.corruptedFiles}</p>
             <p className="text-xs text-red-600">Corrupted</p>
           </div>
-          <div className="text-center p-3 bg-orange-50 rounded-xl">
-            <p className="text-2xl font-bold text-orange-700">{metrics.missingFiles}</p>
+          <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+            <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{metrics.missingFiles}</p>
             <p className="text-xs text-orange-600">Missing</p>
           </div>
-          <div className="text-center p-3 bg-slate-50 rounded-xl">
-            <p className="text-2xl font-bold text-slate-700">{metrics.uncheckedFiles}</p>
-            <p className="text-xs text-slate-600">Unchecked</p>
+          <div className="text-center p-3 bg-slate-50 dark:bg-steel-800 rounded-xl">
+            <p className="text-2xl font-bold text-slate-700 dark:text-steel-300">{metrics.uncheckedFiles}</p>
+            <p className="text-xs text-slate-600 dark:text-steel-400">Unchecked</p>
           </div>
         </div>
       </motion.div>
@@ -418,13 +418,13 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"
+        className="lg:col-span-2 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Storage Health</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-1">{metrics.coveragePercentage}%</p>
-            <p className="text-sm text-slate-500 mt-1">Requirements with current evidence</p>
+            <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Storage Health</h3>
+            <p className="text-3xl font-bold text-slate-900 dark:text-steel-100 mt-1">{metrics.coveragePercentage}%</p>
+            <p className="text-sm text-slate-500 dark:text-steel-400 mt-1">Requirements with current evidence</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center">
             <Database className="w-6 h-6 text-indigo-600" />
@@ -432,16 +432,16 @@ const BentoGridDashboard: React.FC<{
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-emerald-50 rounded-xl">
-            <p className="text-2xl font-bold text-emerald-700">{metrics.freshEvidence}</p>
+          <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{metrics.freshEvidence}</p>
             <p className="text-xs text-emerald-600">Fresh</p>
           </div>
-          <div className="text-center p-3 bg-amber-50 rounded-xl">
-            <p className="text-2xl font-bold text-amber-700">{metrics.expiringSoonEvidence}</p>
+          <div className="text-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{metrics.expiringSoonEvidence}</p>
             <p className="text-xs text-amber-600">Expiring Soon</p>
           </div>
-          <div className="text-center p-3 bg-orange-50 rounded-xl">
-            <p className="text-2xl font-bold text-orange-700">{metrics.staleEvidence}</p>
+          <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+            <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{metrics.staleEvidence}</p>
             <p className="text-xs text-orange-600">Stale</p>
           </div>
         </div>
@@ -452,18 +452,18 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors"
+        className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors"
         onClick={() => onNavigate('audit')}
       >
         <div className="flex items-start justify-between mb-4">
           <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
             <Activity className="w-5 h-5 text-purple-600" />
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-400" />
+          <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-500" />
         </div>
-        <h3 className="text-sm font-medium text-slate-500">Recent Uploads</h3>
-        <p className="text-2xl font-bold text-slate-900 mt-1">{metrics.recentUploads}</p>
-        <p className="text-xs text-slate-500">Last 7 days</p>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400">Recent Uploads</h3>
+        <p className="text-2xl font-bold text-slate-900 dark:text-steel-100 mt-1">{metrics.recentUploads}</p>
+        <p className="text-xs text-slate-500 dark:text-steel-400">Last 7 days</p>
       </motion.div>
 
       {/* Pending Reviews */}
@@ -471,18 +471,18 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors"
+        className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors"
         onClick={() => onNavigate('evidence')}
       >
         <div className="flex items-start justify-between mb-4">
           <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
             <Clock className="w-5 h-5 text-amber-600" />
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-400" />
+          <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-500" />
         </div>
-        <h3 className="text-sm font-medium text-slate-500">Pending Review</h3>
-        <p className="text-2xl font-bold text-slate-900 mt-1">{metrics.pendingReviews}</p>
-        <p className="text-xs text-slate-500">Awaiting approval</p>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400">Pending Review</h3>
+        <p className="text-2xl font-bold text-slate-900 dark:text-steel-100 mt-1">{metrics.pendingReviews}</p>
+        <p className="text-xs text-slate-500 dark:text-steel-400">Awaiting approval</p>
       </motion.div>
 
       {/* Approved This Month */}
@@ -490,16 +490,16 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"
+        className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm"
       >
         <div className="flex items-start justify-between mb-4">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
           </div>
         </div>
-        <h3 className="text-sm font-medium text-slate-500">Approved</h3>
-        <p className="text-2xl font-bold text-slate-900 mt-1">{metrics.approvedThisMonth}</p>
-        <p className="text-xs text-slate-500">This month</p>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400">Approved</h3>
+        <p className="text-2xl font-bold text-slate-900 dark:text-steel-100 mt-1">{metrics.approvedThisMonth}</p>
+        <p className="text-xs text-slate-500 dark:text-steel-400">This month</p>
       </motion.div>
 
       {/* Total Files */}
@@ -507,16 +507,16 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"
+        className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm"
       >
         <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-            <FolderOpen className="w-5 h-5 text-slate-600" />
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-steel-800 flex items-center justify-center">
+            <FolderOpen className="w-5 h-5 text-slate-600 dark:text-steel-400" />
           </div>
         </div>
-        <h3 className="text-sm font-medium text-slate-500">Total Files</h3>
-        <p className="text-2xl font-bold text-slate-900 mt-1">{metrics.totalFiles}</p>
-        <p className="text-xs text-slate-500">In vault</p>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400">Total Files</h3>
+        <p className="text-2xl font-bold text-slate-900 dark:text-steel-100 mt-1">{metrics.totalFiles}</p>
+        <p className="text-xs text-slate-500 dark:text-steel-400">In vault</p>
       </motion.div>
 
       {/* Framework Coverage */}
@@ -524,9 +524,9 @@ const BentoGridDashboard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
-        className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"
+        className="lg:col-span-4 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-6 shadow-sm"
       >
-        <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-4">Framework Coverage</h3>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide mb-4">Framework Coverage</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {metrics.frameworkCoverage.map((fw) => (
             <div key={fw.frameworkId} className="text-center">
@@ -552,11 +552,11 @@ const BentoGridDashboard: React.FC<{
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-slate-900">{fw.percentage}%</span>
+                  <span className="text-lg font-bold text-slate-900 dark:text-steel-100">{fw.percentage}%</span>
                 </div>
               </div>
-              <p className="text-xs font-medium text-slate-700">{fw.frameworkName}</p>
-              <p className="text-xs text-slate-500">{fw.coveredClauses}/{fw.totalClauses}</p>
+              <p className="text-xs font-medium text-slate-700 dark:text-steel-300">{fw.frameworkName}</p>
+              <p className="text-xs text-slate-500 dark:text-steel-400">{fw.coveredClauses}/{fw.totalClauses}</p>
             </div>
           ))}
         </div>
@@ -609,13 +609,13 @@ const EvidenceListView: React.FC<{
       {/* Search & Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-steel-500" />
           <input
             type="text"
             placeholder="Search evidence..."
             value={searchText}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -623,8 +623,8 @@ const EvidenceListView: React.FC<{
             onClick={onToggleFilters}
             className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl transition-colors ${
               showFilters || hasFilters
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400'
+                : 'border-slate-200 dark:border-steel-700 text-slate-600 dark:text-steel-400 hover:bg-slate-50 dark:hover:bg-steel-800'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -632,11 +632,11 @@ const EvidenceListView: React.FC<{
             {hasFilters && <span className="w-2 h-2 rounded-full bg-indigo-500" />}
           </button>
 
-          <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden">
+          <div className="flex items-center border border-slate-200 dark:border-steel-700 rounded-xl overflow-hidden">
             <button
               onClick={() => onViewModeChange('grid')}
               className={`p-2.5 transition-colors ${
-                viewMode === 'grid' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'
+                viewMode === 'grid' ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400' : 'text-slate-500 dark:text-steel-400 hover:bg-slate-50 dark:hover:bg-steel-800'
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -644,7 +644,7 @@ const EvidenceListView: React.FC<{
             <button
               onClick={() => onViewModeChange('list')}
               className={`p-2.5 transition-colors ${
-                viewMode === 'list' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'
+                viewMode === 'list' ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400' : 'text-slate-500 dark:text-steel-400 hover:bg-slate-50 dark:hover:bg-steel-800'
               }`}
             >
               <List className="w-4 h-4" />
@@ -662,14 +662,14 @@ const EvidenceListView: React.FC<{
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <div className="p-4 bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1">Type</label>
                   <select
                     value={filterType}
                     onChange={(e) => onFilterTypeChange(e.target.value as EvidenceType | '')}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
                   >
                     <option value="">All Types</option>
                     <option value="document">Document</option>
@@ -683,11 +683,11 @@ const EvidenceListView: React.FC<{
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1">Status</label>
                   <select
                     value={filterStatus}
                     onChange={(e) => onFilterStatusChange(e.target.value as EvidenceStatus | '')}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
                   >
                     <option value="">All Statuses</option>
                     <option value="draft">Draft</option>
@@ -696,11 +696,11 @@ const EvidenceListView: React.FC<{
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Freshness</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1">Freshness</label>
                   <select
                     value={filterFreshness}
                     onChange={(e) => onFilterFreshnessChange(e.target.value as FreshnessStatus | '')}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg bg-white dark:bg-midnight-900 text-slate-900 dark:text-steel-100"
                   >
                     <option value="">All</option>
                     <option value="fresh">Fresh</option>
@@ -717,7 +717,7 @@ const EvidenceListView: React.FC<{
                     onFilterStatusChange('');
                     onFilterFreshnessChange('');
                   }}
-                  className="text-sm text-slate-500 hover:text-slate-700"
+                  className="text-sm text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200"
                 >
                   Clear Filters
                 </button>
@@ -729,7 +729,7 @@ const EvidenceListView: React.FC<{
 
       {/* Evidence Grid/List */}
       {evidence.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-slate-500">
+        <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-steel-400">
           <FolderOpen className="w-12 h-12 mb-4 opacity-50" />
           <p className="text-lg font-medium">No evidence found</p>
           <p className="text-sm mt-1">Upload files or apply different filters</p>
@@ -748,16 +748,16 @@ const EvidenceListView: React.FC<{
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
           <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-steel-800 border-b border-slate-200 dark:border-steel-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Evidence</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Control</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Freshness</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Files</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Updated</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Evidence</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Control</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Freshness</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Files</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wide">Updated</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -796,11 +796,11 @@ const EvidenceGridCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       onClick={onClick}
-      className="bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
+      className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer overflow-hidden"
     >
       {/* Thumbnail */}
       {thumbnailFile?.mimeType.startsWith('image/') && (
-        <div className="h-32 bg-slate-100 overflow-hidden">
+        <div className="h-32 bg-slate-100 dark:bg-steel-800 overflow-hidden">
           <img
             src={thumbnailFile.url}
             alt={thumbnailFile.originalName}
@@ -812,17 +812,17 @@ const EvidenceGridCard: React.FC<{
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+            <div className="p-2 bg-slate-100 dark:bg-steel-800 rounded-lg text-slate-600 dark:text-steel-400">
               {EVIDENCE_TYPE_ICONS[evidence.type]}
             </div>
             <div className="min-w-0">
-              <h3 className="font-medium text-slate-900 truncate">{evidence.title}</h3>
-              <p className="text-xs text-slate-500">{evidence.controlId}</p>
+              <h3 className="font-medium text-slate-900 dark:text-steel-100 truncate">{evidence.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-steel-400">{evidence.controlId}</p>
             </div>
           </div>
         </div>
 
-        <p className="text-sm text-slate-600 line-clamp-2 mb-3">{evidence.description}</p>
+        <p className="text-sm text-slate-600 dark:text-steel-400 line-clamp-2 mb-3">{evidence.description}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -836,12 +836,12 @@ const EvidenceGridCard: React.FC<{
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-1 text-xs text-slate-500">
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-steel-700">
+          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-steel-400">
             <Paperclip className="w-3 h-3" />
             {fileCount} file{fileCount !== 1 ? 's' : ''}
           </div>
-          <div className="flex items-center gap-1 text-xs text-slate-500">
+          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-steel-400">
             {EVIDENCE_SOURCE_ICONS[evidence.source]}
             {evidence.source}
           </div>
@@ -860,7 +860,7 @@ const EvidenceGridCard: React.FC<{
               </span>
             ))}
             {evidence.frameworkMappings.length > 3 && (
-              <span className="px-1.5 py-0.5 text-[10px] text-slate-500">
+              <span className="px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-steel-400">
                 +{evidence.frameworkMappings.length - 3}
               </span>
             )}
@@ -883,21 +883,21 @@ const EvidenceListRow: React.FC<{
   return (
     <tr
       onClick={onClick}
-      className="hover:bg-slate-50 cursor-pointer transition-colors"
+      className="hover:bg-slate-50 dark:hover:bg-steel-800 cursor-pointer transition-colors"
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+          <div className="p-2 bg-slate-100 dark:bg-steel-800 rounded-lg text-slate-600 dark:text-steel-400">
             {EVIDENCE_TYPE_ICONS[evidence.type]}
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-slate-900 truncate">{evidence.title}</p>
-            <p className="text-xs text-slate-500 truncate">{evidence.description}</p>
+            <p className="font-medium text-slate-900 dark:text-steel-100 truncate">{evidence.title}</p>
+            <p className="text-xs text-slate-500 dark:text-steel-400 truncate">{evidence.description}</p>
           </div>
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="px-2 py-1 text-xs font-mono bg-slate-100 text-slate-700 rounded">
+        <span className="px-2 py-1 text-xs font-mono bg-slate-100 dark:bg-steel-800 text-slate-700 dark:text-steel-300 rounded">
           {evidence.controlId}
         </span>
       </td>
@@ -969,44 +969,44 @@ const IntegrationsView: React.FC<{
           return (
             <div
               key={integration.id}
-              className={`bg-white rounded-xl border p-5 transition-all ${
-                connected ? 'border-emerald-200' : 'border-slate-200 hover:border-indigo-300'
+              className={`bg-white dark:bg-midnight-900 rounded-xl border p-5 transition-all ${
+                connected ? 'border-emerald-200 dark:border-emerald-800' : 'border-slate-200 dark:border-steel-700 hover:border-indigo-300 dark:hover:border-indigo-700'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="p-3 bg-slate-100 rounded-xl text-slate-600">
+                <div className="p-3 bg-slate-100 dark:bg-steel-800 rounded-xl text-slate-600 dark:text-steel-400">
                   {integration.icon}
                 </div>
                 {connected ? (
-                  <span className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">
+                  <span className="flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-full">
                     <Wifi className="w-3 h-3" />
                     Connected
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-full">
+                  <span className="flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-400 text-xs font-medium rounded-full">
                     <WifiOff className="w-3 h-3" />
                     Not Connected
                   </span>
                 )}
               </div>
 
-              <h3 className="font-semibold text-slate-900">{integration.name}</h3>
-              <p className="text-sm text-slate-500 mt-1">{integration.description}</p>
+              <h3 className="font-semibold text-slate-900 dark:text-steel-100">{integration.name}</h3>
+              <p className="text-sm text-slate-500 dark:text-steel-400 mt-1">{integration.description}</p>
 
               {connection && (
-                <div className="mt-4 pt-4 border-t border-slate-100">
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-steel-700">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-slate-500">Evidence</p>
-                      <p className="font-medium text-slate-900">{connection.evidenceCount}</p>
+                      <p className="text-slate-500 dark:text-steel-400">Evidence</p>
+                      <p className="font-medium text-slate-900 dark:text-steel-100">{connection.evidenceCount}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500">Controls</p>
-                      <p className="font-medium text-slate-900">{connection.controlsMapped}</p>
+                      <p className="text-slate-500 dark:text-steel-400">Controls</p>
+                      <p className="font-medium text-slate-900 dark:text-steel-100">{connection.controlsMapped}</p>
                     </div>
                   </div>
                   {connection.lastSyncAt && (
-                    <p className="text-xs text-slate-400 mt-2">
+                    <p className="text-xs text-slate-400 dark:text-steel-500 mt-2">
                       Last synced: {new Date(connection.lastSyncAt).toLocaleString()}
                     </p>
                   )}
@@ -1016,7 +1016,7 @@ const IntegrationsView: React.FC<{
               <button
                 className={`w-full mt-4 py-2 px-4 rounded-lg font-medium transition-colors ${
                   connected
-                    ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-slate-100 dark:bg-steel-800 text-slate-700 dark:text-steel-300 hover:bg-slate-200 dark:hover:bg-steel-700'
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
                 }`}
               >
@@ -1050,52 +1050,52 @@ const AuditLogView: React.FC<{
   };
 
   const actionColors: Record<AuditLogEntry['action'], string> = {
-    view: 'bg-slate-100 text-slate-600',
-    download: 'bg-blue-100 text-blue-600',
-    upload: 'bg-emerald-100 text-emerald-600',
-    delete: 'bg-red-100 text-red-600',
-    approve: 'bg-emerald-100 text-emerald-600',
-    reject: 'bg-amber-100 text-amber-600',
-    archive: 'bg-slate-100 text-slate-600',
-    restore: 'bg-indigo-100 text-indigo-600',
-    export: 'bg-purple-100 text-purple-600',
+    view: 'bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-400',
+    download: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+    upload: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+    delete: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    approve: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+    reject: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    archive: 'bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-400',
+    restore: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    export: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">Audit Log</h2>
-        <button className="flex items-center gap-2 px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">Audit Log</h2>
+        <button className="flex items-center gap-2 px-4 py-2 text-sm border border-slate-200 dark:border-steel-700 rounded-lg hover:bg-slate-50 dark:hover:bg-steel-800 text-slate-700 dark:text-steel-300">
           <Download className="w-4 h-4" />
           Export Log
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
         {entries.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
+          <div className="p-8 text-center text-slate-500 dark:text-steel-400">
             <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No audit log entries yet</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-steel-800">
             {entries.map((entry) => (
-              <div key={entry.id} className="p-4 hover:bg-slate-50 transition-colors">
+              <div key={entry.id} className="p-4 hover:bg-slate-50 dark:hover:bg-steel-800 transition-colors">
                 <div className="flex items-start gap-4">
                   <div className={`p-2 rounded-lg ${actionColors[entry.action]}`}>
                     {actionIcons[entry.action]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900">{entry.userName}</span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-600">{entry.action}</span>
-                      <span className="px-1.5 py-0.5 text-xs bg-slate-100 text-slate-600 rounded">
+                      <span className="font-medium text-slate-900 dark:text-steel-100">{entry.userName}</span>
+                      <span className="text-slate-400 dark:text-steel-500">•</span>
+                      <span className="text-slate-600 dark:text-steel-400">{entry.action}</span>
+                      <span className="px-1.5 py-0.5 text-xs bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-400 rounded">
                         {entry.resourceType}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-600 mt-0.5 truncate">{entry.resourceName}</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-sm text-slate-600 dark:text-steel-400 mt-0.5 truncate">{entry.resourceName}</p>
+                    <p className="text-xs text-slate-400 dark:text-steel-500 mt-1">
                       {new Date(entry.timestamp).toLocaleString()}
                     </p>
                   </div>
@@ -1201,17 +1201,17 @@ const UploadModal: React.FC<{
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-auto"
+        className="w-full max-w-xl bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700 sticky top-0 bg-white dark:bg-midnight-900 z-10">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Add Evidence</h2>
-            <p className="text-sm text-slate-500">Upload files to the secure vault</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">Add Evidence</h2>
+            <p className="text-sm text-slate-500 dark:text-steel-400">Upload files to the secure vault</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:text-steel-400 dark:hover:text-steel-200 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1220,14 +1220,14 @@ const UploadModal: React.FC<{
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">
               Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="e.g., SOC 2 Type II Report 2024"
               required
             />
@@ -1235,14 +1235,14 @@ const UploadModal: React.FC<{
 
           {/* Control ID */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">
               Control ID <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={controlId}
               onChange={(e) => setControlId(e.target.value)}
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="e.g., AC-001"
               required
             />
@@ -1250,27 +1250,27 @@ const UploadModal: React.FC<{
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">
               Description
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
               placeholder="Describe this evidence..."
             />
           </div>
 
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">
               Type
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as EvidenceType)}
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
               <option value="document">Document</option>
               <option value="screenshot">Screenshot</option>
@@ -1289,8 +1289,8 @@ const UploadModal: React.FC<{
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
               isDragging
-                ? 'border-indigo-500 bg-indigo-50'
-                : 'border-slate-200 hover:border-slate-300'
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                : 'border-slate-200 dark:border-steel-700 hover:border-slate-300 dark:hover:border-steel-600'
             }`}
           >
             <input
@@ -1301,15 +1301,15 @@ const UploadModal: React.FC<{
               className="hidden"
               id="file-upload"
             />
-            <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-indigo-500' : 'text-slate-400'}`} />
+            <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragging ? 'text-indigo-500' : 'text-slate-400 dark:text-steel-500'}`} />
             <label
               htmlFor="file-upload"
               className="cursor-pointer"
             >
-              <span className="text-indigo-600 font-medium hover:underline">Click to upload</span>
-              <span className="text-slate-500"> or drag and drop</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Click to upload</span>
+              <span className="text-slate-500 dark:text-steel-400"> or drag and drop</span>
             </label>
-            <p className="text-xs text-slate-400 mt-2">PDF, images, documents up to 10MB each</p>
+            <p className="text-xs text-slate-400 dark:text-steel-500 mt-2">PDF, images, documents up to 10MB each</p>
           </div>
 
           {/* File List */}
@@ -1318,10 +1318,10 @@ const UploadModal: React.FC<{
               {files.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-xl"
+                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-steel-800 rounded-xl"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 bg-white rounded-lg text-slate-500">
+                    <div className="p-2 bg-white dark:bg-midnight-800 rounded-lg text-slate-500 dark:text-steel-400">
                       {file.type.startsWith('image/') ? (
                         <Image className="w-4 h-4" />
                       ) : file.type === 'application/pdf' ? (
@@ -1331,8 +1331,8 @@ const UploadModal: React.FC<{
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
-                      <p className="text-xs text-slate-400">{formatFileSize(file.size)}</p>
+                      <p className="text-sm font-medium text-slate-700 dark:text-steel-300 truncate">{file.name}</p>
+                      <p className="text-xs text-slate-400 dark:text-steel-500">{formatFileSize(file.size)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1347,7 +1347,7 @@ const UploadModal: React.FC<{
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
-                        className="p-1 text-slate-400 hover:text-red-500 rounded"
+                        className="p-1 text-slate-400 hover:text-red-500 dark:text-steel-400 dark:hover:text-red-400 rounded"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1359,12 +1359,12 @@ const UploadModal: React.FC<{
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-steel-700">
             <button
               type="button"
               onClick={onClose}
               disabled={uploading}
-              className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 text-slate-600 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-xl transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1434,20 +1434,20 @@ const EvidenceDetailDrawer: React.FC<{
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="absolute right-0 top-0 bottom-0 w-full max-w-2xl bg-white shadow-2xl flex flex-col"
+        className="absolute right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-midnight-900 shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-steel-700">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-slate-100 rounded-xl text-slate-600">
+              <div className="p-2.5 bg-slate-100 dark:bg-steel-800 rounded-xl text-slate-600 dark:text-steel-400">
                 {EVIDENCE_TYPE_ICONS[evidence.type]}
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">{evidence.title}</h2>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">{evidence.title}</h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="px-2 py-0.5 text-xs font-mono bg-slate-100 text-slate-600 rounded">
+                  <span className="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-steel-800 text-slate-600 dark:text-steel-400 rounded">
                     {evidence.controlId}
                   </span>
                   <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusStyle.bg} ${statusStyle.text}`}>
@@ -1462,13 +1462,13 @@ const EvidenceDetailDrawer: React.FC<{
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:text-steel-400 dark:hover:text-steel-200 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <p className="text-sm text-slate-600 mt-4">{evidence.description}</p>
+          <p className="text-sm text-slate-600 dark:text-steel-400 mt-4">{evidence.description}</p>
 
           {/* Section Tabs */}
           <div className="flex items-center gap-1 mt-4">
@@ -1478,8 +1478,8 @@ const EvidenceDetailDrawer: React.FC<{
                 onClick={() => setActiveSection(section)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   activeSection === section
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400'
+                    : 'text-slate-600 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-800'
                 }`}
               >
                 {section.charAt(0).toUpperCase() + section.slice(1)}
@@ -1493,7 +1493,7 @@ const EvidenceDetailDrawer: React.FC<{
           {activeSection === 'files' && currentVersion && (
             <div className="space-y-3">
               {currentVersion.files.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-slate-500 dark:text-steel-400">
                   <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No files attached</p>
                 </div>
@@ -1501,10 +1501,10 @@ const EvidenceDetailDrawer: React.FC<{
                 currentVersion.files.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200"
+                    className="flex items-center justify-between p-4 bg-slate-50 dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 bg-white rounded-lg text-slate-500 border border-slate-200">
+                      <div className="p-2 bg-white dark:bg-midnight-800 rounded-lg text-slate-500 dark:text-steel-400 border border-slate-200 dark:border-steel-700">
                         {file.mimeType.startsWith('image/') ? (
                           <Image className="w-5 h-5" />
                         ) : file.mimeType === 'application/pdf' ? (
@@ -1514,8 +1514,8 @@ const EvidenceDetailDrawer: React.FC<{
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{file.originalName}</p>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                        <p className="font-medium text-slate-900 dark:text-steel-100 truncate">{file.originalName}</p>
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-steel-400 mt-0.5">
                           <span>{(file.size / 1024).toFixed(1)} KB</span>
                           <span>•</span>
                           <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
@@ -1535,7 +1535,7 @@ const EvidenceDetailDrawer: React.FC<{
                       {(file.mimeType.startsWith('image/') || file.mimeType === 'application/pdf') && (
                         <button
                           onClick={() => setPreviewFile(file)}
-                          className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-white transition-colors"
+                          className="p-2 text-slate-400 hover:text-indigo-600 dark:text-steel-400 dark:hover:text-indigo-400 rounded-lg hover:bg-white dark:hover:bg-midnight-800 transition-colors"
                           title="Preview"
                         >
                           <Eye className="w-4 h-4" />
@@ -1543,7 +1543,7 @@ const EvidenceDetailDrawer: React.FC<{
                       )}
                       <button
                         onClick={() => handleDownload(file)}
-                        className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-white transition-colors"
+                        className="p-2 text-slate-400 hover:text-emerald-600 dark:text-steel-400 dark:hover:text-emerald-400 rounded-lg hover:bg-white dark:hover:bg-midnight-800 transition-colors"
                         title="Download"
                       >
                         <Download className="w-4 h-4" />
@@ -1552,7 +1552,7 @@ const EvidenceDetailDrawer: React.FC<{
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-white transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-steel-400 dark:hover:text-steel-200 rounded-lg hover:bg-white dark:hover:bg-midnight-800 transition-colors"
                         title="Open in new tab"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -1571,34 +1571,34 @@ const EvidenceDetailDrawer: React.FC<{
                   key={version.id}
                   className={`p-4 rounded-xl border ${
                     version.version === evidence.currentVersion
-                      ? 'border-indigo-200 bg-indigo-50'
+                      ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20'
                       : version.isArchived
-                      ? 'border-slate-200 bg-slate-50'
-                      : 'border-slate-200'
+                      ? 'border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800'
+                      : 'border-slate-200 dark:border-steel-700'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-900">
+                      <span className="text-sm font-medium text-slate-900 dark:text-steel-100">
                         Version {version.version}
                       </span>
                       {version.version === evidence.currentVersion && (
-                        <span className="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-700 rounded-full">
+                        <span className="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-full">
                           Current
                         </span>
                       )}
                       {version.isArchived && (
-                        <span className="px-2 py-0.5 text-xs bg-slate-200 text-slate-600 rounded-full">
+                        <span className="px-2 py-0.5 text-xs bg-slate-200 dark:bg-steel-700 text-slate-600 dark:text-steel-400 rounded-full">
                           Archived
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 dark:text-steel-400">
                       {new Date(version.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600">{version.notes}</p>
-                  <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                  <p className="text-sm text-slate-600 dark:text-steel-400">{version.notes}</p>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-steel-400">
                     <Paperclip className="w-3 h-3" />
                     {version.files.length} file{version.files.length !== 1 ? 's' : ''}
                   </div>
@@ -1610,7 +1610,7 @@ const EvidenceDetailDrawer: React.FC<{
           {activeSection === 'frameworks' && (
             <div className="space-y-3">
               {evidence.frameworkMappings.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-slate-500 dark:text-steel-400">
                   <Link2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No framework mappings</p>
                 </div>
@@ -1618,7 +1618,7 @@ const EvidenceDetailDrawer: React.FC<{
                 evidence.frameworkMappings.map((mapping, index) => (
                   <div
                     key={`${mapping.frameworkId}-${mapping.clauseId}-${index}`}
-                    className="p-4 bg-slate-50 rounded-xl border border-slate-200"
+                    className="p-4 bg-slate-50 dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700"
                   >
                     <div className="flex items-center gap-2">
                       <span
@@ -1627,10 +1627,10 @@ const EvidenceDetailDrawer: React.FC<{
                       >
                         {mapping.frameworkName}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm text-slate-700">{mapping.clauseId}</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400 dark:text-steel-500" />
+                      <span className="text-sm text-slate-700 dark:text-steel-300">{mapping.clauseId}</span>
                     </div>
-                    <p className="text-sm text-slate-600 mt-2">{mapping.clauseTitle}</p>
+                    <p className="text-sm text-slate-600 dark:text-steel-400 mt-2">{mapping.clauseTitle}</p>
                   </div>
                 ))
               )}
@@ -1639,14 +1639,14 @@ const EvidenceDetailDrawer: React.FC<{
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-steel-800">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-500 dark:text-steel-400">
               Created {new Date(evidence.createdAt).toLocaleDateString()} •
               Updated {new Date(evidence.updatedAt).toLocaleDateString()}
             </div>
             <div className="flex items-center gap-2">
-              <button className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-white transition-colors">
+              <button className="px-4 py-2 text-sm border border-slate-200 dark:border-steel-700 rounded-lg hover:bg-white dark:hover:bg-midnight-800 text-slate-700 dark:text-steel-300 transition-colors">
                 Export
               </button>
               {evidence.status === 'draft' && (
@@ -1697,17 +1697,17 @@ const FilePreviewModal: React.FC<{
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+            <div className="p-2 bg-slate-100 dark:bg-steel-800 rounded-lg text-slate-600 dark:text-steel-400">
               {isImage ? <Image className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
             </div>
             <div>
-              <h3 className="font-medium text-slate-900">{file.originalName}</h3>
-              <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
+              <h3 className="font-medium text-slate-900 dark:text-steel-100">{file.originalName}</h3>
+              <p className="text-xs text-slate-500 dark:text-steel-400">{(file.size / 1024).toFixed(1)} KB</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1715,20 +1715,20 @@ const FilePreviewModal: React.FC<{
               href={file.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:text-steel-400 dark:hover:text-steel-200 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800"
             >
               <ExternalLink className="w-5 h-5" />
             </a>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:text-steel-400 dark:hover:text-steel-200 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto bg-slate-100 flex items-center justify-center">
+        <div className="flex-1 overflow-auto bg-slate-100 dark:bg-midnight-800 flex items-center justify-center">
           {isImage ? (
             <img
               src={file.url}
@@ -1742,7 +1742,7 @@ const FilePreviewModal: React.FC<{
               title={file.originalName}
             />
           ) : (
-            <div className="text-center text-slate-500 p-8">
+            <div className="text-center text-slate-500 dark:text-steel-400 p-8">
               <File className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p>Preview not available for this file type</p>
               <a

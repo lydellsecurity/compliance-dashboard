@@ -76,10 +76,10 @@ const ROLE_LABELS: Record<UserRole, { label: string; color: string }> = {
 };
 
 const PLAN_COLORS: Record<TenantPlan, string> = {
-  free: 'text-slate-600 bg-slate-100',
-  startup: 'text-indigo-600 bg-indigo-100',
-  business: 'text-violet-600 bg-violet-100',
-  enterprise: 'text-amber-600 bg-amber-100',
+  free: 'text-slate-600 dark:text-steel-400 bg-slate-100 dark:bg-steel-800',
+  startup: 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30',
+  business: 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30',
+  enterprise: 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30',
 };
 
 // ============================================================================
@@ -134,7 +134,7 @@ const TenantAdmin: React.FC<TenantAdminProps> = ({ tenantId, userId, userRole })
 
   if (!tenant) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-slate-500">
+      <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-steel-400">
         <AlertTriangle className="w-12 h-12 mb-4" />
         <p>Failed to load tenant information</p>
       </div>
@@ -477,7 +477,7 @@ const TeamTab: React.FC<{
                     {member.role !== 'owner' && (
                       <button
                         onClick={() => handleRemoveMember(member.id)}
-                        className="p-1 text-slate-400 hover:text-red-500 rounded"
+                        className="p-1 text-slate-400 dark:text-steel-400 hover:text-red-500 dark:hover:text-red-400 rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1341,7 +1341,7 @@ const InviteModal: React.FC<{
           <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
             Invite Team Member
           </h2>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+          <button onClick={onClose} className="p-1 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 rounded">
             <X className="w-5 h-5" />
           </button>
         </div>

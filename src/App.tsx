@@ -864,7 +864,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
                           <p className="text-sm font-medium text-slate-800 dark:text-steel-200 truncate">{task.control.title}</p>
                           <p className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">{task.reason}</p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-500 group-hover:text-indigo-500 transition-colors" />
                       </div>
                     </motion.button>
                   );
@@ -1391,7 +1391,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
                     selectedFramework === 'all' ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-700 dark:text-accent-400' : 'text-slate-700 dark:text-steel-300'
                   }`}
                 >
-                  <div className="w-2 h-2 rounded-full bg-slate-400" />
+                  <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-steel-500" />
                   <span>All Frameworks</span>
                   {selectedFramework === 'all' && <Check className="w-4 h-4 ml-auto" />}
                 </button>
@@ -1509,7 +1509,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               onClick={() => setViewMode('controls')}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'controls'
-                  ? 'bg-slate-600 text-white shadow-sm'
+                  ? 'bg-slate-600 dark:bg-steel-600 text-white shadow-sm'
                   : 'text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700'
               }`}
               title="Legacy controls list view"
