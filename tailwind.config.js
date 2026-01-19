@@ -35,6 +35,14 @@ export default {
           800: '#1e293b',
           900: '#0f172a',
         },
+        // Midnight dark mode palette
+        midnight: {
+          600: '#1E293B',
+          700: '#0F172A',
+          800: '#0B1120',
+          900: '#070D1A',
+          950: '#020617',
+        },
         // Primary accent - Indigo-600 for CTAs
         accent: {
           50: '#eef2ff',
@@ -127,6 +135,12 @@ export default {
         'success': '0 4px 14px rgba(16, 185, 129, 0.25)',
         // Inner shadows
         'inner': 'inset 0 2px 4px rgba(0, 0, 0, 0.04)',
+        // Glow shadows for dark mode
+        'glow-sm': '0 0 10px rgba(99, 102, 241, 0.3)',
+        'glow': '0 0 20px rgba(99, 102, 241, 0.4)',
+        'glow-success': '0 0 10px rgba(16, 185, 129, 0.4)',
+        'glow-warning': '0 0 10px rgba(245, 158, 11, 0.4)',
+        'glow-risk': '0 0 10px rgba(244, 63, 94, 0.4)',
       },
       borderRadius: {
         'none': '0',
