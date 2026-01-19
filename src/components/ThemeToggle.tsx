@@ -9,31 +9,19 @@ interface ThemeToggleProps {
 }
 
 const THEME_KEY = 'compliance-dashboard-theme';
-const LEGACY_DARK_MODE_KEY = 'attestai-dark-mode';
 
 /**
- * Get initial theme from localStorage, checking both new and legacy keys
- * for backward compatibility with useCompliance hook
+ * Get initial theme from localStorage
+ * Default to light mode for clean corporate look
  */
 function getInitialTheme(): Theme {
-  // Default to light mode
   if (typeof window === 'undefined') return 'light';
 
-  // Check new theme key first
+  // Only check the new theme key
   const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-  if (stored === 'dark' || stored === 'light') return stored;
+  if (stored === 'dark') return 'dark';
 
-  // Check legacy dark mode key from useCompliance for backward compatibility
-  const legacyDarkMode = localStorage.getItem(LEGACY_DARK_MODE_KEY);
-  if (legacyDarkMode !== null) {
-    try {
-      return JSON.parse(legacyDarkMode) ? 'dark' : 'light';
-    } catch {
-      // Fallback if parse fails
-    }
-  }
-
-  // Default to light mode for clean corporate look
+  // Default to light mode
   return 'light';
 }
 
@@ -51,9 +39,8 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
       root.classList.remove('dark');
     }
 
-    // Save to both keys for synchronization with useCompliance hook
+    // Save theme preference
     localStorage.setItem(THEME_KEY, theme);
-    localStorage.setItem(LEGACY_DARK_MODE_KEY, JSON.stringify(theme === 'dark'));
   }, [theme]);
 
   const toggleTheme = () => {

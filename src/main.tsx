@@ -7,12 +7,11 @@ import './index.css';
 // Initialize theme on app load - default to light mode
 // This runs before React hydrates to prevent flash of wrong theme
 const THEME_KEY = 'compliance-dashboard-theme';
-const LEGACY_DARK_MODE_KEY = 'attestai-dark-mode';
 
 function initializeTheme() {
   const root = document.documentElement;
 
-  // Check stored theme preference
+  // Only check the new theme key - ignore legacy key for fresh default
   const stored = localStorage.getItem(THEME_KEY);
   if (stored === 'dark') {
     root.classList.add('dark');
@@ -20,29 +19,14 @@ function initializeTheme() {
     return;
   }
 
-  if (stored === 'light') {
-    root.classList.add('light');
-    root.classList.remove('dark');
-    return;
-  }
-
-  // Check legacy key for backward compatibility
-  const legacyDarkMode = localStorage.getItem(LEGACY_DARK_MODE_KEY);
-  if (legacyDarkMode !== null) {
-    try {
-      if (JSON.parse(legacyDarkMode)) {
-        root.classList.add('dark');
-        root.classList.remove('light');
-        return;
-      }
-    } catch {
-      // Fallback if parse fails
-    }
-  }
-
-  // Default to light mode
+  // Default to light mode (corporate clean look)
   root.classList.add('light');
   root.classList.remove('dark');
+
+  // Set the key to ensure consistent behavior
+  if (!stored) {
+    localStorage.setItem(THEME_KEY, 'light');
+  }
 }
 
 initializeTheme();
