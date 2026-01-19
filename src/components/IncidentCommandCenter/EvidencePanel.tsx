@@ -223,22 +223,22 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <Paperclip className="w-5 h-5 text-indigo-600" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <Paperclip className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Evidence & Attachments</h2>
-              <p className="text-sm text-slate-500">{evidence.length} files attached</p>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">Evidence & Attachments</h2>
+              <p className="text-sm text-slate-500 dark:text-steel-400">{evidence.length} files attached</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -251,8 +251,8 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
           onDrop={handleDrop}
           className={`mx-6 mt-4 p-6 border-2 border-dashed rounded-xl text-center transition-colors ${
             isDragOver
-              ? 'border-indigo-500 bg-indigo-50'
-              : 'border-slate-200 hover:border-slate-300'
+              ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+              : 'border-slate-200 dark:border-steel-600 hover:border-slate-300 dark:hover:border-steel-500'
           }`}
         >
           <input
@@ -261,17 +261,17 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
             onChange={handleFileSelect}
             className="hidden"
           />
-          <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragOver ? 'text-indigo-500' : 'text-slate-400'}`} />
-          <p className="text-slate-600 mb-1">
+          <Upload className={`w-10 h-10 mx-auto mb-3 ${isDragOver ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-steel-500'}`} />
+          <p className="text-slate-600 dark:text-steel-300 mb-1">
             Drag and drop files here, or{' '}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="text-indigo-600 font-medium hover:text-indigo-700"
+              className="text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300"
             >
               browse
             </button>
           </p>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-400 dark:text-steel-500">
             Screenshots, logs, transcripts, or any relevant documents
           </p>
         </div>
@@ -283,22 +283,22 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mx-6 mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200"
+              className="mx-6 mt-4 p-4 bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white rounded-lg border border-slate-200">
-                  <File className="w-5 h-5 text-slate-500" />
+                <div className="p-2 bg-white dark:bg-steel-700 rounded-lg border border-slate-200 dark:border-steel-600">
+                  <File className="w-5 h-5 text-slate-500 dark:text-steel-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 truncate">{newEvidence.file.name}</p>
-                  <p className="text-sm text-slate-500">{formatSize(newEvidence.file.size)}</p>
+                  <p className="font-medium text-slate-900 dark:text-steel-100 truncate">{newEvidence.file.name}</p>
+                  <p className="text-sm text-slate-500 dark:text-steel-400">{formatSize(newEvidence.file.size)}</p>
                 </div>
                 <button
                   onClick={() => {
                     setNewEvidence({ type: 'other', description: '', file: null });
                     setShowUploadForm(false);
                   }}
-                  className="p-2 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                  className="p-2 text-slate-400 dark:text-steel-500 hover:text-red-500 dark:hover:text-red-400 rounded-lg transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -306,13 +306,13 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-1">
                     Evidence Type
                   </label>
                   <select
                     value={newEvidence.type}
                     onChange={e => setNewEvidence(prev => ({ ...prev, type: e.target.value as EvidenceItem['type'] }))}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-midnight-900 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-900 dark:text-steel-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   >
                     <option value="screenshot">Screenshot</option>
                     <option value="log">Log File</option>
@@ -322,7 +322,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-1">
                     Description
                   </label>
                   <input
@@ -330,7 +330,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                     value={newEvidence.description}
                     onChange={e => setNewEvidence(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Brief description..."
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-midnight-900 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -364,8 +364,8 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
             onClick={() => setSelectedType('all')}
             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               selectedType === 'all'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'text-slate-500 hover:bg-slate-100'
+                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
+                : 'text-slate-500 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-700'
             }`}
           >
             All ({evidence.length})
@@ -379,8 +379,8 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                 onClick={() => setSelectedType(type)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   selectedType === type
-                    ? 'bg-indigo-100 text-indigo-700'
-                    : 'text-slate-500 hover:bg-slate-100'
+                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
+                    : 'text-slate-500 dark:text-steel-400 hover:bg-slate-100 dark:hover:bg-steel-700'
                 }`}
               >
                 {config.label} ({count})
@@ -393,9 +393,9 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
         <div className="flex-1 overflow-y-auto p-6 pt-4">
           {filteredEvidence.length === 0 ? (
             <div className="text-center py-12">
-              <Paperclip className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500">No evidence attached yet</p>
-              <p className="text-sm text-slate-400 mt-1">
+              <Paperclip className="w-12 h-12 mx-auto mb-4 text-slate-300 dark:text-steel-600" />
+              <p className="text-slate-500 dark:text-steel-400">No evidence attached yet</p>
+              <p className="text-sm text-slate-400 dark:text-steel-500 mt-1">
                 Upload screenshots, logs, or documents to document the incident
               </p>
             </div>
@@ -408,7 +408,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                     key={item.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors"
+                    className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 hover:bg-slate-100 dark:hover:bg-steel-800 transition-colors"
                   >
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -418,7 +418,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-slate-900 truncate">{item.name}</p>
+                        <p className="font-medium text-slate-900 dark:text-steel-100 truncate">{item.name}</p>
                         <span
                           className="px-2 py-0.5 text-xs font-medium rounded"
                           style={{ backgroundColor: config.bgColor, color: config.color }}
@@ -426,8 +426,8 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                           {config.label}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-500 mb-2">{item.description}</p>
-                      <div className="flex items-center gap-4 text-xs text-slate-400">
+                      <p className="text-sm text-slate-500 dark:text-steel-400 mb-2">{item.description}</p>
+                      <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-steel-500">
                         <span className="flex items-center gap-1">
                           <User className="w-3.5 h-3.5" />
                           {item.uploadedBy}
@@ -441,20 +441,20 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 dark:text-steel-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                         title="View"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 dark:text-steel-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                         title="Download"
                       >
                         <Download className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 dark:text-steel-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -468,15 +468,15 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
-          <p className="text-sm text-slate-500">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
+          <p className="text-sm text-slate-500 dark:text-steel-400">
             {evidence.reduce((acc, e) => acc + e.size, 0) > 1024 * 1024
               ? `${(evidence.reduce((acc, e) => acc + e.size, 0) / (1024 * 1024)).toFixed(1)} MB total`
               : `${(evidence.reduce((acc, e) => acc + e.size, 0) / 1024).toFixed(1)} KB total`}
           </p>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+            className="px-4 py-2 bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-200 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-steel-600 transition-colors"
           >
             Close
           </button>

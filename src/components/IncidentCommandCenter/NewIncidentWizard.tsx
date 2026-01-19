@@ -284,21 +284,21 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
           <div className="space-y-6">
             {/* Incident Title */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 What happened? <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.title || ''}
                 onChange={e => updateField('title', e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 placeholder="Brief description of the incident (e.g., 'Ransomware detected on file server')"
               />
             </div>
 
             {/* Threat Category */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-3">
                 What type of incident is this? <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -309,24 +309,24 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                     onClick={() => updateField('threatCategory', option.value)}
                     className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                       formData.threatCategory === option.value
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-slate-200 dark:border-steel-600 hover:border-slate-300 dark:hover:border-steel-500 bg-white dark:bg-midnight-800'
                     }`}
                   >
                     <div className={`p-2 rounded-lg ${
                       formData.threatCategory === option.value
-                        ? 'bg-indigo-100 text-indigo-600'
-                        : 'bg-slate-100 text-slate-500'
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                        : 'bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
                     }`}>
                       {option.icon}
                     </div>
                     <div>
                       <p className={`font-medium ${
-                        formData.threatCategory === option.value ? 'text-indigo-900' : 'text-slate-900'
+                        formData.threatCategory === option.value ? 'text-indigo-900 dark:text-indigo-200' : 'text-slate-900 dark:text-steel-100'
                       }`}>
                         {option.label}
                       </p>
-                      <p className="text-xs text-slate-500 mt-0.5">{option.description}</p>
+                      <p className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">{option.description}</p>
                     </div>
                   </button>
                 ))}
@@ -335,21 +335,21 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
 
             {/* Detailed Description */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 Provide more details (optional)
               </label>
               <textarea
                 value={formData.description || ''}
                 onChange={e => updateField('description', e.target.value)}
                 rows={4}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                 placeholder="Describe what was observed, initial indicators, timeline of events..."
               />
             </div>
 
             {/* Attack Vectors */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 How did this happen? (Attack vectors)
               </label>
               <div className="flex flex-wrap gap-2">
@@ -366,7 +366,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                     className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
                       formData.attackVectors?.includes(option.value)
                         ? 'bg-indigo-500 text-white border-indigo-500'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                        : 'bg-white dark:bg-midnight-800 text-slate-600 dark:text-steel-300 border-slate-200 dark:border-steel-600 hover:border-indigo-300 dark:hover:border-indigo-500'
                     }`}
                   >
                     {option.label}
@@ -382,7 +382,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
           <div className="space-y-6">
             {/* Affected Systems */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 Which systems are affected?
               </label>
               <div className="flex gap-2 mb-3">
@@ -397,7 +397,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                       setSystemInput('');
                     }
                   }}
-                  className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="flex-1 px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="Enter system name and press Enter"
                 />
               </div>
@@ -405,7 +405,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                 {formData.affectedSystems?.map((system, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-200 rounded-lg text-sm"
                   >
                     <Server className="w-3.5 h-3.5" />
                     {system}
@@ -428,7 +428,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
 
             {/* Affected Users Count */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 Approximately how many users are affected?
               </label>
               <div className="grid grid-cols-4 gap-3">
@@ -439,14 +439,14 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                     onClick={() => updateField('affectedUsers', count)}
                     className={`p-4 rounded-xl border-2 transition-all ${
                       formData.affectedUsers === count
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-slate-200 dark:border-steel-600 hover:border-slate-300 dark:hover:border-steel-500 bg-white dark:bg-midnight-800'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-slate-900">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-steel-100">
                       {count === 0 ? '0' : count === 1000 ? '1000+' : `${count}+`}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">
+                    <div className="text-xs text-slate-500 dark:text-steel-400 mt-1">
                       {count === 0 ? 'None' : count === 10 ? 'Few' : count === 100 ? 'Many' : 'Mass'}
                     </div>
                   </button>
@@ -458,7 +458,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                   min="0"
                   value={formData.affectedUsers || ''}
                   onChange={e => updateField('affectedUsers', parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="Or enter exact number"
                 />
               </div>
@@ -471,7 +471,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
           <div className="space-y-6">
             {/* Data Exposed */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-3">
                 Was any data exposed or exfiltrated?
               </label>
               <div className="grid grid-cols-2 gap-4">
@@ -480,19 +480,19 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                   onClick={() => updateField('dataExposed', true)}
                   className={`p-6 rounded-xl border-2 transition-all ${
                     formData.dataExposed === true
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                      : 'border-slate-200 dark:border-steel-600 hover:border-slate-300 dark:hover:border-steel-500 bg-white dark:bg-midnight-800'
                   }`}
                 >
                   <AlertTriangle className={`w-8 h-8 mx-auto mb-2 ${
-                    formData.dataExposed === true ? 'text-red-500' : 'text-slate-400'
+                    formData.dataExposed === true ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-steel-500'
                   }`} />
                   <div className={`font-medium ${
-                    formData.dataExposed === true ? 'text-red-900' : 'text-slate-900'
+                    formData.dataExposed === true ? 'text-red-900 dark:text-red-200' : 'text-slate-900 dark:text-steel-100'
                   }`}>
                     Yes, data was exposed
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xs text-slate-500 dark:text-steel-400 mt-1">
                     Data may have been accessed or exfiltrated
                   </div>
                 </button>
@@ -501,19 +501,19 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                   onClick={() => updateField('dataExposed', false)}
                   className={`p-6 rounded-xl border-2 transition-all ${
                     formData.dataExposed === false
-                      ? 'border-emerald-500 bg-emerald-50'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                      : 'border-slate-200 dark:border-steel-600 hover:border-slate-300 dark:hover:border-steel-500 bg-white dark:bg-midnight-800'
                   }`}
                 >
                   <Shield className={`w-8 h-8 mx-auto mb-2 ${
-                    formData.dataExposed === false ? 'text-emerald-500' : 'text-slate-400'
+                    formData.dataExposed === false ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-steel-500'
                   }`} />
                   <div className={`font-medium ${
-                    formData.dataExposed === false ? 'text-emerald-900' : 'text-slate-900'
+                    formData.dataExposed === false ? 'text-emerald-900 dark:text-emerald-200' : 'text-slate-900 dark:text-steel-100'
                   }`}>
                     No data exposure
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xs text-slate-500 dark:text-steel-400 mt-1">
                     No evidence of data access
                   </div>
                 </button>
@@ -527,7 +527,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                <label className="block text-sm font-medium text-slate-700 mb-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-3">
                   What types of data were potentially affected?
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -543,22 +543,22 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                       }}
                       className={`p-4 rounded-xl border-2 text-left transition-all ${
                         formData.dataTypes?.includes(option.value)
-                          ? 'border-red-500 bg-red-50'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-slate-200 dark:border-steel-600 hover:border-slate-300 dark:hover:border-steel-500 bg-white dark:bg-midnight-800'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                           formData.dataTypes?.includes(option.value)
                             ? 'bg-red-500 border-red-500'
-                            : 'border-slate-300'
+                            : 'border-slate-300 dark:border-steel-500'
                         }`}>
                           {formData.dataTypes?.includes(option.value) && (
                             <CheckCircle2 className="w-3 h-3 text-white" />
                           )}
                         </div>
                         <span className={`text-sm font-medium ${
-                          formData.dataTypes?.includes(option.value) ? 'text-red-900' : 'text-slate-700'
+                          formData.dataTypes?.includes(option.value) ? 'text-red-900 dark:text-red-200' : 'text-slate-700 dark:text-steel-200'
                         }`}>
                           {option.label}
                         </span>
@@ -570,11 +570,11 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
             )}
 
             {/* Calculated Severity Preview */}
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="p-4 bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-700">Calculated Severity</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Based on your answers</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-steel-200">Calculated Severity</p>
+                  <p className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">Based on your answers</p>
                 </div>
                 <div
                   className="px-4 py-2 rounded-lg text-sm font-bold"
@@ -595,24 +595,24 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
           <div className="space-y-6">
             {/* Incident Commander */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 Who is the Incident Commander? <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.incidentCommander || ''}
                 onChange={e => updateField('incidentCommander', e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 placeholder="Name of the person leading the response"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-slate-500 dark:text-steel-400 mt-2">
                 The Incident Commander has overall authority and responsibility for managing the incident.
               </p>
             </div>
 
             {/* Responders */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 Who else is responding?
               </label>
               <div className="flex gap-2 mb-3">
@@ -627,7 +627,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                       setResponderInput('');
                     }
                   }}
-                  className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="flex-1 px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   placeholder="Enter name and press Enter"
                 />
               </div>
@@ -635,7 +635,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                 {formData.responders?.map((responder, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-sm"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg text-sm"
                   >
                     <Users className="w-3.5 h-3.5" />
                     {responder}
@@ -658,14 +658,14 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
 
             {/* Client Contact */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-2">
                 Client Contact (if applicable)
               </label>
               <input
                 type="text"
                 value={formData.clientContact || ''}
                 onChange={e => updateField('clientContact', e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full px-4 py-3 bg-white dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-xl text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 placeholder="Primary contact at the client organization"
               />
             </div>
@@ -676,15 +676,15 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
         return (
           <div className="space-y-6">
             {/* Summary Card */}
-            <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
-              <div className="p-4 border-b border-slate-200">
-                <h4 className="font-semibold text-slate-900">Incident Summary</h4>
+            <div className="bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
+              <div className="p-4 border-b border-slate-200 dark:border-steel-700">
+                <h4 className="font-semibold text-slate-900 dark:text-steel-100">Incident Summary</h4>
               </div>
               <div className="p-4 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-slate-500">Title</p>
-                    <p className="font-medium text-slate-900">{formData.title}</p>
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Title</p>
+                    <p className="font-medium text-slate-900 dark:text-steel-100">{formData.title}</p>
                   </div>
                   <div
                     className="px-3 py-1.5 rounded-lg text-sm font-bold"
@@ -699,45 +699,45 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-slate-500">Threat Type</p>
-                    <p className="font-medium text-slate-900">
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Threat Type</p>
+                    <p className="font-medium text-slate-900 dark:text-steel-100">
                       {THREAT_LABELS[formData.threatCategory!]}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500">Incident Commander</p>
-                    <p className="font-medium text-slate-900">{formData.incidentCommander}</p>
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Incident Commander</p>
+                    <p className="font-medium text-slate-900 dark:text-steel-100">{formData.incidentCommander}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-slate-500">Affected Systems</p>
-                    <p className="font-medium text-slate-900">
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Affected Systems</p>
+                    <p className="font-medium text-slate-900 dark:text-steel-100">
                       {formData.affectedSystems?.length || 0} systems
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500">Affected Users</p>
-                    <p className="font-medium text-slate-900">{formData.affectedUsers || 0}</p>
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Affected Users</p>
+                    <p className="font-medium text-slate-900 dark:text-steel-100">{formData.affectedUsers || 0}</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-slate-500">Data Exposure</p>
-                  <p className={`font-medium ${formData.dataExposed ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <p className="text-sm text-slate-500 dark:text-steel-400">Data Exposure</p>
+                  <p className={`font-medium ${formData.dataExposed ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     {formData.dataExposed ? 'Yes - Data was exposed' : 'No data exposure'}
                   </p>
                 </div>
 
                 {formData.dataTypes && formData.dataTypes.length > 0 && (
                   <div>
-                    <p className="text-sm text-slate-500">Data Types Affected</p>
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Data Types Affected</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {formData.dataTypes.map(type => (
                         <span
                           key={type}
-                          className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium"
+                          className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium"
                         >
                           {type.toUpperCase()}
                         </span>
@@ -750,14 +750,14 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
 
             {/* Warning for critical/high */}
             {(calculatedSeverity === 'critical' || calculatedSeverity === 'high') && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-900">
+                    <p className="font-medium text-amber-900 dark:text-amber-200">
                       This is a {calculatedSeverity === 'critical' ? 'critical' : 'high'} severity incident
                     </p>
-                    <p className="text-sm text-amber-700 mt-1">
+                    <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
                       Regulatory notification may be required. An AI-generated response playbook will be available after creation.
                     </p>
                   </div>
@@ -785,7 +785,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-red-600 to-orange-600">
@@ -807,7 +807,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
         </div>
 
         {/* Progress Steps */}
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
           <div className="flex items-center justify-between">
             {WIZARD_STEPS.map((step, index) => (
               <React.Fragment key={step.id}>
@@ -823,7 +823,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                       ? 'bg-emerald-500 text-white'
                       : index === currentStep
                       ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-200 text-slate-500'
+                      : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
                   }`}>
                     {index < currentStep ? (
                       <CheckCircle2 className="w-4 h-4" />
@@ -832,14 +832,14 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
                     )}
                   </div>
                   <span className={`text-sm font-medium hidden md:block ${
-                    index === currentStep ? 'text-indigo-600' : 'text-slate-500'
+                    index === currentStep ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-steel-400'
                   }`}>
                     {step.title}
                   </span>
                 </button>
                 {index < WIZARD_STEPS.length - 1 && (
                   <div className={`flex-1 h-0.5 mx-2 ${
-                    index < currentStep ? 'bg-emerald-500' : 'bg-slate-200'
+                    index < currentStep ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-steel-700'
                   }`} />
                 )}
               </React.Fragment>
@@ -851,14 +851,14 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
                 {WIZARD_STEPS[currentStep].icon}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
                   {WIZARD_STEPS[currentStep].title}
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-steel-400">
                   {WIZARD_STEPS[currentStep].description}
                 </p>
               </div>
@@ -879,11 +879,11 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
           <button
             onClick={goBack}
             disabled={currentStep === 0}
-            className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-steel-300 hover:text-slate-800 dark:hover:text-steel-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Back

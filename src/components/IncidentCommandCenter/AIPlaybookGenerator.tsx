@@ -584,7 +584,7 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-violet-600">
@@ -628,11 +628,11 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
         <div className="flex-1 overflow-y-auto">
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-16 px-8">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mb-6">
-                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+              <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-6">
+                <Loader2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">Generating Playbook</h3>
-              <p className="text-slate-500 mb-8">AI is analyzing the incident and creating a response plan...</p>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-steel-100 mb-2">Generating Playbook</h3>
+              <p className="text-slate-500 dark:text-steel-400 mb-8">AI is analyzing the incident and creating a response plan...</p>
 
               <div className="w-full max-w-md space-y-3">
                 {generationSteps.map((step, index) => (
@@ -640,21 +640,21 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                     key={index}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
                       index < generationStep
-                        ? 'bg-emerald-50'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20'
                         : index === generationStep
-                        ? 'bg-indigo-50'
-                        : 'bg-slate-50'
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'bg-slate-50 dark:bg-midnight-800'
                     }`}
                   >
                     {index < generationStep ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                     ) : index === generationStep ? (
-                      <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                      <Loader2 className="w-5 h-5 text-indigo-500 dark:text-indigo-400 animate-spin" />
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
+                      <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-steel-600" />
                     )}
                     <span className={`text-sm ${
-                      index <= generationStep ? 'text-slate-900' : 'text-slate-400'
+                      index <= generationStep ? 'text-slate-900 dark:text-steel-100' : 'text-slate-400 dark:text-steel-500'
                     }`}>
                       {step}
                     </span>
@@ -665,12 +665,12 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
           ) : (
             <div className="p-6 space-y-4">
               {/* Progress Bar */}
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-slate-50 dark:bg-midnight-800 rounded-xl p-4 border border-slate-200 dark:border-steel-700">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">Response Progress</span>
-                  <span className="text-sm text-slate-500">{completedCount} of {totalSteps} steps</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-steel-200">Response Progress</span>
+                  <span className="text-sm text-slate-500 dark:text-steel-400">{completedCount} of {totalSteps} steps</span>
                 </div>
-                <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-3 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
@@ -683,11 +683,11 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
               {playbook.map(section => (
                 <div
                   key={section.phase}
-                  className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                  className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden"
                 >
                   <button
                     onClick={() => toggleSection(section.phase)}
-                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-steel-800 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -697,21 +697,21 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                         {section.icon}
                       </div>
                       <div className="text-left">
-                        <h4 className="font-semibold text-slate-900">{section.title}</h4>
-                        <p className="text-sm text-slate-500">
+                        <h4 className="font-semibold text-slate-900 dark:text-steel-100">{section.title}</h4>
+                        <p className="text-sm text-slate-500 dark:text-steel-400">
                           {section.steps.filter(s => completedSteps.has(s.id)).length} of {section.steps.length} completed
                         </p>
                       </div>
                     </div>
                     {expandedSections.has(section.phase) ? (
-                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                      <ChevronDown className="w-5 h-5 text-slate-400 dark:text-steel-500" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-slate-400" />
+                      <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-500" />
                     )}
                   </button>
 
                   {expandedSections.has(section.phase) && section.steps.length > 0 && (
-                    <div className="border-t border-slate-200 divide-y divide-slate-100">
+                    <div className="border-t border-slate-200 dark:border-steel-700 divide-y divide-slate-100 dark:divide-steel-700">
                       {section.steps.map(step => {
                         const priorityColors = getPriorityColor(step.priority);
                         const isCompleted = completedSteps.has(step.id);
@@ -719,7 +719,7 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                         return (
                           <div
                             key={step.id}
-                            className={`p-4 transition-colors ${isCompleted ? 'bg-emerald-50/50' : ''}`}
+                            className={`p-4 transition-colors ${isCompleted ? 'bg-emerald-50/50 dark:bg-emerald-900/20' : ''}`}
                           >
                             <div className="flex items-start gap-4">
                               <button
@@ -727,14 +727,14 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                                 className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                                   isCompleted
                                     ? 'bg-emerald-500 border-emerald-500'
-                                    : 'border-slate-300 hover:border-indigo-500'
+                                    : 'border-slate-300 dark:border-steel-500 hover:border-indigo-500'
                                 }`}
                               >
                                 {isCompleted && <CheckCircle2 className="w-3 h-3 text-white" />}
                               </button>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h5 className={`font-medium ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                                  <h5 className={`font-medium ${isCompleted ? 'text-slate-500 dark:text-steel-500 line-through' : 'text-slate-900 dark:text-steel-100'}`}>
                                     {step.title}
                                   </h5>
                                   <span
@@ -744,7 +744,7 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                                     {step.priority}
                                   </span>
                                 </div>
-                                <p className={`text-sm ${isCompleted ? 'text-slate-400' : 'text-slate-600'}`}>
+                                <p className={`text-sm ${isCompleted ? 'text-slate-400 dark:text-steel-500' : 'text-slate-600 dark:text-steel-300'}`}>
                                   {step.description}
                                 </p>
                                 {step.substeps && (
@@ -753,16 +753,16 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                                       <li
                                         key={idx}
                                         className={`text-sm flex items-start gap-2 ${
-                                          isCompleted ? 'text-slate-400' : 'text-slate-500'
+                                          isCompleted ? 'text-slate-400 dark:text-steel-500' : 'text-slate-500 dark:text-steel-400'
                                         }`}
                                       >
-                                        <span className="text-slate-300 mt-1.5">•</span>
+                                        <span className="text-slate-300 dark:text-steel-600 mt-1.5">•</span>
                                         {substep}
                                       </li>
                                     ))}
                                   </ul>
                                 )}
-                                <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
+                                <div className="flex items-center gap-4 mt-3 text-xs text-slate-400 dark:text-steel-500">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3.5 h-3.5" />
                                     {step.estimatedTime}
@@ -787,8 +787,8 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
 
         {/* Footer */}
         {!isGenerating && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
-            <div className="text-sm text-slate-500">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
+            <div className="text-sm text-slate-500 dark:text-steel-400">
               Generated for {SEVERITY_CONFIG[incident.severity].label} severity {THREAT_LABELS[incident.threatCategory]} incident
             </div>
             <div className="flex items-center gap-3">
@@ -797,7 +797,7 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                   // Export as PDF would go here
                   console.log('Export playbook');
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-700 rounded-xl transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Export PDF

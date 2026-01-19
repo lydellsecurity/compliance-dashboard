@@ -224,15 +224,15 @@ Generated: ${new Date().toLocaleString()}
         <div className="flex items-start gap-4">
           <button
             onClick={onBack}
-            className="mt-1 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            className="mt-1 p-2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-700 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <span className="font-mono text-sm text-slate-500">{incident.incidentNumber}</span>
+              <span className="font-mono text-sm text-slate-500 dark:text-steel-400">{incident.incidentNumber}</span>
               {isDrill && (
-                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg">
+                <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold rounded-lg">
                   TABLETOP EXERCISE
                 </span>
               )}
@@ -256,28 +256,28 @@ Generated: ${new Date().toLocaleString()}
                 {statusConfig.label}
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">{incident.title}</h1>
-            <p className="text-slate-500 mt-1">{incident.description}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-steel-100">{incident.title}</h1>
+            <p className="text-slate-500 dark:text-steel-400 mt-1">{incident.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => onOpenPlaybook(incident)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-100 text-indigo-700 rounded-xl font-medium hover:bg-indigo-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-xl font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
           >
             <BookOpen className="w-4 h-4" />
             View Playbook
           </button>
           <button
             onClick={() => setShowEvidencePanel(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-200 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-steel-600 transition-colors"
           >
             <Paperclip className="w-4 h-4" />
             Evidence
           </button>
           <button
             onClick={handleExportPostMortem}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-200 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-steel-600 transition-colors"
           >
             <Download className="w-4 h-4" />
             Export Report
@@ -286,10 +286,10 @@ Generated: ${new Date().toLocaleString()}
       </div>
 
       {/* Status Workflow */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-900">Response Progress</h3>
-          <span className="text-sm text-slate-500">
+          <h3 className="font-semibold text-slate-900 dark:text-steel-100">Response Progress</h3>
+          <span className="text-sm text-slate-500 dark:text-steel-400">
             <Clock className="w-4 h-4 inline mr-1" />
             Elapsed: {timeElapsed}
           </span>
@@ -333,7 +333,7 @@ Generated: ${new Date().toLocaleString()}
                 </button>
                 {index < STATUS_WORKFLOW.length - 1 && (
                   <div className={`flex-1 h-1 mx-2 rounded-full ${
-                    index < currentStatusIndex ? 'bg-emerald-500' : 'bg-slate-200'
+                    index < currentStatusIndex ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-steel-700'
                   }`} />
                 )}
               </React.Fragment>
@@ -343,7 +343,7 @@ Generated: ${new Date().toLocaleString()}
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-steel-700">
         {[
           { id: 'overview', label: 'Overview', icon: <Target className="w-4 h-4" /> },
           { id: 'timeline', label: 'Timeline', icon: <Clock className="w-4 h-4" /> },
@@ -355,8 +355,8 @@ Generated: ${new Date().toLocaleString()}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.id
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200'
             }`}
           >
             {tab.icon}
@@ -380,33 +380,33 @@ Generated: ${new Date().toLocaleString()}
               <div className="col-span-12 lg:col-span-8 space-y-6">
                 {/* Key Metrics */}
                 <div className="grid grid-cols-4 gap-4">
-                  <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-steel-400 mb-2">
                       <Server className="w-4 h-4" />
                       <span className="text-sm">Systems</span>
                     </div>
-                    <p className="text-2xl font-bold text-slate-900">{incident.affectedSystems.length}</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-steel-100">{incident.affectedSystems.length}</p>
                   </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-steel-400 mb-2">
                       <Users className="w-4 h-4" />
                       <span className="text-sm">Users</span>
                     </div>
-                    <p className="text-2xl font-bold text-slate-900">{incident.affectedUsers}</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-steel-100">{incident.affectedUsers}</p>
                   </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-steel-400 mb-2">
                       <Shield className="w-4 h-4" />
                       <span className="text-sm">Controls</span>
                     </div>
-                    <p className="text-2xl font-bold text-slate-900">{incident.affectedControlIds.length}</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-steel-100">{incident.affectedControlIds.length}</p>
                   </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-steel-400 mb-2">
                       <Database className="w-4 h-4" />
                       <span className="text-sm">Data Exposed</span>
                     </div>
-                    <p className={`text-2xl font-bold ${incident.dataExposed ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <p className={`text-2xl font-bold ${incident.dataExposed ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                       {incident.dataExposed ? 'Yes' : 'No'}
                     </p>
                   </div>
@@ -414,13 +414,13 @@ Generated: ${new Date().toLocaleString()}
 
                 {/* Affected Systems */}
                 {incident.affectedSystems.length > 0 && (
-                  <div className="bg-white rounded-xl border border-slate-200 p-6">
-                    <h4 className="font-semibold text-slate-900 mb-4">Affected Systems</h4>
+                  <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+                    <h4 className="font-semibold text-slate-900 dark:text-steel-100 mb-4">Affected Systems</h4>
                     <div className="flex flex-wrap gap-2">
                       {incident.affectedSystems.map((system, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm"
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-200 rounded-lg text-sm"
                         >
                           <Server className="w-4 h-4" />
                           {system}
@@ -432,24 +432,24 @@ Generated: ${new Date().toLocaleString()}
 
                 {/* Data Types */}
                 {incident.dataExposed && incident.dataTypes.length > 0 && (
-                  <div className="bg-red-50 rounded-xl border border-red-200 p-6">
+                  <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
-                      <h4 className="font-semibold text-red-900">Data Types Exposed</h4>
+                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <h4 className="font-semibold text-red-900 dark:text-red-200">Data Types Exposed</h4>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {incident.dataTypes.map((type, index) => (
                         <span
                           key={index}
-                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium"
+                          className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium"
                         >
                           {type.toUpperCase()}
                         </span>
                       ))}
                     </div>
                     {incident.regulatoryNotificationRequired && (
-                      <div className="mt-4 pt-4 border-t border-red-200">
-                        <p className="text-sm text-red-700">
+                      <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-800">
+                        <p className="text-sm text-red-700 dark:text-red-400">
                           <AlertCircle className="w-4 h-4 inline mr-1" />
                           Regulatory notification may be required
                           {incident.notificationDeadline && ` by ${new Date(incident.notificationDeadline).toLocaleDateString()}`}
@@ -462,87 +462,87 @@ Generated: ${new Date().toLocaleString()}
 
               {/* Threat Details */}
               <div className="col-span-12 lg:col-span-4 space-y-6">
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <h4 className="font-semibold text-slate-900 mb-4">Threat Details</h4>
+                <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+                  <h4 className="font-semibold text-slate-900 dark:text-steel-100 mb-4">Threat Details</h4>
                   <dl className="space-y-4">
                     <div>
-                      <dt className="text-sm text-slate-500">Category</dt>
-                      <dd className="font-medium text-slate-900">{THREAT_LABELS[incident.threatCategory]}</dd>
+                      <dt className="text-sm text-slate-500 dark:text-steel-400">Category</dt>
+                      <dd className="font-medium text-slate-900 dark:text-steel-100">{THREAT_LABELS[incident.threatCategory]}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm text-slate-500 mb-1">Attack Vectors</dt>
+                      <dt className="text-sm text-slate-500 dark:text-steel-400 mb-1">Attack Vectors</dt>
                       <dd className="flex flex-wrap gap-1">
                         {incident.attackVectors.length > 0 ? (
                           incident.attackVectors.map((vector, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs"
+                              className="px-2 py-1 bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300 rounded text-xs"
                             >
                               {vector.replace(/_/g, ' ')}
                             </span>
                           ))
                         ) : (
-                          <span className="text-slate-400 text-sm">Not specified</span>
+                          <span className="text-slate-400 dark:text-steel-500 text-sm">Not specified</span>
                         )}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm text-slate-500">Frameworks Affected</dt>
+                      <dt className="text-sm text-slate-500 dark:text-steel-400">Frameworks Affected</dt>
                       <dd className="flex flex-wrap gap-1 mt-1">
                         {incident.affectedFrameworks.length > 0 ? (
                           incident.affectedFrameworks.map((fw, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium"
+                              className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded text-xs font-medium"
                             >
                               {fw}
                             </span>
                           ))
                         ) : (
-                          <span className="text-slate-400 text-sm">To be determined</span>
+                          <span className="text-slate-400 dark:text-steel-500 text-sm">To be determined</span>
                         )}
                       </dd>
                     </div>
                   </dl>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <h4 className="font-semibold text-slate-900 mb-4">Key Timestamps</h4>
+                <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+                  <h4 className="font-semibold text-slate-900 dark:text-steel-100 mb-4">Key Timestamps</h4>
                   <dl className="space-y-3">
                     <div className="flex justify-between">
-                      <dt className="text-sm text-slate-500">Detected</dt>
-                      <dd className="text-sm font-medium text-slate-900">
+                      <dt className="text-sm text-slate-500 dark:text-steel-400">Detected</dt>
+                      <dd className="text-sm font-medium text-slate-900 dark:text-steel-100">
                         {new Date(incident.detectedAt).toLocaleString()}
                       </dd>
                     </div>
                     {incident.containedAt && (
                       <div className="flex justify-between">
-                        <dt className="text-sm text-slate-500">Contained</dt>
-                        <dd className="text-sm font-medium text-slate-900">
+                        <dt className="text-sm text-slate-500 dark:text-steel-400">Contained</dt>
+                        <dd className="text-sm font-medium text-slate-900 dark:text-steel-100">
                           {new Date(incident.containedAt).toLocaleString()}
                         </dd>
                       </div>
                     )}
                     {incident.eradicatedAt && (
                       <div className="flex justify-between">
-                        <dt className="text-sm text-slate-500">Eradicated</dt>
-                        <dd className="text-sm font-medium text-slate-900">
+                        <dt className="text-sm text-slate-500 dark:text-steel-400">Eradicated</dt>
+                        <dd className="text-sm font-medium text-slate-900 dark:text-steel-100">
                           {new Date(incident.eradicatedAt).toLocaleString()}
                         </dd>
                       </div>
                     )}
                     {incident.recoveredAt && (
                       <div className="flex justify-between">
-                        <dt className="text-sm text-slate-500">Recovered</dt>
-                        <dd className="text-sm font-medium text-slate-900">
+                        <dt className="text-sm text-slate-500 dark:text-steel-400">Recovered</dt>
+                        <dd className="text-sm font-medium text-slate-900 dark:text-steel-100">
                           {new Date(incident.recoveredAt).toLocaleString()}
                         </dd>
                       </div>
                     )}
                     {incident.closedAt && (
                       <div className="flex justify-between">
-                        <dt className="text-sm text-slate-500">Closed</dt>
-                        <dd className="text-sm font-medium text-slate-900">
+                        <dt className="text-sm text-slate-500 dark:text-steel-400">Closed</dt>
+                        <dd className="text-sm font-medium text-slate-900 dark:text-steel-100">
                           {new Date(incident.closedAt).toLocaleString()}
                         </dd>
                       </div>
@@ -554,12 +554,12 @@ Generated: ${new Date().toLocaleString()}
           )}
 
           {activeTab === 'timeline' && (
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h4 className="font-semibold text-slate-900">Incident Timeline</h4>
+                <h4 className="font-semibold text-slate-900 dark:text-steel-100">Incident Timeline</h4>
                 <button
                   onClick={() => setShowAddEvent(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg text-sm font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Event
@@ -573,15 +573,15 @@ Generated: ${new Date().toLocaleString()}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200"
+                    className="mb-6 p-4 bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700"
                   >
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Event Type</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-1">Event Type</label>
                         <select
                           value={newEventType}
                           onChange={e => setNewEventType(e.target.value as IncidentTimelineEvent['eventType'])}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          className="w-full px-3 py-2 bg-white dark:bg-midnight-900 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-900 dark:text-steel-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         >
                           <option value="action">Action Taken</option>
                           <option value="finding">Finding</option>
@@ -591,30 +591,30 @@ Generated: ${new Date().toLocaleString()}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-1">Title</label>
                         <input
                           type="text"
                           value={newEventTitle}
                           onChange={e => setNewEventTitle(e.target.value)}
                           placeholder="Event title..."
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          className="w-full px-3 py-2 bg-white dark:bg-midnight-900 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                       </div>
                     </div>
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-steel-200 mb-1">Description</label>
                       <textarea
                         value={newEventDescription}
                         onChange={e => setNewEventDescription(e.target.value)}
                         placeholder="Describe what happened..."
                         rows={2}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+                        className="w-full px-3 py-2 bg-white dark:bg-midnight-900 border border-slate-200 dark:border-steel-600 rounded-lg text-sm text-slate-900 dark:text-steel-100 placeholder-slate-400 dark:placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                       />
                     </div>
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setShowAddEvent(false)}
-                        className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm"
+                        className="px-3 py-2 text-slate-600 dark:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-700 rounded-lg transition-colors text-sm"
                       >
                         Cancel
                       </button>
@@ -632,10 +632,10 @@ Generated: ${new Date().toLocaleString()}
 
               {/* Timeline */}
               <div className="relative">
-                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200" />
+                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-steel-700" />
                 <div className="space-y-6">
                   {incident.timelineEvents.length === 0 ? (
-                    <p className="text-slate-500 text-center py-8">No timeline events recorded yet</p>
+                    <p className="text-slate-500 dark:text-steel-400 text-center py-8">No timeline events recorded yet</p>
                   ) : (
                     [...incident.timelineEvents]
                       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -646,16 +646,16 @@ Generated: ${new Date().toLocaleString()}
                           </div>
                           <div className="flex-1 pb-6">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-slate-400 dark:text-steel-500">
                                 {new Date(event.timestamp).toLocaleString()}
                               </span>
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs capitalize">
+                              <span className="px-2 py-0.5 bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300 rounded text-xs capitalize">
                                 {event.eventType}
                               </span>
                             </div>
-                            <h5 className="font-medium text-slate-900">{event.title}</h5>
-                            <p className="text-sm text-slate-600 mt-1">{event.description}</p>
-                            <p className="text-xs text-slate-400 mt-2">by {event.actor}</p>
+                            <h5 className="font-medium text-slate-900 dark:text-steel-100">{event.title}</h5>
+                            <p className="text-sm text-slate-600 dark:text-steel-300 mt-1">{event.description}</p>
+                            <p className="text-xs text-slate-400 dark:text-steel-500 mt-2">by {event.actor}</p>
                           </div>
                         </div>
                       ))
@@ -669,57 +669,57 @@ Generated: ${new Date().toLocaleString()}
             <div className="space-y-6">
               {/* Summary */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl border border-slate-200 p-4">
-                  <p className="text-sm text-slate-500">Affected Controls</p>
-                  <p className="text-2xl font-bold text-slate-900">{incident.affectedControlIds.length}</p>
+                <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
+                  <p className="text-sm text-slate-500 dark:text-steel-400">Affected Controls</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-steel-100">{incident.affectedControlIds.length}</p>
                 </div>
-                <div className="bg-red-50 rounded-xl border border-red-200 p-4">
-                  <p className="text-sm text-red-600">Pre-existing Gaps</p>
-                  <p className="text-2xl font-bold text-red-600">{gapCount}</p>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4">
+                  <p className="text-sm text-red-600 dark:text-red-400">Pre-existing Gaps</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{gapCount}</p>
                 </div>
-                <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
-                  <p className="text-sm text-emerald-600">Controls Validated</p>
-                  <p className="text-2xl font-bold text-emerald-600">{incident.affectedControlIds.length - gapCount}</p>
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">Controls Validated</p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{incident.affectedControlIds.length - gapCount}</p>
                 </div>
               </div>
 
               {/* Controls List */}
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200">
-                  <h4 className="font-semibold text-slate-900">Affected Controls</h4>
+              <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 dark:border-steel-700">
+                  <h4 className="font-semibold text-slate-900 dark:text-steel-100">Affected Controls</h4>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-steel-700">
                   {affectedControlsWithStatus.length === 0 ? (
-                    <p className="text-slate-500 text-center py-8">No controls mapped to this incident</p>
+                    <p className="text-slate-500 dark:text-steel-400 text-center py-8">No controls mapped to this incident</p>
                   ) : (
                     affectedControlsWithStatus.map(({ controlId, control, hasGap }) => (
                       <div key={controlId} className="px-6 py-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            hasGap ? 'bg-red-100' : 'bg-emerald-100'
+                            hasGap ? 'bg-red-100 dark:bg-red-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'
                           }`}>
                             {hasGap ? (
-                              <AlertTriangle className="w-5 h-5 text-red-600" />
+                              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
                             ) : (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                             )}
                           </div>
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className="font-medium text-slate-900 dark:text-steel-100">
                               {control?.title || controlId}
                             </p>
-                            <p className="text-sm text-slate-500">{controlId}</p>
+                            <p className="text-sm text-slate-500 dark:text-steel-400">{controlId}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
                             hasGap
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-emerald-100 text-emerald-700'
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                              : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                           }`}>
                             {hasGap ? 'Gap Identified' : 'Control Validated'}
                           </span>
-                          <ChevronRight className="w-5 h-5 text-slate-400" />
+                          <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-500" />
                         </div>
                       </div>
                     ))
@@ -732,48 +732,48 @@ Generated: ${new Date().toLocaleString()}
           {activeTab === 'team' && (
             <div className="grid grid-cols-2 gap-6">
               {/* Incident Commander */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h4 className="font-semibold text-slate-900 mb-4">Incident Commander</h4>
+              <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+                <h4 className="font-semibold text-slate-900 dark:text-steel-100 mb-4">Incident Commander</h4>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <User className="w-6 h-6 text-indigo-600" />
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                    <User className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">{incident.incidentCommander}</p>
-                    <p className="text-sm text-slate-500">Overall incident authority</p>
+                    <p className="font-medium text-slate-900 dark:text-steel-100">{incident.incidentCommander}</p>
+                    <p className="text-sm text-slate-500 dark:text-steel-400">Overall incident authority</p>
                   </div>
                 </div>
               </div>
 
               {/* Client Contact */}
               {incident.clientContact && (
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <h4 className="font-semibold text-slate-900 mb-4">Client Contact</h4>
+                <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+                  <h4 className="font-semibold text-slate-900 dark:text-steel-100 mb-4">Client Contact</h4>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <Building2 className="w-6 h-6 text-emerald-600" />
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">{incident.clientContact}</p>
-                      <p className="text-sm text-slate-500">Primary client liaison</p>
+                      <p className="font-medium text-slate-900 dark:text-steel-100">{incident.clientContact}</p>
+                      <p className="text-sm text-slate-500 dark:text-steel-400">Primary client liaison</p>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Responders */}
-              <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-6">
-                <h4 className="font-semibold text-slate-900 mb-4">Response Team</h4>
+              <div className="col-span-2 bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+                <h4 className="font-semibold text-slate-900 dark:text-steel-100 mb-4">Response Team</h4>
                 {incident.responders.length === 0 ? (
-                  <p className="text-slate-500">No additional responders assigned</p>
+                  <p className="text-slate-500 dark:text-steel-400">No additional responders assigned</p>
                 ) : (
                   <div className="grid grid-cols-3 gap-4">
                     {incident.responders.map((responder, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                          <User className="w-5 h-5 text-slate-600" />
+                      <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-midnight-800 rounded-lg">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-steel-700 flex items-center justify-center">
+                          <User className="w-5 h-5 text-slate-600 dark:text-steel-300" />
                         </div>
-                        <span className="font-medium text-slate-900">{responder}</span>
+                        <span className="font-medium text-slate-900 dark:text-steel-100">{responder}</span>
                       </div>
                     ))}
                   </div>
