@@ -416,6 +416,13 @@ const LandingPage: React.FC = () => {
   const [showMobileCTA, setShowMobileCTA] = useState(false);
   const [activeControl, setActiveControl] = useState<string | null>('ac-001');
 
+  // Force light mode for landing page
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('light');
+    root.classList.remove('dark');
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       setShowMobileCTA(window.scrollY > 600);

@@ -44,6 +44,7 @@ import { monitoringService } from './services/continuous-monitoring.service';
 import { useOrganization } from './contexts/OrganizationContext';
 import { useAuth } from './hooks/useAuth';
 import { CommandPalette, useCommandPalette } from './components/ui';
+import { ThemeToggle } from './components/ThemeToggle';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'questionnaires' | 'trust-center' | 'certificate' | 'verify' | 'admin' | 'settings';
 
@@ -1953,6 +1954,14 @@ const CommandSidebar: React.FC<{
           </button>
           {!expanded && (
             <div className="nav-tooltip">Sync Activity</div>
+          )}
+        </div>
+
+        {/* Theme Toggle */}
+        <div className="relative group">
+          <ThemeToggle collapsed={!expanded} />
+          {!expanded && (
+            <div className="nav-tooltip">Theme</div>
           )}
         </div>
 

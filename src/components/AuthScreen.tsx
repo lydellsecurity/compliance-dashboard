@@ -6,7 +6,7 @@
  * Login and signup UI for the Compliance Engine.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, User, Building2, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -15,7 +15,7 @@ type AuthMode = 'signin' | 'signup' | 'forgot';
 
 const AuthScreen: React.FC = () => {
   const { signIn, signUp, signInWithGoogle, resetPassword, loading, error, clearError } = useAuth();
-  
+
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +23,13 @@ const AuthScreen: React.FC = () => {
   const [orgName, setOrgName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Force light mode for auth screen
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('light');
+    root.classList.remove('dark');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
