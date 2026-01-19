@@ -80,10 +80,10 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
           <div className="flex items-center gap-4">
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -92,7 +92,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
               <Building2 className="w-7 h-7" style={{ color: critConfig.color }} />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-steel-100 flex items-center gap-3">
                 {vendor.name}
                 <span
                   className="px-2.5 py-1 text-xs font-medium rounded-lg"
@@ -102,8 +102,8 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                 </span>
               </h2>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-sm text-slate-500">{CATEGORY_LABELS[vendor.category]}</span>
-                <span className="text-slate-300">|</span>
+                <span className="text-sm text-slate-500 dark:text-steel-400">{CATEGORY_LABELS[vendor.category]}</span>
+                <span className="text-slate-300 dark:text-steel-600">|</span>
                 <span
                   className="inline-flex items-center gap-1 text-sm"
                   style={{ color: statusConfig.color }}
@@ -118,13 +118,13 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {}}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-white dark:hover:bg-steel-800 rounded-lg transition-colors"
             >
               <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-white dark:hover:bg-steel-800 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -132,15 +132,15 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 px-6 py-2 border-b border-slate-200 bg-white">
+        <div className="flex items-center gap-1 px-6 py-2 border-b border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-900">
           {(['overview', 'artifacts', 'history'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
                 activeTab === tab
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-600 dark:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-800'
               }`}
             >
               {tab}
@@ -155,8 +155,8 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
               {/* Left Column */}
               <div className="space-y-6">
                 {/* Risk Score Card */}
-                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
-                  <h3 className="text-sm font-medium text-slate-500 mb-3">Risk Assessment</h3>
+                <div className="bg-slate-50 dark:bg-midnight-800 rounded-xl p-5 border border-slate-200 dark:border-steel-700">
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 mb-3">Risk Assessment</h3>
 
                   {vendor.riskScore !== undefined ? (
                     <>
@@ -171,7 +171,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                           {vendor.riskScore}
                         </div>
                         <div className="mb-1">
-                          <span className="text-sm text-slate-500">out of 100</span>
+                          <span className="text-sm text-slate-500 dark:text-steel-400">out of 100</span>
                           <div className={`flex items-center gap-1 text-sm ${
                             vendor.riskScore >= 50 ? 'text-amber-600' : 'text-emerald-600'
                           }`}>
@@ -185,7 +185,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-3 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${vendor.riskScore}%` }}
@@ -199,7 +199,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                       </div>
 
                       {vendor.lastAssessmentAt && (
-                        <p className="text-sm text-slate-500 mt-3 flex items-center gap-1.5">
+                        <p className="text-sm text-slate-500 dark:text-steel-400 mt-3 flex items-center gap-1.5">
                           <Clock className="w-4 h-4" />
                           Last assessed: {new Date(vendor.lastAssessmentAt).toLocaleDateString()}
                         </p>
@@ -208,7 +208,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                   ) : (
                     <div className="text-center py-4">
                       <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                      <p className="text-slate-600 font-medium">Not yet assessed</p>
+                      <p className="text-slate-600 dark:text-steel-300 font-medium">Not yet assessed</p>
                       <button
                         onClick={onStartAssessment}
                         className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
@@ -220,14 +220,14 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                 </div>
 
                 {/* Contact Information */}
-                <div className="bg-white rounded-xl p-5 border border-slate-200">
-                  <h3 className="text-sm font-medium text-slate-500 mb-3">Contact Information</h3>
+                <div className="bg-white dark:bg-midnight-800 rounded-xl p-5 border border-slate-200 dark:border-steel-700">
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 mb-3">Contact Information</h3>
 
                   <div className="space-y-3">
                     {vendor.primaryContactName && (
                       <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-900">{vendor.primaryContactName}</span>
+                        <span className="text-slate-900 dark:text-steel-100">{vendor.primaryContactName}</span>
                       </div>
                     )}
                     {vendor.primaryContactEmail && (
@@ -244,7 +244,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                     {vendor.primaryContactPhone && (
                       <div className="flex items-center gap-3">
                         <Phone className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-900">{vendor.primaryContactPhone}</span>
+                        <span className="text-slate-900 dark:text-steel-100">{vendor.primaryContactPhone}</span>
                       </div>
                     )}
                     {vendor.website && (
@@ -264,13 +264,13 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                   </div>
 
                   {!vendor.primaryContactName && !vendor.primaryContactEmail && !vendor.website && (
-                    <p className="text-slate-400 text-sm">No contact information available</p>
+                    <p className="text-slate-400 dark:text-steel-500 text-sm">No contact information available</p>
                   )}
                 </div>
 
                 {/* Certifications */}
-                <div className="bg-white rounded-xl p-5 border border-slate-200">
-                  <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center gap-2">
+                <div className="bg-white dark:bg-midnight-800 rounded-xl p-5 border border-slate-200 dark:border-steel-700">
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 mb-3 flex items-center gap-2">
                     <Award className="w-4 h-4" />
                     Certifications
                   </h3>
@@ -280,7 +280,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                       {vendor.certifications.map((cert, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-sm font-medium"
                         >
                           <Shield className="w-4 h-4" />
                           {cert}
@@ -288,7 +288,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-slate-400 text-sm">No certifications on file</p>
+                    <p className="text-slate-400 dark:text-steel-500 text-sm">No certifications on file</p>
                   )}
                 </div>
               </div>
@@ -296,8 +296,8 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
               {/* Right Column */}
               <div className="space-y-6">
                 {/* Contract Details */}
-                <div className="bg-white rounded-xl p-5 border border-slate-200">
-                  <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center gap-2">
+                <div className="bg-white dark:bg-midnight-800 rounded-xl p-5 border border-slate-200 dark:border-steel-700">
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 mb-3 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Contract Details
                   </h3>
@@ -305,8 +305,8 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                   <div className="space-y-4">
                     {vendor.contractStartDate && (
                       <div>
-                        <span className="text-xs text-slate-500">Start Date</span>
-                        <p className="text-slate-900 font-medium">
+                        <span className="text-xs text-slate-500 dark:text-steel-400">Start Date</span>
+                        <p className="text-slate-900 dark:text-steel-100 font-medium">
                           {new Date(vendor.contractStartDate).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -318,7 +318,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
 
                     {vendor.contractEndDate && (
                       <div>
-                        <span className="text-xs text-slate-500">End Date</span>
+                        <span className="text-xs text-slate-500 dark:text-steel-400">End Date</span>
                         <p className="text-slate-900 font-medium flex items-center gap-2">
                           {new Date(vendor.contractEndDate).toLocaleDateString('en-US', {
                             year: 'numeric',
@@ -328,8 +328,8 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                           {daysUntilContractEnd !== null && daysUntilContractEnd <= 30 && (
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               daysUntilContractEnd <= 7
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                             }`}>
                               {daysUntilContractEnd <= 0 ? 'Expired' : `${daysUntilContractEnd}d left`}
                             </span>
@@ -340,7 +340,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
 
                     {vendor.contractValue && (
                       <div>
-                        <span className="text-xs text-slate-500">Contract Value</span>
+                        <span className="text-xs text-slate-500 dark:text-steel-400">Contract Value</span>
                         <p className="text-slate-900 font-medium flex items-center gap-1">
                           <DollarSign className="w-4 h-4 text-slate-400" />
                           {vendor.contractValue.toLocaleString('en-US', {
@@ -357,7 +357,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                         <div className={`w-3 h-3 rounded-full ${
                           vendor.autoRenewal ? 'bg-emerald-500' : 'bg-slate-300'
                         }`} />
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 dark:text-steel-300">
                           Auto-renewal {vendor.autoRenewal ? 'enabled' : 'disabled'}
                         </span>
                       </div>
@@ -365,26 +365,26 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
                   </div>
 
                   {!vendor.contractStartDate && !vendor.contractEndDate && (
-                    <p className="text-slate-400 text-sm">No contract details available</p>
+                    <p className="text-slate-400 dark:text-steel-500 text-sm">No contract details available</p>
                   )}
                 </div>
 
                 {/* Next Assessment */}
                 <div className={`rounded-xl p-5 border ${
                   daysUntilAssessment !== null && daysUntilAssessment <= 7
-                    ? 'bg-red-50 border-red-200'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                     : daysUntilAssessment !== null && daysUntilAssessment <= 30
-                    ? 'bg-amber-50 border-amber-200'
-                    : 'bg-white border-slate-200'
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                    : 'bg-white dark:bg-midnight-800 border-slate-200 dark:border-steel-700'
                 }`}>
-                  <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 mb-3 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Assessment Schedule
                   </h3>
 
                   {vendor.nextAssessmentAt ? (
                     <div>
-                      <p className="text-lg font-semibold text-slate-900">
+                      <p className="text-lg font-semibold text-slate-900 dark:text-steel-100">
                         {new Date(vendor.nextAssessmentAt).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
@@ -425,13 +425,13 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
 
                 {/* Compliance Frameworks */}
                 {vendor.complianceFrameworks.length > 0 && (
-                  <div className="bg-white rounded-xl p-5 border border-slate-200">
-                    <h3 className="text-sm font-medium text-slate-500 mb-3">Applicable Frameworks</h3>
+                  <div className="bg-white dark:bg-midnight-800 rounded-xl p-5 border border-slate-200 dark:border-steel-700">
+                    <h3 className="text-sm font-medium text-slate-500 dark:text-steel-400 mb-3">Applicable Frameworks</h3>
                     <div className="flex flex-wrap gap-2">
                       {vendor.complianceFrameworks.map((fw, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium"
+                          className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg text-sm font-medium"
                         >
                           {fw}
                         </span>
@@ -445,10 +445,10 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
 
           {activeTab === 'artifacts' && (
             <div className="space-y-4">
-              <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                <Paperclip className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-lg font-medium text-slate-900 mb-1">Security Artifacts</h3>
-                <p className="text-slate-500 mb-4">
+              <div className="text-center py-12 bg-slate-50 dark:bg-midnight-800 rounded-xl border-2 border-dashed border-slate-200 dark:border-steel-700">
+                <Paperclip className="w-12 h-12 text-slate-300 dark:text-steel-600 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-steel-100 mb-1">Security Artifacts</h3>
+                <p className="text-slate-500 dark:text-steel-400 mb-4">
                   Upload SOC 2 reports, ISO certificates, and other security documents
                 </p>
                 <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
@@ -461,10 +461,10 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
 
           {activeTab === 'history' && (
             <div className="space-y-4">
-              <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200">
-                <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-lg font-medium text-slate-900 mb-1">Assessment History</h3>
-                <p className="text-slate-500">
+              <div className="text-center py-12 bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700">
+                <Clock className="w-12 h-12 text-slate-300 dark:text-steel-600 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-steel-100 mb-1">Assessment History</h3>
+                <p className="text-slate-500 dark:text-steel-400">
                   No previous assessments found for this vendor
                 </p>
               </div>
@@ -473,15 +473,15 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+            className="px-4 py-2 text-slate-600 dark:text-steel-300 hover:text-slate-800 dark:hover:text-steel-100 transition-colors"
           >
             Close
           </button>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-white transition-colors flex items-center gap-2">
+            <button className="px-4 py-2 border border-slate-200 dark:border-steel-600 rounded-lg text-slate-700 dark:text-steel-300 hover:bg-white dark:hover:bg-steel-800 transition-colors flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Export Report
             </button>

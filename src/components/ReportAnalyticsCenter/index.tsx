@@ -267,15 +267,15 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] -mx-6 -mt-6 px-6 py-6">
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-midnight-950 -mx-6 -mt-6 px-6 py-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-steel-100">
               Report & Analytics Center
             </h1>
-            <p className="text-slate-600 mt-1">
+            <p className="text-slate-600 dark:text-steel-400 mt-1">
               Generate, manage, and analyze compliance reports
             </p>
           </div>
@@ -298,9 +298,9 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
 
         {/* Report Categories - Span 8 columns */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-indigo-500" />
                 Artifact Repository
               </h2>
@@ -329,8 +329,8 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                   className={`
                     relative p-5 rounded-xl border-2 text-left transition-all duration-200
                     ${selectedCategory === category.id
-                      ? 'border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/10'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-lg shadow-indigo-500/10'
+                      : 'border-slate-200 dark:border-steel-600 bg-white dark:bg-midnight-800 hover:border-slate-300 dark:hover:border-steel-500 hover:shadow-md'
                     }
                   `}
                 >
@@ -341,19 +341,19 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                     {category.icon}
                   </div>
 
-                  <h3 className="font-semibold text-slate-900 mb-1">
+                  <h3 className="font-semibold text-slate-900 dark:text-steel-100 mb-1">
                     {category.title}
                   </h3>
-                  <p className="text-sm text-slate-500 line-clamp-2">
+                  <p className="text-sm text-slate-500 dark:text-steel-400 line-clamp-2">
                     {category.description}
                   </p>
 
                   {/* Report count badge */}
                   <div className="absolute top-4 right-4 flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-slate-400">
+                    <span className="text-sm font-medium text-slate-400 dark:text-steel-500">
                       {category.reportCount}
                     </span>
-                    <FileText className="w-4 h-4 text-slate-400" />
+                    <FileText className="w-4 h-4 text-slate-400 dark:text-steel-500" />
                   </div>
 
                   {/* Generate button */}
@@ -367,8 +367,8 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                       mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg
                       text-sm font-medium transition-all
                       ${isGenerating === category.id
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        ? 'bg-slate-100 dark:bg-steel-700 text-slate-400 dark:text-steel-500 cursor-not-allowed'
+                        : 'bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-300 hover:bg-slate-200 dark:hover:bg-steel-600'
                       }
                     `}
                   >
@@ -394,9 +394,9 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
             </div>
 
             {/* Recent Reports List */}
-            <div className="border-t border-slate-200 pt-6">
+            <div className="border-t border-slate-200 dark:border-steel-700 pt-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-slate-900">
+                <h3 className="font-medium text-slate-900 dark:text-steel-100">
                   {selectedCategory
                     ? `${categoriesWithCounts.find(c => c.id === selectedCategory)?.title} Reports`
                     : 'Recent Reports'
@@ -412,14 +412,14 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                       placeholder="Search reports..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-lg text-slate-900 dark:text-steel-100 placeholder:text-slate-400 dark:placeholder:text-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
 
                   <select
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)}
-                    className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-2 text-sm bg-slate-50 dark:bg-midnight-800 border border-slate-200 dark:border-steel-600 rounded-lg text-slate-900 dark:text-steel-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="all">All Time</option>
                     <option value="7d">Last 7 Days</option>
@@ -439,7 +439,7 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                      className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-midnight-800 rounded-xl hover:bg-slate-100 dark:hover:bg-steel-800 transition-colors group"
                     >
                       {/* Icon */}
                       <div
@@ -454,7 +454,7 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-slate-900 truncate">
+                          <h4 className="font-medium text-slate-900 dark:text-steel-100 truncate">
                             {report.title}
                           </h4>
                           {report.frameworkId && (
@@ -471,16 +471,16 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                           <span className={`
                             px-2 py-0.5 text-xs font-medium rounded
                             ${report.status === 'final'
-                              ? 'bg-emerald-100 text-emerald-700'
+                              ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                               : report.status === 'draft'
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-slate-100 text-slate-600'
+                              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                              : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300'
                             }
                           `}>
                             {report.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                        <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 dark:text-steel-400">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
                             {new Date(report.generatedAt).toLocaleDateString()}
@@ -497,13 +497,13 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setPreviewReport(report)}
-                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-500 dark:text-steel-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                           title="Preview"
                         >
                           <Eye className="w-5 h-5" />
                         </button>
                         <button
-                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-500 dark:text-steel-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                           title="Download"
                         >
                           <Download className="w-5 h-5" />
@@ -514,8 +514,8 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                 </AnimatePresence>
 
                 {filteredReports.length === 0 && (
-                  <div className="text-center py-12 text-slate-500">
-                    <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <div className="text-center py-12 text-slate-500 dark:text-steel-400">
+                    <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-steel-600" />
                     <p className="font-medium">No reports found</p>
                     <p className="text-sm">Generate a new report or adjust your filters</p>
                   </div>
@@ -540,20 +540,20 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
           <RiskHeatmap compliance={compliance} />
 
           {/* Quick Stats */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+          <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6">
+            <h3 className="font-semibold text-slate-900 dark:text-steel-100 mb-4 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-indigo-500" />
               Report Statistics
             </h3>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Total Reports</span>
-                <span className="font-semibold text-slate-900">{reports.length}</span>
+                <span className="text-slate-600 dark:text-steel-400">Total Reports</span>
+                <span className="font-semibold text-slate-900 dark:text-steel-100">{reports.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Generated This Month</span>
-                <span className="font-semibold text-slate-900">
+                <span className="text-slate-600 dark:text-steel-400">Generated This Month</span>
+                <span className="font-semibold text-slate-900 dark:text-steel-100">
                   {reports.filter(r => {
                     const date = new Date(r.generatedAt);
                     const now = new Date();
@@ -563,14 +563,14 @@ const ReportAnalyticsCenter: React.FC<ReportAnalyticsCenterProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Active Frameworks</span>
-                <span className="font-semibold text-slate-900">
+                <span className="text-slate-600 dark:text-steel-400">Active Frameworks</span>
+                <span className="font-semibold text-slate-900 dark:text-steel-100">
                   {compliance.frameworkProgress.length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Last Generated</span>
-                <span className="font-semibold text-slate-900">
+                <span className="text-slate-600 dark:text-steel-400">Last Generated</span>
+                <span className="font-semibold text-slate-900 dark:text-steel-100">
                   {reports.length > 0
                     ? new Date(reports[0].generatedAt).toLocaleDateString()
                     : 'N/A'

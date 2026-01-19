@@ -477,13 +477,13 @@ const QuestionnaireCenter: React.FC<QuestionnaireCenterProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-steel-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
               <Brain className="w-5 h-5 text-white" />
             </div>
             Security Questionnaire Automation Center
           </h2>
-          <p className="text-slate-500 mt-1">
+          <p className="text-slate-500 dark:text-steel-400 mt-1">
             AI-powered questionnaire response with intelligent control mapping
           </p>
         </div>
@@ -492,29 +492,29 @@ const QuestionnaireCenter: React.FC<QuestionnaireCenterProps> = ({
         {parsedQuestions.length > 0 && (
           <div className="flex items-center gap-4">
             <div className="text-center px-4">
-              <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-              <p className="text-xs text-slate-500">Total</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-steel-100">{stats.total}</p>
+              <p className="text-xs text-slate-500 dark:text-steel-400">Total</p>
             </div>
-            <div className="text-center px-4 border-l border-slate-200">
+            <div className="text-center px-4 border-l border-slate-200 dark:border-steel-700">
               <p className="text-2xl font-bold text-emerald-600">{stats.approved}</p>
-              <p className="text-xs text-slate-500">Approved</p>
+              <p className="text-xs text-slate-500 dark:text-steel-400">Approved</p>
             </div>
-            <div className="text-center px-4 border-l border-slate-200">
+            <div className="text-center px-4 border-l border-slate-200 dark:border-steel-700">
               <p className="text-2xl font-bold text-amber-600">{stats.lowConfidence}</p>
-              <p className="text-xs text-slate-500">Review Needed</p>
+              <p className="text-xs text-slate-500 dark:text-steel-400">Review Needed</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-steel-700 pb-2">
         <button
           onClick={() => setViewMode('upload')}
           className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
             viewMode === 'upload'
-              ? 'bg-violet-100 text-violet-700'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
+              : 'text-slate-600 dark:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-800'
           }`}
         >
           <Upload className="w-4 h-4 inline-block mr-2" />
@@ -525,16 +525,16 @@ const QuestionnaireCenter: React.FC<QuestionnaireCenterProps> = ({
           disabled={parsedQuestions.length === 0}
           className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
             viewMode === 'review'
-              ? 'bg-violet-100 text-violet-700'
+              ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
               : parsedQuestions.length === 0
-              ? 'text-slate-400 cursor-not-allowed'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'text-slate-400 dark:text-steel-500 cursor-not-allowed'
+              : 'text-slate-600 dark:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-800'
           }`}
         >
           <Eye className="w-4 h-4 inline-block mr-2" />
           Review Answers
           {parsedQuestions.length > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-slate-200 rounded-full text-xs">
+            <span className="ml-2 px-2 py-0.5 bg-slate-200 dark:bg-steel-700 rounded-full text-xs">
               {parsedQuestions.length}
             </span>
           )}
@@ -543,8 +543,8 @@ const QuestionnaireCenter: React.FC<QuestionnaireCenterProps> = ({
           onClick={() => setViewMode('library')}
           className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
             viewMode === 'library'
-              ? 'bg-violet-100 text-violet-700'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
+              : 'text-slate-600 dark:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-800'
           }`}
         >
           <BookOpen className="w-4 h-4 inline-block mr-2" />
@@ -554,8 +554,8 @@ const QuestionnaireCenter: React.FC<QuestionnaireCenterProps> = ({
           onClick={() => setViewMode('knowledge')}
           className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
             viewMode === 'knowledge'
-              ? 'bg-violet-100 text-violet-700'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
+              : 'text-slate-600 dark:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-800'
           }`}
         >
           <Database className="w-4 h-4 inline-block mr-2" />

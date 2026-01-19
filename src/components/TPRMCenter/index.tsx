@@ -248,13 +248,13 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-3">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-steel-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white">
               <ShoppingBag className="w-5 h-5" />
             </div>
             Third-Party Risk Management
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-slate-500 dark:text-steel-400 mt-1">
             Centralized vendor oversight with automated risk assessment
           </p>
         </div>
@@ -282,72 +282,72 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-3 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
               <Building2 className="w-5 h-5 text-indigo-600" />
             </div>
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
               +12%
             </span>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{dashboard?.totalVendors || 0}</div>
-          <div className="text-sm text-slate-500">Total Vendors</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-steel-100">{dashboard?.totalVendors || 0}</div>
+          <div className="text-sm text-slate-500 dark:text-steel-400">Total Vendors</div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-3 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{dashboard?.byStatus.active || 0}</div>
-          <div className="text-sm text-slate-500">Active Vendors</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-steel-100">{dashboard?.byStatus.active || 0}</div>
+          <div className="text-sm text-slate-500 dark:text-steel-400">Active Vendors</div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-3 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
             </div>
             {(dashboard?.assessmentsDue || 0) > 0 && (
-              <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded-full">
                 Action Required
               </span>
             )}
           </div>
-          <div className="text-3xl font-bold text-slate-900">{dashboard?.assessmentsDue || 0}</div>
-          <div className="text-sm text-slate-500">Assessments Due</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-steel-100">{dashboard?.assessmentsDue || 0}</div>
+          <div className="text-sm text-slate-500 dark:text-steel-400">Assessments Due</div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-3 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-red-600" />
             </div>
             {(dashboard?.contractsExpiring || 0) > 0 && (
               <Bell className="w-4 h-4 text-red-500 animate-pulse" />
             )}
           </div>
-          <div className="text-3xl font-bold text-slate-900">{dashboard?.contractsExpiring || 0}</div>
-          <div className="text-sm text-slate-500">Contracts Expiring</div>
+          <div className="text-3xl font-bold text-slate-900 dark:text-steel-100">{dashboard?.contractsExpiring || 0}</div>
+          <div className="text-sm text-slate-500 dark:text-steel-400">Contracts Expiring</div>
         </motion.div>
 
         {/* Vendor Health Map - Large Card */}
@@ -368,21 +368,21 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-4 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center gap-2 mb-4">
             <Shield className="w-5 h-5 text-indigo-500" />
-            <h3 className="font-semibold text-slate-900">Compliance Coverage</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-steel-100">Compliance Coverage</h3>
           </div>
 
           <div className="space-y-4">
             {/* SOC 2 */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-slate-700">SOC 2 Certified</span>
-                <span className="text-sm font-semibold text-indigo-600">{complianceCoverage.soc2}%</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-steel-300">SOC 2 Certified</span>
+                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{complianceCoverage.soc2}%</span>
               </div>
-              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${complianceCoverage.soc2}%` }}
@@ -390,7 +390,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                   className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">
                 {complianceCoverage.withSOC2} of {vendors.length} vendors
               </p>
             </div>
@@ -398,10 +398,10 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
             {/* ISO 27001 */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-slate-700">ISO 27001</span>
-                <span className="text-sm font-semibold text-emerald-600">{complianceCoverage.iso}%</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-steel-300">ISO 27001</span>
+                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{complianceCoverage.iso}%</span>
               </div>
-              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${complianceCoverage.iso}%` }}
@@ -409,7 +409,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                   className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">
                 {complianceCoverage.withISO} of {vendors.length} vendors
               </p>
             </div>
@@ -421,14 +421,14 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-4 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-500" />
-              <h3 className="font-semibold text-slate-900">Upcoming Reviews</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-steel-100">Upcoming Reviews</h3>
             </div>
-            <span className="text-xs font-medium text-slate-500">Next 30 days</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-steel-400">Next 30 days</span>
           </div>
 
           {upcomingReviews.length > 0 ? (
@@ -441,7 +441,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                   <div
                     key={vendor.id}
                     onClick={() => setSelectedVendor(vendor)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-steel-800/50 hover:bg-slate-100 dark:hover:bg-steel-800 cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -456,16 +456,16 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                         />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-900">{vendor.name}</p>
-                        <p className="text-xs text-slate-500">{CATEGORY_LABELS[vendor.category]}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-steel-100">{vendor.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-steel-400">{CATEGORY_LABELS[vendor.category]}</p>
                       </div>
                     </div>
                     <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                       daysUntil <= 7
-                        ? 'bg-red-100 text-red-700'
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                         : daysUntil <= 14
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                        : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300'
                     }`}>
                       {daysUntil}d
                     </span>
@@ -474,7 +474,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
               })}
             </div>
           ) : (
-            <div className="text-center py-6 text-slate-400">
+            <div className="text-center py-6 text-slate-400 dark:text-steel-500">
               <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No reviews scheduled</p>
             </div>
@@ -486,11 +486,11 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+          className="col-span-4 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-5"
         >
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-indigo-500" />
-            <h3 className="font-semibold text-slate-900">Risk Distribution</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-steel-100">Risk Distribution</h3>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -570,13 +570,13 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          className="col-span-12 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+          className="col-span-12 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm overflow-hidden"
         >
           {/* Table Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700">
             <div className="flex items-center gap-4">
-              <h3 className="font-semibold text-slate-900">Vendor Directory</h3>
-              <span className="text-sm text-slate-500">
+              <h3 className="font-semibold text-slate-900 dark:text-steel-100">Vendor Directory</h3>
+              <span className="text-sm text-slate-500 dark:text-steel-400">
                 {filteredVendors.length} vendor{filteredVendors.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -590,7 +590,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search vendors..."
-                  className="pl-9 pr-4 py-2 w-64 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="pl-9 pr-4 py-2 w-64 text-sm border border-slate-200 dark:border-steel-600 rounded-lg bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 placeholder:text-slate-400 dark:placeholder:text-steel-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
 
@@ -598,7 +598,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
               {filterCriticality && (
                 <button
                   onClick={() => setFilterCriticality(null)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-50"
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-600 hover:bg-slate-50 dark:hover:bg-steel-800"
                 >
                   <span style={{ color: CRITICALITY_CONFIG[filterCriticality].color }}>
                     {CRITICALITY_CONFIG[filterCriticality].label}
@@ -609,7 +609,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
 
               <button
                 onClick={() => loadData()}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -619,24 +619,24 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-slate-50 dark:bg-midnight-800 border-b border-slate-200 dark:border-steel-700">
                 <tr>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">
                     Vendor
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">
                     Criticality
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">
                     Risk Score
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-steel-400 uppercase tracking-wider">
                     Certifications
                   </th>
                   <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -644,14 +644,14 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-steel-700">
                 {filteredVendors.map((vendor, idx) => (
                   <motion.tr
                     key={vendor.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.02 }}
-                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="hover:bg-slate-50 dark:hover:bg-steel-800/50 transition-colors cursor-pointer"
                     onClick={() => setSelectedVendor(vendor)}
                   >
                     <td className="px-6 py-4">
@@ -666,9 +666,9 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                           />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900">{vendor.name}</p>
+                          <p className="font-medium text-slate-900 dark:text-steel-100">{vendor.name}</p>
                           {vendor.website && (
-                            <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <p className="text-xs text-slate-500 dark:text-steel-400 flex items-center gap-1">
                               <ExternalLink className="w-3 h-3" />
                               {vendor.website.replace(/^https?:\/\//, '').split('/')[0]}
                             </p>
@@ -677,7 +677,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-slate-600">
+                      <span className="text-sm text-slate-600 dark:text-steel-300">
                         {CATEGORY_LABELS[vendor.category]}
                       </span>
                     </td>
@@ -695,7 +695,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                     <td className="px-6 py-4">
                       {vendor.riskScore !== undefined ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="w-16 h-2 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${
                                 vendor.riskScore >= 75 ? 'bg-red-500' :
@@ -714,7 +714,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-slate-400">Not assessed</span>
+                        <span className="text-sm text-slate-400 dark:text-steel-500">Not assessed</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -734,19 +734,19 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                         {vendor.certifications.slice(0, 2).map((cert, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs"
                           >
                             <Award className="w-3 h-3" />
                             {cert.length > 10 ? cert.substring(0, 10) + '...' : cert}
                           </span>
                         ))}
                         {vendor.certifications.length > 2 && (
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-400 dark:text-steel-500">
                             +{vendor.certifications.length - 2}
                           </span>
                         )}
                         {vendor.certifications.length === 0 && (
-                          <span className="text-xs text-slate-400">None</span>
+                          <span className="text-xs text-slate-400 dark:text-steel-500">None</span>
                         )}
                       </div>
                     </td>
@@ -754,14 +754,14 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
                       <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleStartQuestionnaire(vendor)}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 dark:text-steel-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                           title="Risk Assessment"
                         >
                           <FileText className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setSelectedVendor(vendor)}
-                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -775,9 +775,9 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
 
             {filteredVendors.length === 0 && (
               <div className="text-center py-12">
-                <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No vendors found</h3>
-                <p className="text-slate-500 mb-4">
+                <Building2 className="w-12 h-12 text-slate-300 dark:text-steel-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-steel-100 mb-2">No vendors found</h3>
+                <p className="text-slate-500 dark:text-steel-400 mb-4">
                   {searchTerm || filterCriticality
                     ? 'Try adjusting your search or filters'
                     : 'Get started by adding your first vendor'}

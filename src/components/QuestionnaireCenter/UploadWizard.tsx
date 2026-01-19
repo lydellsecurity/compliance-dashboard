@@ -283,7 +283,7 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
             className={`relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all ${
               isDragOver
                 ? 'border-violet-500 bg-violet-50'
-                : 'border-slate-300 bg-white hover:border-violet-400 hover:bg-violet-50/50'
+                : 'border-slate-300 dark:border-steel-600 bg-white dark:bg-midnight-900 hover:border-violet-400 hover:bg-violet-50/50'
             }`}
           >
             <input
@@ -297,7 +297,7 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
             {isProcessing ? (
               <div>
                 <Loader2 className="w-16 h-16 text-violet-500 mx-auto mb-4 animate-spin" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Processing File...</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 dark:text-steel-100 mb-2">Processing File...</h3>
                 <p className="text-slate-500">Parsing questionnaire data</p>
               </div>
             ) : (
@@ -305,13 +305,13 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
                   <FileSpreadsheet className="w-10 h-10 text-violet-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 dark:text-steel-100 mb-2">
                   Upload Security Questionnaire
                 </h3>
-                <p className="text-slate-500 mb-4">
+                <p className="text-slate-500 dark:text-steel-400 mb-4">
                   Drag & drop your Excel or CSV file, or click to browse
                 </p>
-                <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
+                <div className="flex items-center justify-center gap-4 text-sm text-slate-400 dark:text-steel-500">
                   <span className="flex items-center gap-1">
                     <FileText className="w-4 h-4" />
                     .csv
@@ -338,36 +338,36 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
 
           {/* Supported Formats */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 </div>
-                <h4 className="font-medium text-slate-900">SIG / SIG Lite</h4>
+                <h4 className="font-medium text-slate-900 dark:text-steel-100">SIG / SIG Lite</h4>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-steel-400">
                 Standardized Information Gathering questionnaires
               </p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-blue-600" />
                 </div>
-                <h4 className="font-medium text-slate-900">CAIQ / VSA</h4>
+                <h4 className="font-medium text-slate-900 dark:text-steel-100">CAIQ / VSA</h4>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-steel-400">
                 Cloud security and vendor assessment formats
               </p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-violet-600" />
                 </div>
-                <h4 className="font-medium text-slate-900">Custom Formats</h4>
+                <h4 className="font-medium text-slate-900 dark:text-steel-100">Custom Formats</h4>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-steel-400">
                 Any spreadsheet with question columns
               </p>
             </div>
@@ -380,24 +380,24 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+          className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-700">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
                 <Settings className="w-5 h-5 text-violet-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Configure Column Mapping</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-semibold text-slate-900 dark:text-steel-100">Configure Column Mapping</h3>
+                <p className="text-sm text-slate-500 dark:text-steel-400">
                   {file?.name} • {parsedRows.length} rows detected
                 </p>
               </div>
             </div>
             <button
               onClick={resetWizard}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-300 hover:bg-slate-100 dark:bg-steel-700 dark:hover:bg-steel-700 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -414,7 +414,7 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
                 onChange={e => setHasHeaderRow(e.target.checked)}
                 className="w-4 h-4 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
               />
-              <label htmlFor="hasHeader" className="text-sm text-slate-700">
+              <label htmlFor="hasHeader" className="text-sm text-slate-700 dark:text-steel-300">
                 First row contains column headers
               </label>
             </div>
@@ -422,13 +422,13 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
             {/* Column Selectors */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">
                   Question Column <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={columnMapping.question}
                   onChange={e => setColumnMapping(prev => ({ ...prev, question: parseInt(e.target.value) }))}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100"
                 >
                   {headers.map((header, idx) => (
                     <option key={idx} value={idx}>
@@ -439,7 +439,7 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1.5">
                   Category Column (Optional)
                 </label>
                 <select
@@ -448,7 +448,7 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
                     ...prev,
                     category: e.target.value ? parseInt(e.target.value) : undefined,
                   }))}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-steel-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100"
                 >
                   <option value="">None</option>
                   {headers.map((header, idx) => (
@@ -462,31 +462,31 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
 
             {/* Preview */}
             <div>
-              <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-slate-700 dark:text-steel-300 mb-2 flex items-center gap-2">
                 <Eye className="w-4 h-4" />
                 Preview (First 5 Questions)
               </h4>
-              <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+              <div className="bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-100">
-                      <th className="px-4 py-2 text-left text-slate-600 font-medium">Row</th>
+                    <tr className="bg-slate-100 dark:bg-steel-700">
+                      <th className="px-4 py-2 text-left text-slate-600 dark:text-steel-300 font-medium">Row</th>
                       {columnMapping.category !== undefined && (
-                        <th className="px-4 py-2 text-left text-slate-600 font-medium">Category</th>
+                        <th className="px-4 py-2 text-left text-slate-600 dark:text-steel-300 font-medium">Category</th>
                       )}
-                      <th className="px-4 py-2 text-left text-slate-600 font-medium">Question</th>
+                      <th className="px-4 py-2 text-left text-slate-600 dark:text-steel-300 font-medium">Question</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-200 dark:divide-steel-700">
                     {parsedRows.slice(0, 5).map(row => (
-                      <tr key={row.rowNumber} className="hover:bg-white">
-                        <td className="px-4 py-2 text-slate-500">{row.rowNumber}</td>
+                      <tr key={row.rowNumber} className="hover:bg-white dark:hover:bg-midnight-900">
+                        <td className="px-4 py-2 text-slate-500 dark:text-steel-400">{row.rowNumber}</td>
                         {columnMapping.category !== undefined && (
-                          <td className="px-4 py-2 text-slate-700">
+                          <td className="px-4 py-2 text-slate-700 dark:text-steel-300">
                             {row.values[columnMapping.category] || '-'}
                           </td>
                         )}
-                        <td className="px-4 py-2 text-slate-900">
+                        <td className="px-4 py-2 text-slate-900 dark:text-steel-100">
                           {row.values[columnMapping.question] || '-'}
                         </td>
                       </tr>
@@ -498,10 +498,10 @@ const UploadWizard: React.FC<UploadWizardProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-midnight-800 border-t border-slate-200 dark:border-steel-700">
             <button
               onClick={resetWizard}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+              className="px-4 py-2 text-slate-600 dark:text-steel-300 hover:text-slate-800 dark:hover:text-steel-100 transition-colors"
             >
               Cancel
             </button>

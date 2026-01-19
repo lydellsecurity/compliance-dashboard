@@ -168,7 +168,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
             value={searchTerm}
             onChange={e => onSearchChange(e.target.value)}
             placeholder="Search questions..."
-            className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 dark:border-steel-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 dark:text-steel-100"
           />
         </div>
 
@@ -179,7 +179,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
             className={`px-3 py-2 border rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${
               showFilters
                 ? 'bg-violet-50 border-violet-200 text-violet-700'
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                : 'bg-white dark:bg-midnight-900 border-slate-200 dark:border-steel-700 text-slate-600 dark:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-800 dark:hover:bg-steel-800'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -214,17 +214,17 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-slate-50 rounded-xl border border-slate-200 p-4"
+            className="bg-slate-50 dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 p-4"
           >
             <div className="flex items-center gap-6">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                <label className="block text-xs font-medium text-slate-500 dark:text-steel-400 dark:text-steel-400 mb-1.5">
                   Confidence
                 </label>
                 <select
                   value={filterConfidence}
                   onChange={e => onFilterConfidenceChange(e.target.value as AnswerConfidence | 'all')}
-                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-sm border border-slate-200 dark:border-steel-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 dark:text-steel-100"
                 >
                   <option value="all">All Confidence</option>
                   <option value="high">High Only</option>
@@ -234,13 +234,13 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                <label className="block text-xs font-medium text-slate-500 dark:text-steel-400 dark:text-steel-400 mb-1.5">
                   Status
                 </label>
                 <select
                   value={filterStatus}
                   onChange={e => onFilterStatusChange(e.target.value as ParsedQuestion['status'] | 'all')}
-                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-sm border border-slate-200 dark:border-steel-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 dark:text-steel-100"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -253,7 +253,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
 
               {/* Quick Stats */}
               <div className="flex items-center gap-4 ml-auto text-sm">
-                <span className="text-slate-500">
+                <span className="text-slate-500 dark:text-steel-400">
                   {stats.pending} pending
                 </span>
                 <span className="text-violet-600">
@@ -277,10 +277,10 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
       {/* Dual Pane Layout */}
       <div className="grid grid-cols-12 gap-6">
         {/* Left Pane: Question List */}
-        <div className="col-span-5 bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-            <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4 text-slate-500" />
+        <div className="col-span-5 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
+            <h3 className="font-semibold text-slate-900 dark:text-steel-100 text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4 text-slate-500 dark:text-steel-400" />
               Questions ({questions.length})
             </h3>
           </div>
@@ -289,10 +289,10 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
             {questions.length === 0 ? (
               <div className="py-12 text-center">
                 <Search className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500">No questions match your filters</p>
+                <p className="text-slate-500 dark:text-steel-400">No questions match your filters</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-steel-700">
                 {questions.map(question => {
                   const isSelected = question.id === selectedQuestionId;
                   const statusConfig = STATUS_CONFIG[question.status];
@@ -310,16 +310,16 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                           ? 'bg-violet-50 border-l-2 border-l-violet-500'
                           : isLowConfidence
                           ? 'bg-amber-50/50 hover:bg-amber-50 border-l-2 border-l-amber-400'
-                          : 'hover:bg-slate-50'
+                          : 'hover:bg-slate-50 dark:hover:bg-steel-800'
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <span className="text-xs text-slate-400 font-mono mt-0.5">
+                        <span className="text-xs text-slate-400 dark:text-steel-500 font-mono mt-0.5">
                           #{question.rowNumber}
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm line-clamp-2 ${
-                            isSelected ? 'text-violet-900' : 'text-slate-900'
+                            isSelected ? 'text-violet-900' : 'text-slate-900 dark:text-steel-100'
                           }`}>
                             {question.originalQuestion}
                           </p>
@@ -346,7 +346,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                               </span>
                             )}
                             {question.category && (
-                              <span className="text-xs text-slate-400 truncate">
+                              <span className="text-xs text-slate-400 dark:text-steel-500 truncate">
                                 {question.category}
                               </span>
                             )}
@@ -371,10 +371,10 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
               key={selectedQuestion.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+              className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 overflow-hidden"
             >
               {/* Header */}
-              <div className="px-6 py-4 border-b border-slate-200">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-steel-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
@@ -394,7 +394,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900">
+                      <h3 className="font-semibold text-slate-900 dark:text-steel-100 dark:text-steel-100">
                         Question #{selectedQuestion.rowNumber}
                       </h3>
                       {selectedQuestion.aiConfidence && (
@@ -425,21 +425,21 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
               )}
 
               {/* Original Question */}
-              <div className="px-6 py-4 border-b border-slate-100">
-                <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-steel-700">
+                <h4 className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wider mb-2">
                   Original Question
                 </h4>
-                <p className="text-slate-900">{selectedQuestion.originalQuestion}</p>
+                <p className="text-slate-900 dark:text-steel-100">{selectedQuestion.originalQuestion}</p>
                 {selectedQuestion.category && (
-                  <span className="inline-block mt-2 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">
+                  <span className="inline-block mt-2 px-2 py-0.5 bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300 rounded text-xs">
                     {selectedQuestion.category}
                   </span>
                 )}
               </div>
 
               {/* AI Suggested Answer */}
-              <div className="px-6 py-4 border-b border-slate-100">
-                <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-steel-700">
+                <h4 className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Sparkles className="w-3.5 h-3.5" />
                   AI Suggested Answer
                 </h4>
@@ -450,7 +450,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                       value={editedAnswer}
                       onChange={e => setEditedAnswer(e.target.value)}
                       rows={4}
-                      className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                      className="w-full p-3 border border-slate-200 dark:border-steel-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100"
                       placeholder="Enter your answer..."
                     />
                     <input
@@ -458,7 +458,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                       value={editedNotes}
                       onChange={e => setEditedNotes(e.target.value)}
                       placeholder="Add notes (optional)"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-steel-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100"
                     />
                     <div className="flex items-center gap-2">
                       <button
@@ -470,7 +470,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors text-sm"
+                        className="px-4 py-2 text-slate-600 dark:text-steel-300 hover:text-slate-800 dark:hover:text-steel-100 transition-colors text-sm"
                       >
                         Cancel
                       </button>
@@ -479,10 +479,10 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                 ) : (
                   <div>
                     {selectedQuestion.status === 'pending' ? (
-                      <div className="bg-slate-50 rounded-xl p-6 text-center">
+                      <div className="bg-slate-50 dark:bg-midnight-800 rounded-xl p-6 text-center">
                         <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                        <p className="text-slate-500">No AI answer yet</p>
-                        <p className="text-sm text-slate-400 mt-1">
+                        <p className="text-slate-500 dark:text-steel-400">No AI answer yet</p>
+                        <p className="text-sm text-slate-400 dark:text-steel-500 mt-1">
                           Click &quot;Generate AI Answers&quot; to process
                         </p>
                       </div>
@@ -503,11 +503,11 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                             : 'bg-violet-50 border border-violet-200'
                         }`}
                       >
-                        <p className="text-slate-900 whitespace-pre-wrap">
+                        <p className="text-slate-900 dark:text-steel-100 whitespace-pre-wrap">
                           {selectedQuestion.userAnswer || selectedQuestion.aiAnswer}
                         </p>
                         {selectedQuestion.userNotes && (
-                          <p className="text-sm text-slate-500 mt-2 pt-2 border-t border-slate-200">
+                          <p className="text-sm text-slate-500 dark:text-steel-400 mt-2 pt-2 border-t border-slate-200">
                             <strong>Notes:</strong> {selectedQuestion.userNotes}
                           </p>
                         )}
@@ -519,19 +519,19 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
 
               {/* AI Reasoning */}
               {selectedQuestion.aiReasoning && !isEditing && (
-                <div className="px-6 py-4 border-b border-slate-100">
-                  <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-steel-700">
+                  <h4 className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <Lightbulb className="w-3.5 h-3.5" />
                     AI Reasoning
                   </h4>
-                  <p className="text-sm text-slate-600">{selectedQuestion.aiReasoning}</p>
+                  <p className="text-sm text-slate-600 dark:text-steel-300">{selectedQuestion.aiReasoning}</p>
                 </div>
               )}
 
               {/* Related Controls */}
               {relatedControls.length > 0 && !isEditing && (
-                <div className="px-6 py-4 border-b border-slate-100">
-                  <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-steel-700">
+                  <h4 className="text-xs font-medium text-slate-500 dark:text-steel-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Shield className="w-3.5 h-3.5" />
                     Source Controls ({relatedControls.length})
                   </h4>
@@ -545,7 +545,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                       return (
                         <div
                           key={idx}
-                          className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg"
+                          className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-midnight-800 rounded-lg"
                         >
                           <div
                             className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -567,10 +567,10 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900">
+                            <p className="text-sm font-medium text-slate-900 dark:text-steel-100 dark:text-steel-100">
                               {control.title}
                             </p>
-                            <p className="text-xs text-slate-500">{control.id}</p>
+                            <p className="text-xs text-slate-500 dark:text-steel-400 dark:text-steel-400">{control.id}</p>
                           </div>
                           <span
                             className={`px-2 py-0.5 rounded text-xs ${
@@ -578,7 +578,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : isPartial
                                 ? 'bg-amber-100 text-amber-700'
-                                : 'bg-slate-100 text-slate-600'
+                                : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300'
                             }`}
                           >
                             {isCompliant ? 'Compliant' : isPartial ? 'Partial' : 'Not Assessed'}
@@ -594,7 +594,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
               {selectedQuestion.status !== 'pending' &&
                 selectedQuestion.status !== 'generating' &&
                 !isEditing && (
-                  <div className="px-6 py-4 bg-slate-50">
+                  <div className="px-6 py-4 bg-slate-50 dark:bg-midnight-800">
                     <div className="flex items-center gap-3">
                       {selectedQuestion.status !== 'approved' && (
                         <button
@@ -608,7 +608,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
 
                       <button
                         onClick={handleStartEdit}
-                        className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-steel-800 transition-colors flex items-center justify-center gap-2"
                       >
                         <Edit3 className="w-4 h-4" />
                         Edit
@@ -624,7 +624,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                       )}
 
                       <button
-                        className="px-4 py-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                        className="px-4 py-2.5 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-300 hover:bg-slate-100 dark:hover:bg-steel-700 rounded-xl transition-colors"
                         title="Copy answer"
                       >
                         <Copy className="w-4 h-4" />
@@ -641,12 +641,12 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
                 )}
             </motion.div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 p-12 text-center">
               <Eye className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 dark:text-steel-100 mb-2">
                 Select a Question
               </h3>
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-steel-400">
                 Click on a question from the left panel to review the AI suggestion
               </p>
             </div>

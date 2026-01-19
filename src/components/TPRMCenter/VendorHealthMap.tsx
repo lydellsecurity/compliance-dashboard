@@ -55,12 +55,12 @@ const VendorHealthMap: React.FC<VendorHealthMapProps> = ({ vendors, onVendorClic
 
   if (vendors.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 h-full">
+      <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6 h-full">
         <div className="flex items-center gap-2 mb-4">
           <Activity className="w-5 h-5 text-indigo-500" />
-          <h3 className="font-semibold text-slate-900">Vendor Health Map</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-steel-100">Vendor Health Map</h3>
         </div>
-        <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+        <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-steel-500">
           <MapPin className="w-12 h-12 mb-3 opacity-50" />
           <p>No vendors to display</p>
           <p className="text-sm">Add vendors to see the health map</p>
@@ -70,21 +70,21 @@ const VendorHealthMap: React.FC<VendorHealthMapProps> = ({ vendors, onVendorClic
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 h-full">
+    <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6 h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-indigo-500" />
-          <h3 className="font-semibold text-slate-900">Vendor Health Map</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-steel-100">Vendor Health Map</h3>
         </div>
         <div className="flex items-center gap-4">
           {needsAttention > 0 && (
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm font-medium">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium">
               <AlertTriangle className="w-4 h-4" />
               {needsAttention} need attention
             </span>
           )}
-          <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+          <button className="p-1.5 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800 transition-colors">
             <Info className="w-4 h-4" />
           </button>
         </div>
@@ -105,7 +105,7 @@ const VendorHealthMap: React.FC<VendorHealthMapProps> = ({ vendors, onVendorClic
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: config.color }}
                 />
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-sm font-medium text-slate-700 dark:text-steel-300">
                   {config.label} Risk ({vendorList.length})
                 </span>
               </div>
@@ -180,8 +180,8 @@ const VendorHealthMap: React.FC<VendorHealthMapProps> = ({ vendors, onVendorClic
       </div>
 
       {/* Legend */}
-      <div className="mt-6 pt-4 border-t border-slate-200">
-        <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-6 pt-4 border-t border-slate-200 dark:border-steel-700">
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-steel-400">
           <div className="flex items-center gap-4">
             <span>Risk Score:</span>
             <div className="flex items-center gap-2">

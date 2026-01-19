@@ -97,13 +97,13 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ compliance }) => {
   }, [heatmapData]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+    <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+        <h3 className="font-semibold text-slate-900 dark:text-steel-100 flex items-center gap-2">
           <Grid3X3 className="w-5 h-5 text-indigo-500" />
           Risk Heatmap
         </h3>
-        <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+        <button className="p-1.5 text-slate-400 dark:text-steel-400 hover:text-slate-600 dark:hover:text-steel-200 rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800 transition-colors">
           <Info className="w-4 h-4" />
         </button>
       </div>
@@ -111,7 +111,7 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ compliance }) => {
       {/* Heatmap Grid */}
       <div className="relative">
         {/* Y-axis label */}
-        <div className="absolute -left-2 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-slate-500 whitespace-nowrap">
+        <div className="absolute -left-2 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-slate-500 dark:text-steel-400 whitespace-nowrap">
           Likelihood
         </div>
 
@@ -159,7 +159,7 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ compliance }) => {
           </div>
 
           {/* X-axis labels */}
-          <div className="grid grid-cols-5 gap-1 text-[10px] text-slate-500">
+          <div className="grid grid-cols-5 gap-1 text-[10px] text-slate-500 dark:text-steel-400">
             {IMPACT_LABELS.map((label) => (
               <div key={label} className="text-center truncate">
                 {label}
@@ -168,13 +168,13 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ compliance }) => {
           </div>
 
           {/* X-axis title */}
-          <div className="text-center text-xs font-medium text-slate-500 mt-2">
+          <div className="text-center text-xs font-medium text-slate-500 dark:text-steel-400 mt-2">
             Impact
           </div>
         </div>
 
         {/* Y-axis labels */}
-        <div className="absolute left-8 top-0 bottom-8 flex flex-col justify-between text-[10px] text-slate-500 -ml-7">
+        <div className="absolute left-8 top-0 bottom-8 flex flex-col justify-between text-[10px] text-slate-500 dark:text-steel-400 -ml-7">
           {LIKELIHOOD_LABELS.slice().reverse().map((label) => (
             <div key={label} className="h-0 flex items-center">
               <span className="truncate w-14 text-right">{label}</span>
@@ -184,7 +184,7 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ compliance }) => {
       </div>
 
       {/* Risk Summary */}
-      <div className="mt-6 pt-4 border-t border-slate-200">
+      <div className="mt-6 pt-4 border-t border-slate-200 dark:border-steel-700">
         <div className="grid grid-cols-4 gap-2">
           <div className="p-2 rounded-lg text-center" style={{ backgroundColor: RISK_COLORS.critical.bg }}>
             <span className="text-lg font-bold" style={{ color: RISK_COLORS.critical.text }}>
@@ -221,7 +221,7 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ compliance }) => {
         </div>
 
         {riskSummary.critical > 0 && (
-          <div className="mt-3 p-2 bg-red-50 rounded-lg flex items-center gap-2 text-sm text-red-700">
+          <div className="mt-3 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
             <AlertTriangle className="w-4 h-4" />
             {riskSummary.critical} critical risk gap{riskSummary.critical !== 1 ? 's' : ''} require immediate attention
           </div>

@@ -54,19 +54,19 @@ const ComplianceVelocity: React.FC<ComplianceVelocityProps> = ({
   const colors = getColor(rate);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+    <div className="bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+        <h3 className="font-semibold text-slate-900 dark:text-steel-100 flex items-center gap-2">
           <Zap className="w-5 h-5 text-amber-500" />
           Compliance Velocity
         </h3>
         <div className={`
           flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium
           ${trendStatus === 'positive'
-            ? 'bg-emerald-100 text-emerald-700'
+            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
             : trendStatus === 'negative'
-            ? 'bg-red-100 text-red-700'
-            : 'bg-slate-100 text-slate-600'
+            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+            : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300'
           }
         `}>
           <TrendIcon className="w-4 h-4" />
@@ -112,7 +112,7 @@ const ComplianceVelocity: React.FC<ComplianceVelocityProps> = ({
             >
               {Math.round(rate)}%
             </motion.span>
-            <span className="text-xs text-slate-500">Implemented</span>
+            <span className="text-xs text-slate-500 dark:text-steel-400">Implemented</span>
           </div>
         </div>
 
@@ -120,12 +120,12 @@ const ComplianceVelocity: React.FC<ComplianceVelocityProps> = ({
         <div className="flex-1 space-y-4">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-slate-500">Controls Implemented</span>
-              <span className="text-sm font-semibold text-slate-900">
+              <span className="text-sm text-slate-500 dark:text-steel-400">Controls Implemented</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-steel-100">
                 {implemented} / {total}
               </span>
             </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: colors.main }}
@@ -137,15 +137,15 @@ const ComplianceVelocity: React.FC<ComplianceVelocityProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-50 rounded-lg">
+            <div className="p-3 bg-slate-50 dark:bg-midnight-800 rounded-lg">
               <span className="text-xs text-slate-500 block">This Period</span>
-              <span className="text-lg font-semibold text-slate-900">
+              <span className="text-lg font-semibold text-slate-900 dark:text-steel-100">
                 +{Math.round(implemented * 0.15)}
               </span>
             </div>
-            <div className="p-3 bg-slate-50 rounded-lg">
+            <div className="p-3 bg-slate-50 dark:bg-midnight-800 rounded-lg">
               <span className="text-xs text-slate-500 block">Avg/Week</span>
-              <span className="text-lg font-semibold text-slate-900">
+              <span className="text-lg font-semibold text-slate-900 dark:text-steel-100">
                 {Math.round(implemented * 0.03)}
               </span>
             </div>
@@ -157,10 +157,10 @@ const ComplianceVelocity: React.FC<ComplianceVelocityProps> = ({
       <div className={`
         mt-4 p-3 rounded-lg text-sm flex items-center gap-2
         ${trendStatus === 'positive'
-          ? 'bg-emerald-50 text-emerald-700'
+          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
           : trendStatus === 'negative'
-          ? 'bg-red-50 text-red-700'
-          : 'bg-slate-50 text-slate-600'
+          ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+          : 'bg-slate-50 dark:bg-steel-800 text-slate-600 dark:text-steel-300'
         }
       `}>
         {trendStatus === 'positive' ? (
