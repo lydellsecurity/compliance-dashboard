@@ -25,7 +25,6 @@ import AuditorVerification from './components/AuditorVerification';
 import AuditBundle from './components/AuditBundle';
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
-import { ThemeToggle } from './components/ThemeToggle';
 import Settings from './components/Settings';
 import MonitoringDashboard from './components/MonitoringDashboard';
 import AlertConfiguration from './components/AlertConfiguration';
@@ -1955,11 +1954,6 @@ const CommandSidebar: React.FC<{
           {!expanded && (
             <div className="nav-tooltip">Sync Activity</div>
           )}
-        </div>
-
-        {/* Theme Toggle */}
-        <div className="relative group">
-          <ThemeToggle collapsed={!expanded} />
         </div>
 
         {/* Toggle Expand */}
