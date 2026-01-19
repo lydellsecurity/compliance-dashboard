@@ -6,6 +6,14 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Scheduled Functions - Background Sync
+[functions."integration-scheduler"]
+  schedule = "*/15 * * * *"  # Run every 15 minutes
+
+# Scheduled Functions - Health Checks
+[functions."integration-health-check"]
+  schedule = "0 */6 * * *"  # Run every 6 hours
+
 # API routes to functions (must be BEFORE the SPA catch-all)
 [[redirects]]
   from = "/api/*"

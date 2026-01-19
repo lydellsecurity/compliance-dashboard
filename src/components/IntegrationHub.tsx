@@ -34,6 +34,8 @@ import {
   Globe,
   CheckCircle,
   XCircle,
+  Info,
+  BookOpen,
 } from 'lucide-react';
 import {
   integrationHub,
@@ -526,6 +528,37 @@ const ConnectModal: React.FC<{
             </div>
           )}
 
+          {/* Setup Instructions */}
+          {provider.setupInstructions && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {provider.setupInstructions}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Required Permissions */}
+          {provider.requiredPermissions && provider.requiredPermissions.length > 0 && (
+            <div className="mb-4 p-3 bg-slate-50 dark:bg-steel-900/30 border border-slate-200 dark:border-steel-700 rounded-lg">
+              <p className="text-xs font-medium text-slate-600 dark:text-steel-400 mb-2">
+                Required Permissions:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {provider.requiredPermissions.map((perm, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 bg-slate-200 dark:bg-steel-800 text-slate-700 dark:text-steel-300 text-xs rounded"
+                  >
+                    {perm}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {provider.authMethod === 'oauth2' ? (
             <div className="text-center">
               <p className="text-sm text-slate-600 dark:text-steel-400 mb-6">
@@ -543,6 +576,23 @@ const ConnectModal: React.FC<{
             </div>
           ) : (
             <div className="space-y-4">
+              {/* API Key Generation Link */}
+              {provider.apiKeyUrl && (
+                <div className="flex items-center gap-2 text-sm">
+                  <BookOpen className="w-4 h-4 text-indigo-500" />
+                  <span className="text-slate-600 dark:text-steel-400">Need an API key?</span>
+                  <a
+                    href={provider.apiKeyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                  >
+                    Generate one here
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-steel-300 mb-1">
                   API Key *

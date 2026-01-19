@@ -12,8 +12,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || ''
 );
 
-// Encryption key for storing tokens (should be in env vars)
-const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+// Import shared crypto utilities
+const { encrypt, decrypt, tryDecrypt } = require('./utils/crypto.cjs');
+
+// Encryption configuration (key is managed in crypto.cjs)
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 
 // OAuth provider configurations
@@ -70,42 +72,7 @@ const OAUTH_PROVIDERS = {
   },
 };
 
-/**
- * Encrypt sensitive data
- */
-function encrypt(text) {
-  const iv = crypto.randomBytes(16);
-  const key = Buffer.from(ENCRYPTION_KEY, 'hex');
-  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
-
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-
-  const authTag = cipher.getAuthTag();
-
-  return {
-    encrypted: encrypted,
-    iv: iv.toString('hex'),
-    authTag: authTag.toString('hex'),
-  };
-}
-
-/**
- * Decrypt sensitive data
- */
-function decrypt(encryptedData, ivHex, authTagHex) {
-  const key = Buffer.from(ENCRYPTION_KEY, 'hex');
-  const iv = Buffer.from(ivHex, 'hex');
-  const authTag = Buffer.from(authTagHex, 'hex');
-
-  const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-
-  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-
-  return decrypted;
-}
+// Note: encrypt and decrypt functions are now imported from ./utils/crypto.cjs
 
 /**
  * Exchange authorization code for tokens
@@ -253,7 +220,7 @@ async function revokeToken(providerId, token, config) {
 }
 
 /**
- * Store tokens in database
+ * Store tokens in database with proper encryption metadata
  */
 async function storeTokens(connectionId, tokens) {
   // Encrypt tokens
@@ -265,12 +232,19 @@ async function storeTokens(connectionId, tokens) {
     ? new Date(Date.now() + tokens.expiresIn * 1000).toISOString()
     : null;
 
+  // Store IVs in colon-separated format: accessIv:refreshIv
+  const credentialsIv = encryptedAccess.iv + (encryptedRefresh ? `:${encryptedRefresh.iv}` : '');
+
   const { error } = await supabase
     .from('integration_connections')
     .update({
       access_token_encrypted: encryptedAccess.encrypted,
       refresh_token_encrypted: encryptedRefresh?.encrypted,
-      credentials_iv: encryptedAccess.iv + (encryptedRefresh ? `:${encryptedRefresh.iv}` : ''),
+      // Store IVs (colon-separated for access:refresh)
+      credentials_iv: credentialsIv,
+      // Store auth tags for AES-256-GCM decryption
+      access_token_auth_tag: encryptedAccess.authTag,
+      refresh_token_auth_tag: encryptedRefresh?.authTag || null,
       token_expires_at: expiresAt,
       status: 'connected',
       error_message: null,
@@ -397,8 +371,25 @@ exports.handler = async (event) => {
           };
         }
 
-        // Decrypt refresh token (simplified - need IV and auth tag in production)
-        const decryptedRefresh = connection.refresh_token_encrypted; // Would decrypt properly
+        // Extract refresh token IV (format: accessIv:refreshIv)
+        const ivParts = (connection.credentials_iv || '').split(':');
+        const refreshIv = ivParts[1]; // Second part is refresh token IV
+        const refreshAuthTag = connection.refresh_token_auth_tag;
+
+        if (!refreshIv || !refreshAuthTag) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: 'Missing encryption metadata for refresh token' }),
+          };
+        }
+
+        // Decrypt refresh token with proper IV and auth tag
+        const decryptedRefresh = decrypt(
+          connection.refresh_token_encrypted,
+          refreshIv,
+          refreshAuthTag
+        );
 
         // Refresh tokens
         const tokens = await refreshToken(providerId, decryptedRefresh, connection.config || {});
@@ -438,12 +429,28 @@ exports.handler = async (event) => {
           };
         }
 
-        // Revoke tokens
+        // Revoke tokens (decrypt first)
         if (connection.access_token_encrypted) {
-          await revokeToken(providerId, connection.access_token_encrypted, connection.config || {});
+          const ivParts = (connection.credentials_iv || '').split(':');
+          const accessIv = ivParts[0];
+          const accessAuthTag = connection.access_token_auth_tag;
+
+          if (accessIv && accessAuthTag) {
+            try {
+              const decryptedToken = decrypt(
+                connection.access_token_encrypted,
+                accessIv,
+                accessAuthTag
+              );
+              await revokeToken(providerId, decryptedToken, connection.config || {});
+            } catch (decryptError) {
+              console.warn('Failed to decrypt token for revocation:', decryptError.message);
+              // Continue with disconnection even if revocation fails
+            }
+          }
         }
 
-        // Update connection status
+        // Update connection status and clear all token data
         await supabase
           .from('integration_connections')
           .update({
@@ -451,6 +458,8 @@ exports.handler = async (event) => {
             access_token_encrypted: null,
             refresh_token_encrypted: null,
             credentials_iv: null,
+            access_token_auth_tag: null,
+            refresh_token_auth_tag: null,
             token_expires_at: null,
           })
           .eq('id', connectionId);

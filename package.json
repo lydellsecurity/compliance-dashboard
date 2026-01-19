@@ -13,6 +13,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@azure/arm-keyvault": "^3.0.0",
+    "@octokit/rest": "^20.0.0",
+    "@okta/okta-sdk-nodejs": "^7.0.0",
+    "@slack/web-api": "^7.0.0",
     "@azure/arm-monitor": "^7.0.0",
     "@azure/arm-network": "^33.0.0",
     "@azure/arm-resourcegraph": "^4.2.1",

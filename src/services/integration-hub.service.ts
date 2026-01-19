@@ -48,6 +48,9 @@ export interface IntegrationProvider {
   features: string[];
   controlsMapped: string[];
   isAvailable: boolean;
+  setupInstructions?: string;
+  apiKeyUrl?: string; // Direct link to generate API keys
+  requiredPermissions?: string[]; // Human-readable permissions needed
 }
 
 export interface IntegrationConnection {
@@ -134,6 +137,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['SSO Verification', 'MFA Status', 'User Directory Sync', 'Access Reviews'],
     controlsMapped: ['AC-001', 'AC-002', 'AC-003', 'AC-004'],
     isAvailable: true,
+    setupInstructions: 'Sign in as an Okta admin. You will be asked to authorize read-only access to users, groups, apps, and audit logs.',
+    requiredPermissions: ['Read users and groups', 'Read applications', 'Read system logs'],
   },
   {
     id: 'azure_ad',
@@ -147,6 +152,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['SSO Verification', 'MFA Status', 'Conditional Access', 'User Sync'],
     controlsMapped: ['AC-001', 'AC-002', 'AC-003', 'AC-004', 'AC-005'],
     isAvailable: true,
+    setupInstructions: 'Sign in with a Microsoft work account that has Global Reader or equivalent admin role.',
+    requiredPermissions: ['Read all users', 'Read all groups', 'Read audit logs', 'Read directory data'],
   },
   {
     id: 'google_workspace',
@@ -160,6 +167,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['User Directory Sync', 'MFA Status', 'Security Audit'],
     controlsMapped: ['AC-001', 'AC-002', 'AC-003'],
     isAvailable: true,
+    setupInstructions: 'Sign in with a Google Workspace Super Admin account to grant read access to your organization directory.',
+    requiredPermissions: ['Read users', 'Read groups'],
   },
 
   // HR Systems
@@ -174,6 +183,9 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Employee Directory', 'Onboarding Tracking', 'Offboarding Alerts', 'Background Checks'],
     controlsMapped: ['HR-001', 'HR-002', 'HR-003', 'AC-007'],
     isAvailable: true,
+    setupInstructions: 'In BambooHR, go to Account → API Keys to generate a new key. Use your company subdomain (e.g., "acme" from acme.bamboohr.com).',
+    apiKeyUrl: 'https://help.bamboohr.com/hc/en-us/articles/115001741187-Create-an-API-key',
+    requiredPermissions: ['Employee read access'],
   },
   {
     id: 'gusto',
@@ -186,6 +198,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Employee Directory', 'Onboarding Status', 'Payroll Data'],
     controlsMapped: ['HR-001', 'HR-002'],
     isAvailable: true,
+    setupInstructions: 'Sign in as a Gusto company admin to authorize read access to employee data.',
+    requiredPermissions: ['Read employees', 'Read company info'],
   },
   {
     id: 'rippling',
@@ -198,6 +212,9 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Employee Sync', 'Device Management', 'App Provisioning'],
     controlsMapped: ['HR-001', 'HR-002', 'AM-002'],
     isAvailable: true,
+    setupInstructions: 'In Rippling, go to Settings → API Access to create an API key with employee read permissions.',
+    apiKeyUrl: 'https://app.rippling.com/settings/api-access',
+    requiredPermissions: ['Read employees', 'Read devices'],
   },
 
   // Code Repositories
@@ -213,6 +230,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Branch Protection', 'Code Reviews', 'Security Alerts', 'SDLC Evidence'],
     controlsMapped: ['SD-001', 'SD-002', 'SD-003', 'CM-001'],
     isAvailable: true,
+    setupInstructions: 'Sign in with a GitHub account that has admin access to your organization. We request read-only access to repos and organization data.',
+    requiredPermissions: ['Read repositories', 'Read organization members', 'Read security alerts'],
   },
   {
     id: 'gitlab',
@@ -226,6 +245,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Branch Protection', 'CI/CD Pipeline', 'Security Scanning'],
     controlsMapped: ['SD-001', 'SD-002', 'SD-003', 'CM-001'],
     isAvailable: true,
+    setupInstructions: 'Sign in with a GitLab account that has Maintainer or Owner access to your group/project.',
+    requiredPermissions: ['Read API', 'Read user info', 'Read repositories'],
   },
   {
     id: 'bitbucket',
@@ -239,6 +260,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Branch Rules', 'Pull Requests', 'Pipeline Status'],
     controlsMapped: ['SD-001', 'SD-002', 'CM-001'],
     isAvailable: true,
+    setupInstructions: 'Sign in with an Atlassian account that has admin access to your Bitbucket workspace.',
+    requiredPermissions: ['Read repositories', 'Read pull requests'],
   },
 
   // Project Management
@@ -254,6 +277,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Issue Tracking', 'Sprint Progress', 'Vulnerability Tracking'],
     controlsMapped: ['PM-001', 'IR-002', 'VM-001'],
     isAvailable: true,
+    setupInstructions: 'Sign in with an Atlassian account that has project admin or site admin access to your Jira instance.',
+    requiredPermissions: ['Read projects and issues', 'Read users'],
   },
   {
     id: 'asana',
@@ -266,6 +291,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Task Tracking', 'Project Status', 'Team Workload'],
     controlsMapped: ['PM-001'],
     isAvailable: true,
+    setupInstructions: 'Sign in with an Asana account that has access to the workspaces and projects you want to sync.',
+    requiredPermissions: ['Read tasks and projects'],
   },
 
   // Endpoint/MDM
@@ -280,6 +307,9 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Device Inventory', 'Encryption Status', 'Software Updates', 'Compliance Policies'],
     controlsMapped: ['AM-001', 'AM-002', 'DP-004', 'EP-001'],
     isAvailable: true,
+    setupInstructions: 'In Jamf Pro, go to Settings → System → API Roles and Clients. Create an API client with Read Computer and Read Mobile Device privileges.',
+    apiKeyUrl: 'https://developer.jamf.com/jamf-pro/docs/client-credentials',
+    requiredPermissions: ['Read computers', 'Read mobile devices', 'Read policies'],
   },
   {
     id: 'kandji',
@@ -292,6 +322,9 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Device Compliance', 'Auto Patching', 'Security Baselines'],
     controlsMapped: ['AM-001', 'AM-002', 'EP-001'],
     isAvailable: true,
+    setupInstructions: 'In Kandji, go to Settings → Access → API Token. Create a token with Devices read scope.',
+    apiKeyUrl: 'https://support.kandji.io/support/solutions/articles/72000560412',
+    requiredPermissions: ['Read devices', 'Read compliance status'],
   },
   {
     id: 'intune',
@@ -305,6 +338,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Device Compliance', 'Conditional Access', 'App Protection'],
     controlsMapped: ['AM-001', 'AM-002', 'EP-001', 'EP-002'],
     isAvailable: true,
+    setupInstructions: 'Sign in with an Intune admin or Global Reader account to grant read access to managed devices.',
+    requiredPermissions: ['Read managed devices'],
   },
 
   // Security Tools
@@ -319,6 +354,9 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Threat Detection', 'Incident Response', 'Vulnerability Management'],
     controlsMapped: ['SO-001', 'SO-002', 'IR-001', 'VM-001'],
     isAvailable: true,
+    setupInstructions: 'In Falcon Console, go to Support and resources → API clients and keys. Create a new API client with Read-only permissions for Hosts, Detections, and Spotlight.',
+    apiKeyUrl: 'https://falcon.crowdstrike.com/api-clients-and-keys/',
+    requiredPermissions: ['Read hosts', 'Read detections', 'Read vulnerabilities'],
   },
   {
     id: 'snyk',
@@ -331,6 +369,9 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Code Scanning', 'Dependency Analysis', 'Container Security'],
     controlsMapped: ['SD-003', 'VM-001', 'VM-002'],
     isAvailable: true,
+    setupInstructions: 'In Snyk, go to Account Settings → Auth Token to generate or view your API token.',
+    apiKeyUrl: 'https://app.snyk.io/account',
+    requiredPermissions: ['Read organization projects', 'View vulnerabilities'],
   },
 
   // Communication
@@ -346,6 +387,8 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     features: ['Alert Notifications', 'Audit Logs', 'DLP Monitoring'],
     controlsMapped: ['SO-003', 'CM-002'],
     isAvailable: true,
+    setupInstructions: 'Sign in as a Slack workspace admin to authorize access to user directory and channel information.',
+    requiredPermissions: ['Read users', 'Read channels', 'Send notifications'],
   },
 ];
 
@@ -514,6 +557,10 @@ class IntegrationHubService {
         connectedBy: this.userId,
       };
 
+      // Calculate initial next_sync_at based on sync interval
+      const syncIntervalMinutes = defaultSettings.syncIntervalMinutes || 60;
+      const nextSyncAt = new Date(Date.now() + syncIntervalMinutes * 60 * 1000).toISOString();
+
       const { data, error } = await supabase
         .from('integration_connections')
         .insert({
@@ -526,6 +573,11 @@ class IntegrationHubService {
           credentials,
           settings: defaultSettings,
           metadata,
+          // Set initial sync scheduling
+          sync_enabled: defaultSettings.syncEnabled,
+          sync_frequency_minutes: syncIntervalMinutes,
+          next_sync_at: nextSyncAt,
+          health_status: 'unknown',
         })
         .select()
         .single();

@@ -4,6 +4,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const { decrypt, tryDecrypt } = require('./utils/crypto.cjs');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -148,6 +149,52 @@ async function updateSyncLog(logId, status, results) {
 }
 
 /**
+ * Decrypt access token from connection
+ * @param {Object} connection - The connection object with encrypted tokens
+ * @returns {string|null} Decrypted access token or null
+ */
+function decryptAccessToken(connection) {
+  if (!connection.access_token_encrypted) {
+    return null;
+  }
+
+  // IVs are stored as "accessIv:refreshIv"
+  const ivParts = (connection.credentials_iv || '').split(':');
+  const accessIv = ivParts[0];
+  const accessAuthTag = connection.access_token_auth_tag;
+
+  if (!accessIv || !accessAuthTag) {
+    console.warn('Missing IV or auth tag for access token decryption');
+    return null;
+  }
+
+  return tryDecrypt(connection.access_token_encrypted, accessIv, accessAuthTag);
+}
+
+/**
+ * Decrypt API key credentials from connection
+ * @param {Object} connection - The connection object with encrypted credentials
+ * @returns {string|null} Decrypted API key or null
+ */
+function decryptApiKey(connection) {
+  if (!connection.credentials_encrypted) {
+    return null;
+  }
+
+  // For API keys, IV is stored in credentials_iv (no colon separator)
+  const ivParts = (connection.credentials_iv || '').split(':');
+  const credentialsIv = ivParts[0];
+  const credentialsAuthTag = connection.credentials_auth_tag;
+
+  if (!credentialsIv || !credentialsAuthTag) {
+    console.warn('Missing IV or auth tag for API key decryption');
+    return null;
+  }
+
+  return tryDecrypt(connection.credentials_encrypted, credentialsIv, credentialsAuthTag);
+}
+
+/**
  * Fetch data from provider endpoint
  */
 async function fetchProviderData(endpoint, connection, config) {
@@ -156,11 +203,33 @@ async function fetchProviderData(endpoint, connection, config) {
     'User-Agent': 'LydellSecurity-ComplianceDashboard/1.0',
   };
 
-  // Add auth header
+  // Add auth header with properly decrypted token
   if (connection.auth_type === 'oauth2' && connection.access_token_encrypted) {
-    headers['Authorization'] = `Bearer ${connection.access_token_encrypted}`; // Would be decrypted
+    const decryptedToken = decryptAccessToken(connection);
+    if (!decryptedToken) {
+      throw new Error('Failed to decrypt access token - missing or invalid encryption metadata');
+    }
+    headers['Authorization'] = `Bearer ${decryptedToken}`;
   } else if (connection.auth_type === 'api_key') {
-    headers['Authorization'] = `Bearer ${connection.credentials_encrypted}`; // Would be decrypted
+    const decryptedApiKey = decryptApiKey(connection);
+    if (!decryptedApiKey) {
+      throw new Error('Failed to decrypt API key - missing or invalid encryption metadata');
+    }
+
+    // Different providers use different auth header formats
+    const providerId = connection.provider_id;
+    if (providerId === 'okta') {
+      headers['Authorization'] = `SSWS ${decryptedApiKey}`;
+    } else if (providerId === 'crowdstrike') {
+      // CrowdStrike uses OAuth2 client credentials, handled separately
+      headers['Authorization'] = `Bearer ${decryptedApiKey}`;
+    } else if (providerId === 'bamboohr') {
+      // BambooHR uses basic auth
+      const encoded = Buffer.from(`${decryptedApiKey}:x`).toString('base64');
+      headers['Authorization'] = `Basic ${encoded}`;
+    } else {
+      headers['Authorization'] = `Bearer ${decryptedApiKey}`;
+    }
   }
 
   const baseUrl = endpoint.baseUrl || connection.config?.baseUrl || '';
