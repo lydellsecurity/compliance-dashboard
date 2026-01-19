@@ -37,7 +37,7 @@ import TPRMCenter from './components/TPRMCenter';
 import QuestionnaireCenter from './components/QuestionnaireCenter';
 import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
-import EvidenceRepository from './components/EvidenceRepository';
+import EvidenceVault from './components/EvidenceVault';
 import AuditorRequirementView from './components/AuditorRequirementView';
 import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
 import ControlWorkstationWrapper from './components/ControlWorkstation/ControlWorkstationWrapper';
@@ -2160,9 +2160,10 @@ const AppContent: React.FC = () => {
             {activeTab === 'evidence' && (
               <motion.div key="evidence" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {currentOrg?.id ? (
-                  <EvidenceRepository
+                  <EvidenceVault
                     organizationId={currentOrg.id}
                     userId={currentUserId}
+                    userName={user?.email}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
