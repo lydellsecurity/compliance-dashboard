@@ -124,6 +124,16 @@ export interface RetentionPolicy {
 }
 
 // ============================================================================
+// FILE VALIDATION TYPES
+// ============================================================================
+
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+  warning?: string;
+}
+
+// ============================================================================
 // EVIDENCE REPOSITORY SERVICE
 // ============================================================================
 
@@ -132,6 +142,47 @@ class EvidenceRepositoryService {
   private userId: string | null = null;
   private bucketName = 'evidence';
   private deduplicationRan: Set<string> = new Set(); // Track per-org deduplication
+
+  // ---------------------------------------------------------------------------
+  // FILE VALIDATION CONFIGURATION
+  // ---------------------------------------------------------------------------
+
+  private readonly ALLOWED_MIME_TYPES = new Set([
+    'application/pdf',
+    'application/json',
+    'application/xml',
+    'text/plain',
+    'text/csv',
+    'text/xml',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+    'application/vnd.ms-excel', // .xls
+    'application/msword', // .doc
+    'application/zip',
+    'application/x-zip-compressed',
+  ]);
+
+  private readonly MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+  private readonly BLOCKED_EXTENSIONS = new Set([
+    '.exe', '.dmg', '.pkg', '.msi', '.bat', '.cmd', '.sh', '.ps1',
+    '.dll', '.so', '.dylib', '.app', '.deb', '.rpm', '.com', '.scr',
+    '.vbs', '.vbe', '.js', '.jse', '.ws', '.wsf', '.wsc', '.wsh',
+    '.pif', '.msc', '.hta', '.cpl', '.msp', '.mst', '.jar', '.reg',
+  ]);
+
+  private readonly SAFE_EXTENSIONS = new Set([
+    '.pdf', '.json', '.xml', '.txt', '.csv', '.md', '.yaml', '.yml',
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp',
+    '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.zip', '.log', '.html', '.htm',
+  ]);
 
   // ---------------------------------------------------------------------------
   // INITIALIZATION
@@ -463,6 +514,70 @@ class EvidenceRepositoryService {
   }
 
   /**
+   * Validate file before upload
+   * Checks size, extension, and MIME type for security
+   */
+  validateFile(file: File): FileValidationResult {
+    // Check file size
+    if (file.size > this.MAX_FILE_SIZE_BYTES) {
+      const maxMB = Math.round(this.MAX_FILE_SIZE_BYTES / 1024 / 1024);
+      const fileMB = (file.size / 1024 / 1024).toFixed(1);
+      return {
+        valid: false,
+        error: `File size (${fileMB}MB) exceeds maximum allowed size of ${maxMB}MB`,
+      };
+    }
+
+    // Check file size minimum (empty files)
+    if (file.size === 0) {
+      return {
+        valid: false,
+        error: 'File is empty',
+      };
+    }
+
+    // Extract and validate extension
+    const lastDotIndex = file.name.lastIndexOf('.');
+    const ext = lastDotIndex > 0 ? file.name.substring(lastDotIndex).toLowerCase() : '';
+
+    // Block dangerous extensions
+    if (ext && this.BLOCKED_EXTENSIONS.has(ext)) {
+      return {
+        valid: false,
+        error: `File type "${ext}" is not allowed for security reasons`,
+      };
+    }
+
+    // Check MIME type if provided
+    if (file.type) {
+      if (!this.ALLOWED_MIME_TYPES.has(file.type)) {
+        // If MIME type is not in allowed list, check if extension is safe
+        if (!this.SAFE_EXTENSIONS.has(ext)) {
+          return {
+            valid: false,
+            error: `File type "${file.type}" is not allowed. Supported types: PDF, images, Office documents, text files, and archives.`,
+          };
+        }
+        // Extension is safe but MIME type is unknown - allow with warning
+        return {
+          valid: true,
+          warning: `File type "${file.type}" is unusual but allowed based on extension`,
+        };
+      }
+    } else {
+      // No MIME type - verify extension is safe
+      if (!ext || !this.SAFE_EXTENSIONS.has(ext)) {
+        return {
+          valid: false,
+          error: `Unable to verify file type. Please use files with standard extensions (${Array.from(this.SAFE_EXTENSIONS).slice(0, 5).join(', ')}, etc.)`,
+        };
+      }
+    }
+
+    return { valid: true };
+  }
+
+  /**
    * Upload a file to an evidence item
    */
   async uploadFile(
@@ -474,8 +589,18 @@ class EvidenceRepositoryService {
       return { success: false, error: 'Service not initialized' };
     }
 
+    // Validate file before processing
+    const validation = this.validateFile(file);
+    if (!validation.valid) {
+      console.warn('[EvidenceRepo] File validation failed:', validation.error);
+      return { success: false, error: validation.error };
+    }
+    if (validation.warning) {
+      console.info('[EvidenceRepo] File validation warning:', validation.warning);
+    }
+
     try {
-      // Compute file hash for integrity checking
+      // Compute file hash for integrity checking BEFORE upload
       const checksum = await this.computeFileHash(file);
 
       // Get current evidence to determine version
@@ -1309,6 +1434,119 @@ class EvidenceRepositoryService {
       console.error('[EvidenceRepo] Cleanup exception:', error);
       return { removed: 0, error: error instanceof Error ? error.message : 'Unknown error' };
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // EVIDENCE INTEGRITY CHECK (Broken Link Detection)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Check evidence file integrity - verifies files still exist in storage
+   * Returns list of controls with missing evidence files
+   * Use this to detect "ghost" evidence that appears valid but has deleted files
+   */
+  async checkEvidenceIntegrity(): Promise<{
+    controlId: string;
+    evidenceId: string;
+    evidenceTitle: string;
+    missingFileIds: string[];
+    status: 'final' | 'review' | 'draft';
+  }[]> {
+    if (!supabase || !this.organizationId) return [];
+
+    try {
+      console.log('[EvidenceRepo] Starting integrity check...');
+
+      // Get all evidence items with their files
+      const { data: evidenceItems, error } = await supabase
+        .from('evidence_items')
+        .select(`
+          id,
+          control_id,
+          title,
+          status,
+          evidence_versions (
+            evidence_files!evidence_version_id (
+              id,
+              filename,
+              url
+            )
+          )
+        `)
+        .eq('organization_id', this.organizationId)
+        .in('status', ['final', 'review']); // Only check approved/pending evidence
+
+      if (error || !evidenceItems) {
+        console.error('[EvidenceRepo] Integrity check fetch error:', error);
+        return [];
+      }
+
+      const brokenLinks: {
+        controlId: string;
+        evidenceId: string;
+        evidenceTitle: string;
+        missingFileIds: string[];
+        status: 'final' | 'review' | 'draft';
+      }[] = [];
+
+      // Check each evidence item's files
+      for (const evidence of evidenceItems) {
+        const missingFileIds: string[] = [];
+        const versions = (evidence.evidence_versions as Array<{
+          evidence_files: Array<{ id: string; filename: string; url: string }>;
+        }>) || [];
+
+        for (const version of versions) {
+          for (const file of version.evidence_files || []) {
+            if (file.filename) {
+              // Try to get file metadata (lightweight check)
+              const { error: fileError } = await supabase.storage
+                .from(this.bucketName)
+                .createSignedUrl(file.filename, 1); // 1 second expiry just to check existence
+
+              if (fileError) {
+                // File doesn't exist in storage
+                missingFileIds.push(file.id);
+              }
+            }
+          }
+        }
+
+        if (missingFileIds.length > 0) {
+          brokenLinks.push({
+            controlId: evidence.control_id as string,
+            evidenceId: evidence.id as string,
+            evidenceTitle: evidence.title as string,
+            missingFileIds,
+            status: evidence.status as 'final' | 'review' | 'draft',
+          });
+        }
+      }
+
+      console.log(`[EvidenceRepo] Integrity check complete: ${brokenLinks.length} items with missing files`);
+      return brokenLinks;
+    } catch (err) {
+      console.error('[EvidenceRepo] Integrity check exception:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Get integrity status summary for UI display
+   */
+  async getIntegrityStatus(): Promise<{
+    totalChecked: number;
+    issuesFound: number;
+    affectedControls: string[];
+    lastChecked: string;
+  }> {
+    const issues = await this.checkEvidenceIntegrity();
+    return {
+      totalChecked: issues.length > 0 ? issues.reduce((sum, i) => sum + i.missingFileIds.length, 0) : 0,
+      issuesFound: issues.length,
+      affectedControls: [...new Set(issues.map(i => i.controlId))],
+      lastChecked: new Date().toISOString(),
+    };
   }
 }
 

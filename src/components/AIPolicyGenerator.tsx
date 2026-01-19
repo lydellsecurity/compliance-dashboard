@@ -8,11 +8,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, Download, CheckCircle, AlertCircle, X,
+  Sparkles, Download, CheckCircle, AlertCircle, X, AlertTriangle,
   Copy, Check, Printer, FileCheck, Loader2, ExternalLink, ShieldCheck,
 } from 'lucide-react';
 import type { MasterControl } from '../constants/controls';
 import { complianceDb } from '../services/compliance-database.service';
+import { evidenceRepository } from '../services/evidence-repository.service';
 import confetti from 'canvas-confetti';
 
 // ============================================================================
@@ -499,6 +500,15 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
   const [documentHash, setDocumentHash] = useState<string | null>(null);
   const [jobTitle, setJobTitle] = useState('Compliance Officer');
 
+  // Overwrite confirmation modal state
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
+  const [existingEvidenceInfo, setExistingEvidenceInfo] = useState<{
+    id: string;
+    title: string;
+    status: string;
+    createdAt: string;
+  } | null>(null);
+
   if (!control) return null;
 
   const handleGenerate = async () => {
@@ -528,9 +538,54 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
     }
   };
 
+  // Check for existing evidence before saving
+  const checkExistingEvidence = async (): Promise<boolean> => {
+    const organizationId = complianceDb.getOrganizationId();
+    if (!organizationId) return false;
+
+    try {
+      // Search for existing evidence for this control
+      const existingEvidence = await evidenceRepository.searchEvidence({
+        controlId: control.id,
+        status: 'final',
+      });
+
+      if (existingEvidence && existingEvidence.length > 0) {
+        const existing = existingEvidence[0];
+        setExistingEvidenceInfo({
+          id: existing.id,
+          title: existing.title || 'Existing Policy Document',
+          status: existing.status,
+          createdAt: existing.createdAt || new Date().toISOString(),
+        });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error checking existing evidence:', err);
+      return false;
+    }
+  };
+
   const handleApproveAndSave = async () => {
     if (!policy || !metadata) return;
 
+    // Check for existing evidence and show confirmation if found
+    const hasExisting = await checkExistingEvidence();
+    if (hasExisting) {
+      setShowOverwriteConfirm(true);
+      return; // Wait for user confirmation
+    }
+
+    // No existing evidence, proceed directly
+    await performSave();
+  };
+
+  const performSave = async () => {
+    // Early guard - should never happen since button is disabled without policy/metadata
+    if (!policy || !metadata) return;
+
+    setShowOverwriteConfirm(false);
     setStatus('saving');
     setSaveError(null);
 
@@ -956,6 +1011,97 @@ export const AIPolicyModal: React.FC<AIPolicyModalProps> = ({
               </div>
             </div>
           </motion.div>
+
+          {/* Overwrite Confirmation Modal */}
+          <AnimatePresence>
+            {showOverwriteConfirm && existingEvidenceInfo && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              >
+                {/* Darker backdrop for nested modal */}
+                <div
+                  className="absolute inset-0 bg-black/60"
+                  onClick={() => setShowOverwriteConfirm(false)}
+                />
+
+                {/* Confirmation dialog */}
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="relative bg-white dark:bg-midnight-800 rounded-2xl shadow-2xl p-6 max-w-md w-full"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Warning icon */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary">
+                        Existing Evidence Found
+                      </h3>
+                      <p className="text-sm text-secondary">
+                        This control already has approved evidence
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Existing evidence info */}
+                  <div className="mb-6 p-4 bg-slate-50 dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700">
+                    <div className="text-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Title:</span>
+                        <span className="text-primary font-medium truncate max-w-[180px]">
+                          {existingEvidenceInfo.title}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Status:</span>
+                        <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded text-xs font-medium">
+                          {existingEvidenceInfo.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-secondary">Created:</span>
+                        <span className="text-primary">
+                          {new Date(existingEvidenceInfo.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-secondary mb-6">
+                    Saving this AI-generated policy will create a{' '}
+                    <span className="font-medium text-primary">new version</span>.
+                    The existing evidence will be preserved in version history and
+                    can be restored if needed.
+                  </p>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => setShowOverwriteConfirm(false)}
+                      className="px-4 py-2.5 text-secondary hover:text-primary font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-steel-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={performSave}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg hover:shadow-amber-500/25"
+                    >
+                      <FileCheck className="w-4 h-4" />
+                      Add as New Version
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>

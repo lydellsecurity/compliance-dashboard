@@ -1,0 +1,361 @@
+/**
+ * Responsive Styles for Compliance Dashboard
+ *
+ * Mobile-first approach with breakpoints:
+ * - sm: 640px (mobile landscape)
+ * - md: 768px (tablets)
+ * - lg: 1024px (small laptops)
+ * - xl: 1280px (desktops)
+ * - 2xl: 1536px (large screens)
+ */
+
+/* ==========================================================================
+   DRAWER & MODAL RESPONSIVE FIXES
+   ========================================================================== */
+
+/* Control Detail Drawer - Mobile/Tablet */
+@media (max-width: 1024px) {
+  .control-drawer,
+  .evidence-drawer,
+  .detail-drawer {
+    width: 100% !important;
+    max-width: 100vw !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .control-drawer,
+  .evidence-drawer,
+  .detail-drawer {
+    /* Bottom sheet style on mobile */
+    height: 85vh !important;
+    top: auto !important;
+    bottom: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  .control-drawer::before,
+  .evidence-drawer::before,
+  .detail-drawer::before {
+    /* Drag handle indicator */
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    margin: 8px auto 0;
+  }
+
+  .dark .control-drawer::before,
+  .dark .evidence-drawer::before,
+  .dark .detail-drawer::before {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* ==========================================================================
+   SIDEBAR & NAVIGATION
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .domain-sidebar {
+    position: fixed !important;
+    left: -100% !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 40 !important;
+    transition: left 0.3s ease-in-out !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+  }
+
+  .domain-sidebar.open {
+    left: 0 !important;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 39;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ==========================================================================
+   CONTROL CARDS & GRID
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .control-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    padding: 0.5rem !important;
+  }
+
+  .control-card {
+    padding: 1rem !important;
+  }
+
+  .control-card .framework-pills {
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+
+  .control-card .framework-pill {
+    font-size: 0.625rem !important;
+    padding: 0.125rem 0.375rem !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .control-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+}
+
+/* ==========================================================================
+   FORM INPUTS & BUTTONS
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    min-height: 44px !important; /* Touch target size */
+  }
+
+  button,
+  .btn,
+  [role="button"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .btn-sm {
+    min-height: 36px !important;
+  }
+}
+
+/* ==========================================================================
+   TABLES - Horizontal Scroll on Mobile
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .responsive-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .responsive-table {
+    min-width: 600px !important;
+  }
+
+  .responsive-table th,
+  .responsive-table td {
+    white-space: nowrap !important;
+    padding: 0.5rem !important;
+  }
+}
+
+/* ==========================================================================
+   CHARTS & VISUALIZATIONS
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .progress-ring-container {
+    transform: scale(0.8) !important;
+    transform-origin: center !important;
+  }
+
+  .chart-container {
+    height: 200px !important;
+  }
+
+  .recharts-wrapper {
+    font-size: 10px !important;
+  }
+}
+
+/* ==========================================================================
+   MODALS
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .modal-content {
+    margin: 0 !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
+    border-radius: 0 !important;
+    width: 100vw !important;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 1rem !important;
+  }
+
+  .modal-body {
+    padding: 1rem !important;
+    max-height: calc(100vh - 140px) !important;
+    max-height: calc(100dvh - 140px) !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ==========================================================================
+   TYPOGRAPHY ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  h1, .text-3xl, .text-4xl {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+  }
+
+  h2, .text-2xl {
+    font-size: 1.25rem !important;
+  }
+
+  h3, .text-xl {
+    font-size: 1.125rem !important;
+  }
+
+  .text-sm {
+    font-size: 0.8125rem !important;
+  }
+
+  .text-xs {
+    font-size: 0.6875rem !important;
+  }
+}
+
+/* ==========================================================================
+   SPACING ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .p-6 { padding: 1rem !important; }
+  .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-6 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  .p-8 { padding: 1.25rem !important; }
+
+  .gap-6 { gap: 1rem !important; }
+  .gap-8 { gap: 1.25rem !important; }
+
+  .space-y-6 > * + * { margin-top: 1rem !important; }
+  .space-y-8 > * + * { margin-top: 1.25rem !important; }
+}
+
+/* ==========================================================================
+   HIDE/SHOW UTILITIES
+   ========================================================================== */
+
+.mobile-only {
+  display: none !important;
+}
+
+.desktop-only {
+  display: block !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Flex variants */
+.mobile-only-flex {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-only-flex {
+    display: flex !important;
+  }
+}
+
+/* ==========================================================================
+   TOUCH-FRIENDLY INTERACTIONS
+   ========================================================================== */
+
+@media (pointer: coarse) {
+  /* Increase touch targets for touch devices */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Disable hover effects that might cause sticky states on touch */
+  .hover\:bg-slate-100:hover,
+  .hover\:bg-steel-800:hover {
+    transition: none;
+  }
+
+  /* Add active states instead */
+  .touch-target:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* ==========================================================================
+   SAFE AREA INSETS (for notch devices)
+   ========================================================================== */
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ==========================================================================
+   LANDSCAPE ORIENTATION FIXES
+   ========================================================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .modal-content {
+    max-height: 95vh !important;
+  }
+
+  .control-drawer,
+  .evidence-drawer,
+  .detail-drawer {
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+}

@@ -43,13 +43,23 @@ export interface FrameworkCoverage {
   frameworkColor: string;
   totalClauses: number;
   satisfiedClauses: number;
+  excludedClauses: number; // Clauses where ALL mapped controls are N/A
   percentage: number;
   clauses: {
     clauseId: string;
     clauseTitle: string;
-    satisfied: boolean;
+    satisfied: boolean | null; // null = excluded (all controls N/A)
+    isExcluded: boolean;
     satisfiedByControls: string[];
   }[];
+}
+
+export interface WeightedScoreResult {
+  weightedScore: number;
+  unweightedScore: number;
+  riskBreakdown: Record<string, { total: number; implemented: number; weight: number; naCount: number }>;
+  criticalGaps: string[];
+  highGaps: string[];
 }
 
 export interface DomainGroup {
@@ -327,6 +337,7 @@ class ControlMappingEngine {
         frameworkColor: '#6B7280',
         totalClauses: 0,
         satisfiedClauses: 0,
+        excludedClauses: 0,
         percentage: 0,
         clauses: [],
       };
@@ -352,7 +363,25 @@ class ControlMappingEngine {
     }
 
     // Calculate satisfaction based on control statuses
+    // FIX: Handle N/A controls - exclude clauses where ALL mapped controls are N/A
     const clauses = Array.from(clauseMap.entries()).map(([clauseId, data]) => {
+      // Check if ALL mapped controls are N/A - if so, exclude from calculation
+      const allNA = data.satisfiedByControls.every(controlId => {
+        const status = controlStatuses.get(controlId);
+        return status?.answer === 'na' || status?.status === 'not_applicable';
+      });
+
+      if (allNA && data.satisfiedByControls.length > 0) {
+        return {
+          clauseId,
+          clauseTitle: data.clauseTitle,
+          satisfied: null as boolean | null, // Use null to indicate "excluded"
+          isExcluded: true,
+          satisfiedByControls: data.satisfiedByControls,
+        };
+      }
+
+      // Check if at least one control is implemented (ignoring N/A controls)
       const satisfied = data.satisfiedByControls.some(controlId => {
         const status = controlStatuses.get(controlId);
         return status?.answer === 'yes' || status?.status === 'implemented';
@@ -362,11 +391,15 @@ class ControlMappingEngine {
         clauseId,
         clauseTitle: data.clauseTitle,
         satisfied,
+        isExcluded: false,
         satisfiedByControls: data.satisfiedByControls,
       };
     });
 
-    const satisfiedClauses = clauses.filter(c => c.satisfied).length;
+    // Only count applicable clauses (not excluded) for percentage calculation
+    const applicableClauses = clauses.filter(c => !c.isExcluded);
+    const excludedClauses = clauses.filter(c => c.isExcluded);
+    const satisfiedClauses = applicableClauses.filter(c => c.satisfied === true).length;
 
     return {
       frameworkId,
@@ -374,29 +407,43 @@ class ControlMappingEngine {
       frameworkColor: framework.color,
       totalClauses: clauses.length,
       satisfiedClauses,
-      percentage: clauses.length > 0 ? Math.round((satisfiedClauses / clauses.length) * 100) : 0,
+      excludedClauses: excludedClauses.length,
+      percentage: applicableClauses.length > 0
+        ? Math.round((satisfiedClauses / applicableClauses.length) * 100)
+        : 0,
       clauses,
     };
   }
 
   /**
    * Group controls by domain
+   * FIX: Excludes N/A controls from percentage calculation
    */
   getControlsByDomain(controlStatuses: Map<string, ControlStatus>): DomainGroup[] {
     return this.domains.map(domain => {
       const domainControls = this.controls.filter(c => c.domain === domain.id);
+
+      // Count N/A controls separately
+      const naCount = domainControls.filter(c => {
+        const status = controlStatuses.get(c.id);
+        return status?.answer === 'na' || status?.status === 'not_applicable';
+      }).length;
+
       const implementedCount = domainControls.filter(c => {
         const status = controlStatuses.get(c.id);
         return status?.answer === 'yes' || status?.status === 'implemented';
       }).length;
+
+      // Exclude N/A controls from percentage denominator
+      const applicableControls = domainControls.length - naCount;
 
       return {
         domain,
         controls: domainControls,
         totalControls: domainControls.length,
         implementedCount,
-        percentage: domainControls.length > 0
-          ? Math.round((implementedCount / domainControls.length) * 100)
+        percentage: applicableControls > 0
+          ? Math.round((implementedCount / applicableControls) * 100)
           : 0,
       };
     });
@@ -438,24 +485,139 @@ class ControlMappingEngine {
   }
 
   /**
+   * Get all requirements satisfied by evidence attached to a control
+   * Used to show auditors which frameworks are covered by single evidence
+   * This enables cross-framework evidence mapping for requirement overlap
+   */
+  getSharedRequirements(controlId: string): {
+    sharedClauses: Map<string, FrameworkId[]>;
+    summary: string;
+    totalCrossFrameworkCoverage: number;
+  } {
+    const control = this.controls.find(c => c.id === controlId);
+    if (!control) {
+      return { sharedClauses: new Map(), summary: '', totalCrossFrameworkCoverage: 0 };
+    }
+
+    // Group clauses by their normalized title (e.g., "Access Control" appears in SOC2, ISO, HIPAA)
+    const clauseGroups: Map<string, {
+      frameworkIds: FrameworkId[];
+      clauseIds: string[];
+      originalTitles: string[];
+    }> = new Map();
+
+    for (const mapping of control.frameworkMappings) {
+      // Normalize clause title for grouping - lowercase, trim, remove special chars
+      const normalizedTitle = mapping.clauseTitle
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ');
+
+      if (!clauseGroups.has(normalizedTitle)) {
+        clauseGroups.set(normalizedTitle, {
+          frameworkIds: [],
+          clauseIds: [],
+          originalTitles: [],
+        });
+      }
+
+      const group = clauseGroups.get(normalizedTitle)!;
+      if (!group.frameworkIds.includes(mapping.frameworkId)) {
+        group.frameworkIds.push(mapping.frameworkId);
+        group.clauseIds.push(mapping.clauseId);
+        group.originalTitles.push(mapping.clauseTitle);
+      }
+    }
+
+    // Find shared clauses (appear in 2+ frameworks)
+    const sharedClauses: Map<string, FrameworkId[]> = new Map();
+    let totalCrossFrameworkCoverage = 0;
+
+    for (const [_title, group] of clauseGroups) {
+      if (group.frameworkIds.length > 1) {
+        sharedClauses.set(group.originalTitles[0], group.frameworkIds);
+        totalCrossFrameworkCoverage += group.frameworkIds.length - 1; // Count additional frameworks covered
+      }
+    }
+
+    const sharedCount = sharedClauses.size;
+    const uniqueFrameworks = new Set<FrameworkId>();
+    for (const frameworks of sharedClauses.values()) {
+      frameworks.forEach(f => uniqueFrameworks.add(f));
+    }
+
+    const summary = sharedCount > 0
+      ? `Evidence for this control satisfies ${sharedCount} shared requirement(s) across ${uniqueFrameworks.size} frameworks. Single evidence upload covers ${totalCrossFrameworkCoverage + sharedCount} total requirements.`
+      : 'This control has no overlapping requirements across frameworks.';
+
+    return { sharedClauses, summary, totalCrossFrameworkCoverage };
+  }
+
+  /**
+   * Get framework-specific view of shared requirements for auditor portal
+   * Shows which requirements in a framework are satisfied by shared evidence
+   */
+  getAuditorCrossFrameworkView(frameworkId: FrameworkId, controlStatuses: Map<string, ControlStatus>): {
+    clauseId: string;
+    clauseTitle: string;
+    satisfiedByControls: string[];
+    sharedWithFrameworks: FrameworkId[];
+    hasSharedEvidence: boolean;
+  }[] {
+    const coverage = this.getFrameworkCoverage(frameworkId, controlStatuses);
+
+    return coverage.clauses
+      .filter(c => !c.isExcluded)
+      .map(clause => {
+        // Check which other frameworks share this clause through the same controls
+        const sharedWithFrameworks: Set<FrameworkId> = new Set();
+
+        for (const controlId of clause.satisfiedByControls) {
+          const sharedInfo = this.getSharedRequirements(controlId);
+          for (const [_title, frameworks] of sharedInfo.sharedClauses) {
+            frameworks.forEach(f => {
+              if (f !== frameworkId) {
+                sharedWithFrameworks.add(f);
+              }
+            });
+          }
+        }
+
+        return {
+          clauseId: clause.clauseId,
+          clauseTitle: clause.clauseTitle,
+          satisfiedByControls: clause.satisfiedByControls,
+          sharedWithFrameworks: Array.from(sharedWithFrameworks),
+          hasSharedEvidence: sharedWithFrameworks.size > 0,
+        };
+      });
+  }
+
+  /**
    * Calculate global compliance statistics
+   * FIX: Properly handles N/A controls and excludes them from percentage
    */
   getGlobalStats(controlStatuses: Map<string, ControlStatus>): {
     totalControls: number;
     implementedControls: number;
     inProgressControls: number;
     notStartedControls: number;
+    notApplicableControls: number;
     overallPercentage: number;
-    frameworkStats: { frameworkId: FrameworkId; name: string; percentage: number; color: string }[];
+    frameworkStats: { frameworkId: FrameworkId; name: string; percentage: number; color: string; excludedClauses: number }[];
   } {
     const totalControls = this.controls.length;
     let implemented = 0;
     let inProgress = 0;
     let notStarted = 0;
+    let notApplicable = 0;
 
     for (const control of this.controls) {
       const status = controlStatuses.get(control.id);
-      if (status?.answer === 'yes' || status?.status === 'implemented') {
+      if (status?.answer === 'na' || status?.status === 'not_applicable') {
+        notApplicable++;
+      } else if (status?.answer === 'yes' || status?.status === 'implemented') {
         implemented++;
       } else if (status?.answer === 'partial' || status?.status === 'in_progress') {
         inProgress++;
@@ -471,16 +633,96 @@ class ControlMappingEngine {
         name: fw.name,
         percentage: coverage.percentage,
         color: fw.color,
+        excludedClauses: coverage.excludedClauses,
       };
     });
+
+    // Exclude N/A controls from percentage calculation
+    const applicableControls = totalControls - notApplicable;
 
     return {
       totalControls,
       implementedControls: implemented,
       inProgressControls: inProgress,
       notStartedControls: notStarted,
-      overallPercentage: totalControls > 0 ? Math.round((implemented / totalControls) * 100) : 0,
+      notApplicableControls: notApplicable,
+      overallPercentage: applicableControls > 0
+        ? Math.round((implemented / applicableControls) * 100)
+        : 0,
       frameworkStats,
+    };
+  }
+
+  /**
+   * Calculate weighted compliance score based on risk levels
+   * Critical controls are weighted 4x, High 3x, Medium 2x, Low 1x
+   */
+  getWeightedStats(controlStatuses: Map<string, ControlStatus>): WeightedScoreResult {
+    const RISK_WEIGHTS: Record<string, number> = {
+      critical: 4,
+      high: 3,
+      medium: 2,
+      low: 1,
+    };
+
+    const riskBreakdown: Record<string, { total: number; implemented: number; weight: number; naCount: number }> = {
+      critical: { total: 0, implemented: 0, weight: RISK_WEIGHTS.critical, naCount: 0 },
+      high: { total: 0, implemented: 0, weight: RISK_WEIGHTS.high, naCount: 0 },
+      medium: { total: 0, implemented: 0, weight: RISK_WEIGHTS.medium, naCount: 0 },
+      low: { total: 0, implemented: 0, weight: RISK_WEIGHTS.low, naCount: 0 },
+    };
+
+    const criticalGaps: string[] = [];
+    const highGaps: string[] = [];
+    let totalWeight = 0;
+    let achievedWeight = 0;
+    let totalApplicable = 0;
+    let totalImplemented = 0;
+
+    for (const control of this.controls) {
+      const riskLevel = control.riskLevel || 'medium';
+      const weight = RISK_WEIGHTS[riskLevel] || RISK_WEIGHTS.medium;
+      const status = controlStatuses.get(control.id);
+      const isImplemented = status?.answer === 'yes' || status?.status === 'implemented';
+      const isNA = status?.answer === 'na' || status?.status === 'not_applicable';
+
+      // Track N/A separately
+      if (isNA) {
+        if (riskBreakdown[riskLevel]) {
+          riskBreakdown[riskLevel].naCount++;
+        }
+        continue; // Exclude N/A from weighted calculation
+      }
+
+      totalWeight += weight;
+      totalApplicable++;
+
+      if (riskBreakdown[riskLevel]) {
+        riskBreakdown[riskLevel].total++;
+      }
+
+      if (isImplemented) {
+        achievedWeight += weight;
+        totalImplemented++;
+        if (riskBreakdown[riskLevel]) {
+          riskBreakdown[riskLevel].implemented++;
+        }
+      } else {
+        // Track gaps by severity
+        if (riskLevel === 'critical') {
+          criticalGaps.push(control.id);
+        } else if (riskLevel === 'high') {
+          highGaps.push(control.id);
+        }
+      }
+    }
+
+    return {
+      weightedScore: totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0,
+      unweightedScore: totalApplicable > 0 ? Math.round((totalImplemented / totalApplicable) * 100) : 0,
+      riskBreakdown,
+      criticalGaps,
+      highGaps,
     };
   }
 
@@ -524,6 +766,7 @@ export interface UseControlMappingReturn {
   getAllDomains: () => ComplianceDomainMeta[];
   getAllFrameworks: () => FrameworkMeta[];
   getGlobalStats: (controlStatuses: Map<string, ControlStatus>) => ReturnType<ControlMappingEngine['getGlobalStats']>;
+  getWeightedStats: (controlStatuses: Map<string, ControlStatus>) => WeightedScoreResult;
 }
 
 export function useControlMapping(): UseControlMappingReturn {
@@ -587,6 +830,12 @@ export function useControlMapping(): UseControlMappingReturn {
     []
   );
 
+  const getWeightedStats = useCallback(
+    (controlStatuses: Map<string, ControlStatus>) =>
+      controlMappingEngine.getWeightedStats(controlStatuses),
+    []
+  );
+
   return useMemo(() => ({
     getSatisfiedRequirements,
     getControlCoverage,
@@ -599,6 +848,7 @@ export function useControlMapping(): UseControlMappingReturn {
     getAllDomains,
     getAllFrameworks,
     getGlobalStats,
+    getWeightedStats,
   }), [
     getSatisfiedRequirements,
     getControlCoverage,
@@ -611,6 +861,7 @@ export function useControlMapping(): UseControlMappingReturn {
     getAllDomains,
     getAllFrameworks,
     getGlobalStats,
+    getWeightedStats,
   ]);
 }
 
