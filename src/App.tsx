@@ -34,7 +34,7 @@ import RemediationChat from './components/RemediationChat';
 import IntegrationHub from './components/IntegrationHub';
 import TenantAdmin from './components/TenantAdmin';
 import TPRMCenter from './components/TPRMCenter';
-import QuestionnaireAutomation from './components/QuestionnaireAutomation';
+import QuestionnaireCenter from './components/QuestionnaireCenter';
 import OrganizationSetup from './components/OrganizationSetup';
 import FrameworkRequirementsView from './components/FrameworkRequirementsView';
 import EvidenceRepository from './components/EvidenceRepository';
@@ -2219,10 +2219,11 @@ const AppContent: React.FC = () => {
             {activeTab === 'questionnaires' && (
               <motion.div key="questionnaires" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {currentOrg?.id ? (
-                  <QuestionnaireAutomation
+                  <QuestionnaireCenter
+                    compliance={compliance}
                     organizationId={currentOrg.id}
                     userId={currentUserId}
-                    userEmail={user?.email || ''}
+                    organizationName={currentOrg.name || 'Your Organization'}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
