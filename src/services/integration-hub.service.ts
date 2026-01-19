@@ -953,18 +953,37 @@ class IntegrationHubService {
     const scopes = provider.scopes?.join(' ') || '';
     const clientId = this.getClientId(providerId);
 
+    // Check if OAuth is configured
+    if (!this.isOAuthConfigured(providerId)) {
+      return null;
+    }
+
     // Build authorization URL based on provider
     switch (providerId) {
-      case 'okta':
-        return `https://{your-okta-domain}/oauth2/v1/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      case 'okta': {
+        const oktaDomain = this.getOktaDomain();
+        return `https://${oktaDomain}/oauth2/v1/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      }
       case 'azure_ad':
         return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
       case 'google_workspace':
         return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&access_type=offline`;
       case 'github':
         return `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      case 'gitlab':
+        return `https://gitlab.com/oauth/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      case 'bitbucket':
+        return `https://bitbucket.org/site/oauth2/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
       case 'slack':
         return `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      case 'jira':
+        return `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&response_type=code&prompt=consent`;
+      case 'asana':
+        return `https://app.asana.com/-/oauth_authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      case 'gusto':
+        return `https://api.gusto.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      case 'intune':
+        return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
       default:
         return null;
     }
@@ -1041,8 +1060,33 @@ class IntegrationHubService {
       google_workspace: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
       github: import.meta.env.VITE_GITHUB_CLIENT_ID || '',
       slack: import.meta.env.VITE_SLACK_CLIENT_ID || '',
+      gusto: import.meta.env.VITE_GUSTO_CLIENT_ID || '',
+      jira: import.meta.env.VITE_JIRA_CLIENT_ID || '',
+      asana: import.meta.env.VITE_ASANA_CLIENT_ID || '',
+      gitlab: import.meta.env.VITE_GITLAB_CLIENT_ID || '',
+      bitbucket: import.meta.env.VITE_BITBUCKET_CLIENT_ID || '',
+      intune: import.meta.env.VITE_INTUNE_CLIENT_ID || '',
     };
     return clientIds[providerId] || '';
+  }
+
+  private getOktaDomain(): string {
+    return import.meta.env.VITE_OKTA_DOMAIN || '';
+  }
+
+  /**
+   * Check if OAuth is configured for a provider
+   */
+  isOAuthConfigured(providerId: string): boolean {
+    const clientId = this.getClientId(providerId);
+    if (!clientId) return false;
+
+    // Okta also needs domain
+    if (providerId === 'okta') {
+      return !!this.getOktaDomain();
+    }
+
+    return true;
   }
 
   private mapToConnection(data: Record<string, unknown>): IntegrationConnection {

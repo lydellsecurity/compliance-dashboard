@@ -561,18 +561,45 @@ const ConnectModal: React.FC<{
 
           {provider.authMethod === 'oauth2' ? (
             <div className="text-center">
-              <p className="text-sm text-slate-600 dark:text-steel-400 mb-6">
-                Click the button below to authenticate with {provider.name}. You'll be redirected
-                to their login page.
-              </p>
-              <button
-                onClick={handleOAuthConnect}
-                disabled={connecting}
-                className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Connect with {provider.name}
-              </button>
+              {integrationHub.isOAuthConfigured(provider.id) ? (
+                <>
+                  <p className="text-sm text-slate-600 dark:text-steel-400 mb-6">
+                    Click the button below to authenticate with {provider.name}. You'll be redirected
+                    to their login page.
+                  </p>
+                  <button
+                    onClick={handleOAuthConnect}
+                    disabled={connecting}
+                    className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Connect with {provider.name}
+                  </button>
+                </>
+              ) : (
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        OAuth Not Configured
+                      </p>
+                      <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                        To enable {provider.name} integration, an administrator needs to configure OAuth credentials in the environment settings.
+                      </p>
+                      <a
+                        href={provider.documentationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-amber-700 dark:text-amber-300 hover:underline mt-2"
+                      >
+                        View setup documentation
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
