@@ -16,8 +16,7 @@ import {
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
-import IncidentDashboard from './components/IncidentDashboard';
-import IncidentDetail from './components/IncidentDetail';
+import IncidentCommandCenter from './components/IncidentCommandCenter';
 import ReportAnalyticsCenter from './components/ReportAnalyticsCenter';
 import RemediationEngine from './components/RemediationEngine';
 import TrustCenter from './components/TrustCenter';
@@ -43,7 +42,6 @@ import AuditorRequirementView from './components/AuditorRequirementView';
 import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
 import ControlWorkstationWrapper from './components/ControlWorkstation/ControlWorkstationWrapper';
 import { monitoringService } from './services/continuous-monitoring.service';
-import type { Incident } from './types/incident.types';
 import { useOrganization } from './contexts/OrganizationContext';
 import { useAuth } from './hooks/useAuth';
 import { CommandPalette, useCommandPalette } from './components/ui';
@@ -1994,7 +1992,6 @@ const AppContent: React.FC = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
   // Modal states for new features
   const [showMonitoringDashboard, setShowMonitoringDashboard] = useState(false);
@@ -2104,7 +2101,6 @@ const AppContent: React.FC = () => {
 
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
-    setSelectedIncident(null);
   };
 
   return (
@@ -2148,7 +2144,12 @@ const AppContent: React.FC = () => {
             )}
             {activeTab === 'incidents' && (
               <motion.div key="incidents" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                {selectedIncident ? <IncidentDetail incident={selectedIncident} compliance={compliance} ir={ir} onBack={() => setSelectedIncident(null)} /> : <IncidentDashboard compliance={compliance} ir={ir} onSelectIncident={setSelectedIncident} />}
+                <IncidentCommandCenter
+                  compliance={compliance}
+                  ir={ir}
+                  organizationId={currentOrg?.id || ''}
+                  userId={currentUserId}
+                />
               </motion.div>
             )}
             {activeTab === 'reporting' && (
