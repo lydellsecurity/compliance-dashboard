@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -7,7 +7,7 @@
     <title>Compliance Engine - Live Regulatory Update System</title>
     <meta name="description" content="AI-powered compliance management with automated regulatory scanning and drift detection" />
     <script>
-      // Prevent FOUC by setting theme before render - Dark mode is primary
+      // Prevent FOUC by setting theme before render - Light mode is primary
       (function() {
         var theme = localStorage.getItem('compliance-dashboard-theme');
         // Check legacy key if new key not found (for backward compatibility)
@@ -19,12 +19,12 @@
             } catch(e) {}
           }
         }
-        // Apply theme (default to dark if nothing stored)
-        if (theme === 'light') {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
+        // Apply theme (default to light if nothing stored)
+        if (theme === 'dark') {
+          document.documentElement.classList.remove('light');
+          document.documentElement.classList.add('dark');
         }
-        // Default is dark (set in HTML class), no action needed for dark
+        // Default is light (set in HTML class), no action needed for light
       })();
     </script>
   </head>

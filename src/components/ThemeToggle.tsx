@@ -16,11 +16,12 @@ const LEGACY_DARK_MODE_KEY = 'attestai-dark-mode';
  * for backward compatibility with useCompliance hook
  */
 function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'dark';
+  // Default to light mode
+  if (typeof window === 'undefined') return 'light';
 
   // Check new theme key first
   const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-  if (stored) return stored;
+  if (stored === 'dark' || stored === 'light') return stored;
 
   // Check legacy dark mode key from useCompliance for backward compatibility
   const legacyDarkMode = localStorage.getItem(LEGACY_DARK_MODE_KEY);
