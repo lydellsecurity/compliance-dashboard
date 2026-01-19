@@ -2107,7 +2107,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-200">
+    <div className="min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-colors duration-200">
       {/* Command Palette (Cmd+K) */}
       <CommandPalette
         isOpen={commandPaletteOpen}
@@ -2132,7 +2132,7 @@ const AppContent: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className={`transition-all duration-200 ${sidebarExpanded ? 'ml-56' : 'ml-16'}`}>
+      <main className={`min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-all duration-200 ${sidebarExpanded ? 'ml-56' : 'ml-16'}`}>
         <div className="max-w-7xl mx-auto px-6 py-8">
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
