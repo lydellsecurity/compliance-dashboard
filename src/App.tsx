@@ -21,6 +21,7 @@ import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type Framewo
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
 import { GatedButton, FeatureGate } from './components/UpgradeGate';
+import { BillingStatusBar } from './components/BillingStatusBar';
 
 // Always-mounted overlay modals (isOpen-gated internally). Lazy here would
 // force the chunk to load on every app boot since React still has to render
@@ -2158,6 +2159,7 @@ const AppContent: React.FC = () => {
       {/* Main Content */}
       <main className={`min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-all duration-200 ${sidebarExpanded ? 'ml-56' : 'ml-16'}`}>
         <div className="max-w-7xl mx-auto px-6 py-8">
+          <BillingStatusBar />
           {/* Single Suspense boundary covers every lazy tab body + any lazy
               components nested inside DashboardTab / AssessmentTab. */}
           <Suspense fallback={<TabLoadingFallback />}>

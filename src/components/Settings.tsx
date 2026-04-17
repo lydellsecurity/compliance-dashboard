@@ -9,7 +9,7 @@
  * - Organization settings
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings as SettingsIcon, Cloud, Bell, Activity, Shield, Building2,
@@ -28,6 +28,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useEntitlement } from '../hooks/useEntitlement';
 import { UpgradeModal } from './UpgradeGate';
 import { PLAN_DISPLAY } from '../constants/billing';
+import type { TenantPlan } from '../services/multi-tenant.service';
 
 // ============================================================================
 // TYPES
@@ -787,13 +788,52 @@ const RegulatorySection: React.FC = () => {
 
 const BillingCard: React.FC = () => {
   const { session } = useAuth();
-  const { tenant, plan, suggestedUpgrade, loading } = useEntitlement();
+  const { tenant, plan, suggestedUpgrade, loading, refresh } = useEntitlement();
   const [portalLoading, setPortalLoading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const display = PLAN_DISPLAY[plan];
   const hasSubscription = !!tenant?.billing?.subscriptionId;
+
+  // Post-checkout provisional state: when the user returns from Stripe with
+  // ?checkout=success we may land before the webhook has updated our row.
+  // Poll refresh() for up to 60s (with backoff), then clear the query param.
+  const provisioningRef = useRef<{ startedAt: number; lastPlan: TenantPlan } | null>(null);
+  const [provisioning, setProvisioning] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('checkout') === 'success';
+  });
+
+  useEffect(() => {
+    if (!provisioning) return;
+    if (!provisioningRef.current) {
+      provisioningRef.current = { startedAt: Date.now(), lastPlan: plan };
+    }
+    // If plan already changed from whatever it was when we started, we're done.
+    if (tenant && plan !== provisioningRef.current.lastPlan && plan !== 'free') {
+      setProvisioning(false);
+      provisioningRef.current = null;
+      const url = new URL(window.location.href);
+      url.searchParams.delete('checkout');
+      url.searchParams.delete('session_id');
+      window.history.replaceState({}, '', url.toString());
+      return;
+    }
+    // Stop polling after 60s even if the webhook is slow — show a soft hint.
+    if (Date.now() - provisioningRef.current.startedAt > 60_000) {
+      setProvisioning(false);
+      provisioningRef.current = null;
+      setError(
+        'Your upgrade is taking longer than expected. Refresh in a minute or reach out to support if the plan does not update.'
+      );
+      return;
+    }
+    const id = setTimeout(() => {
+      refresh();
+    }, 2_000);
+    return () => clearTimeout(id);
+  }, [provisioning, plan, tenant, refresh]);
 
   const openPortal = async () => {
     setError(null);
@@ -824,6 +864,17 @@ const BillingCard: React.FC = () => {
 
   return (
     <>
+      {provisioning && (
+        <div className="mb-3 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 flex items-center gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+          <div className="text-sm text-indigo-900 dark:text-indigo-100">
+            <span className="font-semibold">Finishing your upgrade…</span>{' '}
+            <span className="opacity-80">
+              Stripe confirmed your payment. Provisioning your new plan (this takes a few seconds).
+            </span>
+          </div>
+        </div>
+      )}
       <div className="p-5 bg-slate-50 dark:bg-steel-800/50 rounded-xl border border-slate-200 dark:border-steel-700">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">

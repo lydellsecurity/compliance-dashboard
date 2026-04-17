@@ -16,7 +16,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { X, Sparkles, Check, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Check, ArrowRight, ArrowUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import {
   useEntitlement,
@@ -31,8 +31,81 @@ import {
 } from '../constants/billing';
 import {
   PLAN_CONFIGS,
+  type TenantFeatures,
   type TenantPlan,
 } from '../services/multi-tenant.service';
+
+// ============================================================================
+// DIFF HELPERS
+// ============================================================================
+
+const FEATURE_LABELS: Record<keyof TenantFeatures, string> = {
+  cloudIntegrations: 'Cloud integrations (AWS, Azure, GCP)',
+  customControls: 'Custom controls',
+  apiAccess: 'REST API access',
+  ssoEnabled: 'SSO / SAML',
+  customBranding: 'Custom branding',
+  advancedReporting: 'Advanced reporting',
+  trustCenter: 'Public Trust Center',
+  incidentResponse: 'Incident Response engine',
+  vendorRisk: 'Vendor Risk Management',
+  questionnaireAutomation: 'Questionnaire autofill',
+  aiRemediationChat: 'AI Remediation Chat',
+  realTimeRegulatoryScan: 'Real-time regulatory scanning',
+  auditBundleExport: 'Audit-ready export',
+  customDomain: 'Custom domain',
+  scimProvisioning: 'SCIM provisioning',
+};
+
+const LIMIT_LABELS: Record<LimitKey, string> = {
+  maxUsers: 'Users',
+  maxControls: 'Controls',
+  maxEvidence: 'Evidence records',
+  maxIntegrations: 'Integrations',
+  maxStorageGb: 'Storage',
+  retentionDays: 'Retention',
+  auditLogDays: 'Audit log',
+  apiRateLimit: 'API rate',
+};
+
+function formatLimit(limit: LimitKey, value: number): string {
+  if (value === -1) return 'Unlimited';
+  if (limit === 'maxStorageGb') return `${value} GB`;
+  if (limit === 'retentionDays' || limit === 'auditLogDays') return `${value} days`;
+  if (limit === 'apiRateLimit') return `${value}/min`;
+  return value.toLocaleString();
+}
+
+interface PlanDiff {
+  newFeatures: { key: keyof TenantFeatures; label: string }[];
+  raisedLimits: { key: LimitKey; label: string; from: string; to: string }[];
+}
+
+function computePlanDiff(from: TenantPlan, to: TenantPlan): PlanDiff {
+  const fromConfig = PLAN_CONFIGS[from];
+  const toConfig = PLAN_CONFIGS[to];
+
+  const newFeatures = (Object.keys(toConfig.features) as (keyof TenantFeatures)[])
+    .filter((k) => toConfig.features[k] === true && fromConfig.features[k] === false)
+    .map((k) => ({ key: k, label: FEATURE_LABELS[k] }));
+
+  const raisedLimits: PlanDiff['raisedLimits'] = [];
+  (Object.keys(toConfig.limits) as LimitKey[]).forEach((k) => {
+    const fromVal = fromConfig.limits[k];
+    const toVal = toConfig.limits[k];
+    const isRaised = toVal === -1 || (fromVal !== -1 && toVal > fromVal);
+    if (isRaised) {
+      raisedLimits.push({
+        key: k,
+        label: LIMIT_LABELS[k],
+        from: formatLimit(k, fromVal),
+        to: formatLimit(k, toVal),
+      });
+    }
+  });
+
+  return { newFeatures, raisedLimits };
+}
 
 // ============================================================================
 // UPGRADE MODAL
@@ -65,6 +138,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const current = result?.currentPlan ?? 'free';
   const display = PLAN_DISPLAY[plan];
   const config = PLAN_CONFIGS[plan];
+  const diff = useMemo(() => computePlanDiff(current, plan), [current, plan]);
+  // Only show the comparison block when the user is already on a paid-ish plan
+  // that has real features to contrast against. Free-to-Starter users benefit
+  // more from the classic feature-highlight list.
+  const showComparison =
+    current !== 'free' && (diff.newFeatures.length > 0 || diff.raisedLimits.length > 0);
 
   const priceMonthly = config.price;
   const priceAnnualPerMonth = config.priceAnnual > 0 ? Math.round(config.priceAnnual / 12) : 0;
@@ -195,14 +274,60 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             </p>
           </div>
 
-          <ul className="space-y-2">
-            {display.featureHighlights.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-slate-700 dark:text-steel-200">
-                <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
+          {showComparison ? (
+            <div className="space-y-4">
+              {diff.newFeatures.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-2">
+                    What's new at {display.name}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {diff.newFeatures.map((f) => (
+                      <li
+                        key={f.key}
+                        className="flex items-start gap-2 text-sm text-slate-700 dark:text-steel-200"
+                      >
+                        <Sparkles className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                        <span>{f.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {diff.raisedLimits.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-2">
+                    Raised limits
+                  </p>
+                  <ul className="space-y-1.5">
+                    {diff.raisedLimits.map((l) => (
+                      <li
+                        key={l.key}
+                        className="flex items-center justify-between text-sm text-slate-700 dark:text-steel-200 gap-3"
+                      >
+                        <span className="flex items-center gap-2">
+                          <ArrowUp className="w-4 h-4 text-emerald-500 shrink-0" />
+                          {l.label}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-steel-400 tabular-nums">
+                          {l.from} → <span className="font-medium text-slate-900 dark:text-steel-100">{l.to}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {display.featureHighlights.map((f) => (
+                <li key={f} className="flex items-start gap-2 text-sm text-slate-700 dark:text-steel-200">
+                  <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          )}
 
           {error && (
             <div className="text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg">

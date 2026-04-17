@@ -63,6 +63,13 @@ export interface Tenant {
   branding: TenantBranding;
   billing: TenantBilling;
   usage: TenantUsage;
+  /** Stripe price ID of the tenant's primary subscription item (null for Free). */
+  stripePriceId: string | null;
+  /** Set once the Stripe subscription enters its trial window; null afterwards. */
+  trialEndsAt: string | null;
+  /** True when the user has scheduled a cancellation at period end. */
+  cancelAtPeriodEnd: boolean;
+  billingInterval: BillingInterval | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1216,6 +1223,10 @@ class MultiTenantService {
         apiCallsThisMonth: 0,
         lastActivityAt: null,
       },
+      stripePriceId: (data.stripe_price_id as string | null) ?? null,
+      trialEndsAt: (data.trial_ends_at as string | null) ?? null,
+      cancelAtPeriodEnd: (data.cancel_at_period_end as boolean | null) ?? false,
+      billingInterval: (data.billing_interval as BillingInterval | null) ?? null,
       createdAt: data.created_at as string,
       updatedAt: data.updated_at as string,
     };
