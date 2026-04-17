@@ -82,40 +82,7 @@ describe('generate-questionnaire-answer: validation', () => {
 });
 
 describe('generate-questionnaire-answer: happy path (Anthropic mocked)', () => {
-  // NOTE: these tests drive the Anthropic mock handler, but they currently
-  // expect a 400 response because of the parseJsonBody envelope bug described
-  // in the file header. If the source is fixed to read `parseResult.data`,
-  // flip these assertions to expect 200 + questionnaireAnswerSchema.parse(body).
-  it('documents upstream bug: well-formed payload still 400s due to envelope handling', async () => {
-    server.use(
-      anthropicTextHandler(
-        JSON.stringify({
-          answer: 'Yes, MFA is enforced org-wide.',
-          confidence: 'high',
-          reasoning: 'Per SOC 2 CC6.1 control evidence.',
-          relatedControls: ['SOC 2 CC6.1'],
-          evidenceSuggestions: ['MFA enforcement screenshot'],
-        }),
-      ),
-    );
-    const handler = await loadHandler();
-    const res = await handler(
-      jsonEvent('POST', {
-        question: 'Do you enforce MFA?',
-        organizationName: 'Acme',
-        questionType: 'yes_no',
-      }),
-    );
-    // BUG: validatePayload sees the envelope, not the data, so it 400s.
-    expect(res.statusCode).toBe(400);
-    const body = parseBody<{ error: string }>(res);
-    expect(body.error).toMatch(/question|organizationName|Validation failed/i);
-  });
-
-  // The schema below should validate once the bug is fixed. We keep this
-  // disabled under .skip to avoid red CI on a known bug, while preserving
-  // the expected post-fix contract for reviewers.
-  it.skip('post-fix contract: returns questionnaireAnswerSchema envelope', async () => {
+  it('returns questionnaireAnswerSchema envelope for well-formed payload', async () => {
     server.use(
       anthropicTextHandler(
         JSON.stringify({
@@ -136,7 +103,7 @@ describe('generate-questionnaire-answer: happy path (Anthropic mocked)', () => {
     expect(parsed.confidence).toBe('high');
   });
 
-  it.skip('post-fix contract: malformed LLM output still yields a safe envelope', async () => {
+  it('malformed LLM output still yields a safe envelope', async () => {
     server.use(anthropicTextHandler('not valid json at all'));
     const handler = await loadHandler();
     const res = await handler(

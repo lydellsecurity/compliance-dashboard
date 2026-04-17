@@ -18,9 +18,12 @@ const supabase = createClient(
 const signatureVerifiers = {
   /**
    * Verify GitHub webhook signature
-   * Uses HMAC-SHA256 with x-hub-signature-256 header
+   * Uses HMAC-SHA256 with x-hub-signature-256 header.
+   * Signature is `(payload, headers, secret)` to match the dispatcher call
+   * shape used for Slack/Okta/Jira/CrowdStrike.
    */
-  github: (payload, signature, secret) => {
+  github: (payload, headers, secret) => {
+    const signature = headers['x-hub-signature-256'];
     if (!signature) return false;
 
     const expected = 'sha256=' + crypto
@@ -229,9 +232,12 @@ async function processWebhookEvent(webhookEvent, connection) {
   const providerId = connection.provider_id;
   const triggerEvents = syncTriggerEvents[providerId] || [];
 
-  // Check if event type matches any trigger patterns
+  // Check if event type matches any trigger patterns. `eventType` can be
+  // undefined (e.g., a provider whose extractor returned `payload.type` but
+  // the payload had no `type`) — lowercase on undefined would crash the handler.
+  const normalizedEventType = (eventType || '').toLowerCase();
   const shouldSync = triggerEvents.some(pattern =>
-    eventType.toLowerCase().includes(pattern.toLowerCase())
+    normalizedEventType.includes(pattern.toLowerCase())
   );
 
   if (shouldSync) {

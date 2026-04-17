@@ -38,10 +38,12 @@ async function syncOkta(apiToken, domain) {
   };
 
   try {
-    // 1. Fetch all users
+    // 1. Fetch all users.
+    // Note: @okta/okta-sdk-nodejs v7 dropped `.each()` — iterate via
+    // Symbol.asyncIterator instead.
     try {
       const users = [];
-      await client.userApi.listUsers().each(user => {
+      for await (const user of client.userApi.listUsers()) {
         users.push({
           id: user.id,
           status: user.status,
@@ -57,7 +59,7 @@ async function syncOkta(apiToken, domain) {
             provider: user.credentials?.provider?.type,
           },
         });
-      });
+      }
 
       results.data.users = users;
       results.normalized.users = {
@@ -82,7 +84,7 @@ async function syncOkta(apiToken, domain) {
     // 2. Fetch all groups
     try {
       const groups = [];
-      await client.groupApi.listGroups().each(group => {
+      for await (const group of client.groupApi.listGroups()) {
         groups.push({
           id: group.id,
           type: group.type,
@@ -93,7 +95,7 @@ async function syncOkta(apiToken, domain) {
           created: group.created,
           lastMembershipUpdated: group.lastMembershipUpdated,
         });
-      });
+      }
 
       results.data.groups = groups;
       results.normalized.groups = {
@@ -110,7 +112,7 @@ async function syncOkta(apiToken, domain) {
     // 3. Fetch applications
     try {
       const apps = [];
-      await client.applicationApi.listApplications().each(app => {
+      for await (const app of client.applicationApi.listApplications()) {
         apps.push({
           id: app.id,
           name: app.name,
@@ -120,7 +122,7 @@ async function syncOkta(apiToken, domain) {
           created: app.created,
           lastUpdated: app.lastUpdated,
         });
-      });
+      }
 
       results.data.applications = apps;
       results.normalized.applications = {
@@ -139,40 +141,24 @@ async function syncOkta(apiToken, domain) {
     // 4. Fetch policies (authentication policies)
     try {
       const policies = [];
-      await client.policyApi.listPolicies({ type: 'OKTA_SIGN_ON' }).each(policy => {
-        policies.push({
-          id: policy.id,
-          name: policy.name,
-          description: policy.description,
-          status: policy.status,
-          type: policy.type,
-          created: policy.created,
-        });
+      const pushPolicy = (policy) => policies.push({
+        id: policy.id,
+        name: policy.name,
+        description: policy.description,
+        status: policy.status,
+        type: policy.type,
+        created: policy.created,
       });
 
-      // Also get password policies
-      await client.policyApi.listPolicies({ type: 'PASSWORD' }).each(policy => {
-        policies.push({
-          id: policy.id,
-          name: policy.name,
-          description: policy.description,
-          status: policy.status,
-          type: policy.type,
-          created: policy.created,
-        });
-      });
-
-      // Get MFA policies
-      await client.policyApi.listPolicies({ type: 'MFA_ENROLL' }).each(policy => {
-        policies.push({
-          id: policy.id,
-          name: policy.name,
-          description: policy.description,
-          status: policy.status,
-          type: policy.type,
-          created: policy.created,
-        });
-      });
+      for await (const policy of client.policyApi.listPolicies({ type: 'OKTA_SIGN_ON' })) {
+        pushPolicy(policy);
+      }
+      for await (const policy of client.policyApi.listPolicies({ type: 'PASSWORD' })) {
+        pushPolicy(policy);
+      }
+      for await (const policy of client.policyApi.listPolicies({ type: 'MFA_ENROLL' })) {
+        pushPolicy(policy);
+      }
 
       results.data.policies = policies;
       results.normalized.policies = {
@@ -202,9 +188,9 @@ async function syncOkta(apiToken, domain) {
       for (const user of sampleUsers) {
         try {
           const factors = [];
-          await client.userFactorApi.listFactors({ userId: user.id }).each(factor => {
+          for await (const factor of client.userFactorApi.listFactors({ userId: user.id })) {
             factors.push(factor);
-          });
+          }
 
           if (factors.length > 0) {
             factorStats.usersWithMfa++;
@@ -235,22 +221,21 @@ async function syncOkta(apiToken, domain) {
       const logs = [];
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      await client.systemLogApi.listLogEvents({ since, limit: 1000 }).each(event => {
-        if (logs.length < 1000) {
-          logs.push({
-            uuid: event.uuid,
-            eventType: event.eventType,
-            severity: event.severity,
-            displayMessage: event.displayMessage,
-            published: event.published,
-            actor: {
-              type: event.actor?.type,
-              displayName: event.actor?.displayName,
-            },
-            outcome: event.outcome?.result,
-          });
-        }
-      });
+      for await (const event of client.systemLogApi.listLogEvents({ since, limit: 1000 })) {
+        if (logs.length >= 1000) break;
+        logs.push({
+          uuid: event.uuid,
+          eventType: event.eventType,
+          severity: event.severity,
+          displayMessage: event.displayMessage,
+          published: event.published,
+          actor: {
+            type: event.actor?.type,
+            displayName: event.actor?.displayName,
+          },
+          outcome: event.outcome?.result,
+        });
+      }
 
       results.data.system_log = logs;
       results.normalized.system_log = {

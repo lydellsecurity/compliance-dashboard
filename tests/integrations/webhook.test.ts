@@ -208,14 +208,7 @@ describe('integration-webhook: routing + body handling', () => {
 });
 
 describe('integration-webhook: GitHub signature verification', () => {
-  it('valid HMAC-SHA256 signature does not 5xx (graceful handling)', async () => {
-    // NOTE: The GitHub verifier at the time of writing is invoked by the
-    // handler with `(rawBody, eventHeaders, secret)` rather than
-    // `(rawBody, signatureString, secret)` — the verifier's try/catch then
-    // makes every github signature verify as `false`. This test locks in
-    // the "never 5xx / graceful" contract rather than a 200 status, so it
-    // remains green both before and after that bug is fixed. The Slack
-    // happy-path test below covers the accepted->insert flow end-to-end.
+  it('valid HMAC-SHA256 signature is accepted', async () => {
     const handler = await loadHandler('github');
     const body = JSON.stringify({ action: 'opened', number: 1 });
     const sig =
@@ -227,13 +220,7 @@ describe('integration-webhook: GitHub signature verification', () => {
     );
     expect(res.statusCode).toBeLessThan(500);
     const parsed = JSON.parse(res.body) as { status?: string; error?: string };
-    // Either an accepted status OR a structured 401 "Invalid signature" error.
-    expect(
-      parsed.status === 'accepted' ||
-        parsed.status === 'duplicate' ||
-        parsed.status === 'challenge' ||
-        parsed.error === 'Invalid signature'
-    ).toBe(true);
+    expect(['accepted', 'duplicate', 'challenge']).toContain(parsed.status);
   });
 
   it('tampered signature → 401 rejected', async () => {

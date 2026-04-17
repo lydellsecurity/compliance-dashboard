@@ -145,10 +145,11 @@ exports.handler = async (event, context) => {
 
   try {
     // Parse and validate request body
-    const payload = parseJsonBody(event.body);
-    if (!payload) {
-      return errorResponse(400, 'Invalid JSON body', origin);
+    const parseResult = parseJsonBody(event.body);
+    if (!parseResult.valid) {
+      return errorResponse(400, parseResult.error || 'Invalid JSON body', origin);
     }
+    const payload = parseResult.data;
 
     const validationErrors = validatePayload(payload);
     if (validationErrors.length > 0) {
