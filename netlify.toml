@@ -14,6 +14,10 @@
 [functions."integration-health-check"]
   schedule = "0 */6 * * *"  # Run every 6 hours
 
+# Scheduled Functions - Stripe metered-usage reporter
+[functions."stripe-report-usage"]
+  schedule = "15 2 * * *"  # Daily at 02:15 UTC
+
 # API routes to functions (must be BEFORE the SPA catch-all)
 [[redirects]]
   from = "/api/*"

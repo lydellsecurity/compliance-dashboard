@@ -20,6 +20,7 @@ import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type Framewo
 // Inline controls (kept eager — rendered on every control card, lazy would cause flicker).
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
+import { GatedButton, FeatureGate } from './components/UpgradeGate';
 
 // Always-mounted overlay modals (isOpen-gated internally). Lazy here would
 // force the chunk to load on every app boot since React still has to render
@@ -679,13 +680,14 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
                     Remediation Guide
                   </button>
                 )}
-                <button
-                  onClick={() => setShowAIChat(true)}
+                <GatedButton
+                  feature="aiRemediationChat"
+                  onAllow={() => setShowAIChat(true)}
                   className="btn-primary flex-1"
                 >
                   <Sparkles className="w-4 h-4" />
                   AI Assistant
-                </button>
+                </GatedButton>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-rose-600 dark:text-status-risk uppercase tracking-wide mb-2">Remediation Plan</label>
@@ -2226,10 +2228,12 @@ const AppContent: React.FC = () => {
             {activeTab === 'vendors' && (
               <motion.div key="vendors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {currentOrg?.id ? (
-                  <TPRMCenter
-                    organizationId={currentOrg.id}
-                    userId={currentUserId}
-                  />
+                  <FeatureGate feature="vendorRisk">
+                    <TPRMCenter
+                      organizationId={currentOrg.id}
+                      userId={currentUserId}
+                    />
+                  </FeatureGate>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="text-6xl mb-4">🏢</div>

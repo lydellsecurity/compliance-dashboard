@@ -1652,8 +1652,8 @@ const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
       {/* Plan Comparison */}
       <div className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-6">Compare Plans</h3>
-        <div className="grid grid-cols-4 gap-4">
-          {(['free', 'startup', 'business', 'enterprise'] as TenantPlan[]).map((plan) => {
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {(['free', 'starter', 'growth', 'scale', 'enterprise'] as TenantPlan[]).map((plan) => {
             const config = PLAN_CONFIGS[plan];
             const isCurrent = plan === tenant.plan;
             return (

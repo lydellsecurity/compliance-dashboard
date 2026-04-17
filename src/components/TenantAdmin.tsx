@@ -78,8 +78,9 @@ const ROLE_LABELS: Record<UserRole, { label: string; color: string }> = {
 
 const PLAN_COLORS: Record<TenantPlan, string> = {
   free: 'text-slate-600 dark:text-steel-400 bg-slate-100 dark:bg-steel-800',
-  startup: 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30',
-  business: 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30',
+  starter: 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30',
+  growth: 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30',
+  scale: 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30',
   enterprise: 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30',
 };
 
@@ -725,8 +726,8 @@ const BillingTab: React.FC<{
         <h3 className="text-lg font-medium text-slate-900 dark:text-steel-100 mb-4">
           Compare Plans
         </h3>
-        <div className="grid grid-cols-4 gap-4 text-sm">
-          {(['free', 'startup', 'business', 'enterprise'] as TenantPlan[]).map((plan) => {
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
+          {(['free', 'starter', 'growth', 'scale', 'enterprise'] as TenantPlan[]).map((plan) => {
             const config = PLAN_CONFIGS[plan];
             const isCurrent = plan === tenant.plan;
             return (

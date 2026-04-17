@@ -24,6 +24,10 @@ import {
   type AlertSeverity,
 } from '../services/continuous-monitoring.service';
 import { awsConnector } from '../services/cloud-integrations/aws-connector.service';
+import { useAuth } from '../hooks/useAuth';
+import { useEntitlement } from '../hooks/useEntitlement';
+import { UpgradeModal } from './UpgradeGate';
+import { PLAN_DISPLAY } from '../constants/billing';
 
 // ============================================================================
 // TYPES
@@ -778,6 +782,106 @@ const RegulatorySection: React.FC = () => {
 };
 
 // ============================================================================
+// BILLING CARD
+// ============================================================================
+
+const BillingCard: React.FC = () => {
+  const { session } = useAuth();
+  const { tenant, plan, suggestedUpgrade, loading } = useEntitlement();
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const display = PLAN_DISPLAY[plan];
+  const hasSubscription = !!tenant?.billing?.subscriptionId;
+
+  const openPortal = async () => {
+    setError(null);
+    setPortalLoading(true);
+    try {
+      const res = await fetch('/.netlify/functions/stripe-create-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not open billing portal');
+      window.location.href = json.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open billing portal');
+      setPortalLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="card p-5 text-sm text-secondary">Loading billing…</div>
+    );
+  }
+
+  return (
+    <>
+      <div className="p-5 bg-slate-50 dark:bg-steel-800/50 rounded-xl border border-slate-200 dark:border-steel-700">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-primary">
+                {display.name} plan
+              </h3>
+              <p className="text-xs text-secondary">{display.tagline}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {hasSubscription && (
+              <button
+                type="button"
+                onClick={openPortal}
+                disabled={portalLoading}
+                className="btn-secondary"
+              >
+                {portalLoading ? 'Opening…' : 'Manage billing'}
+              </button>
+            )}
+            {suggestedUpgrade && suggestedUpgrade !== 'enterprise' && (
+              <button
+                type="button"
+                onClick={() => setShowUpgrade(true)}
+                className="btn-primary"
+              >
+                Upgrade to {PLAN_DISPLAY[suggestedUpgrade].name}
+              </button>
+            )}
+            {suggestedUpgrade === 'enterprise' && (
+              <a
+                href="mailto:sales@lydellsecurity.com?subject=Enterprise%20plan%20enquiry"
+                className="btn-primary"
+              >
+                Contact sales
+              </a>
+            )}
+          </div>
+        </div>
+        {error && (
+          <p className="text-sm text-rose-600 dark:text-rose-400 mt-2">{error}</p>
+        )}
+      </div>
+      <UpgradeModal
+        open={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        result={{ allowed: false, currentPlan: plan, requiredPlan: suggestedUpgrade ?? 'growth' }}
+        targetPlan={suggestedUpgrade ?? undefined}
+      />
+    </>
+  );
+};
+
+// ============================================================================
 // ADMIN SECTION
 // ============================================================================
 
@@ -825,6 +929,9 @@ const AdminSection: React.FC<{ onOpenAdmin: () => void }> = ({ onOpenAdmin }) =>
           Open Admin Dashboard
         </button>
       </div>
+
+      <BillingCard />
+
 
       {/* Admin Features Grid */}
       <div className="grid md:grid-cols-2 gap-4">

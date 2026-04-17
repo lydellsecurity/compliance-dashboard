@@ -17,8 +17,9 @@ import type { UserRole } from '../lib/database.types';
 // TYPES
 // ============================================================================
 
-export type TenantPlan = 'free' | 'startup' | 'business' | 'enterprise';
+export type TenantPlan = 'free' | 'starter' | 'growth' | 'scale' | 'enterprise';
 export type TenantStatus = 'active' | 'suspended' | 'trial' | 'cancelled';
+export type BillingInterval = 'monthly' | 'annual';
 export type FeatureFlag = string;
 
 export interface TenantLimits {
@@ -43,6 +44,11 @@ export interface TenantFeatures {
   incidentResponse: boolean;
   vendorRisk: boolean;
   questionnaireAutomation: boolean;
+  aiRemediationChat: boolean;
+  realTimeRegulatoryScan: boolean;
+  auditBundleExport: boolean;
+  customDomain: boolean;
+  scimProvisioning: boolean;
 }
 
 export interface Tenant {
@@ -177,7 +183,13 @@ export interface TenantAnalytics {
 // PLAN CONFIGURATIONS
 // ============================================================================
 
-export const PLAN_CONFIGS: Record<TenantPlan, { limits: TenantLimits; features: TenantFeatures; price: number }> = {
+// Prices align with docs/MONETIZATION_PLAN.md §3. `price` is the list monthly
+// price in USD; `priceAnnual` is the yearly total (≈17% less than 12× monthly,
+// i.e. two months free). -1 means custom / contact sales.
+export const PLAN_CONFIGS: Record<
+  TenantPlan,
+  { limits: TenantLimits; features: TenantFeatures; price: number; priceAnnual: number }
+> = {
   free: {
     limits: {
       maxUsers: 3,
@@ -187,10 +199,10 @@ export const PLAN_CONFIGS: Record<TenantPlan, { limits: TenantLimits; features: 
       maxStorageGb: 1,
       retentionDays: 30,
       auditLogDays: 7,
-      apiRateLimit: 100,
+      apiRateLimit: 0,
     },
     features: {
-      cloudIntegrations: false,
+      cloudIntegrations: true,
       customControls: false,
       apiAccess: false,
       ssoEnabled: false,
@@ -200,44 +212,87 @@ export const PLAN_CONFIGS: Record<TenantPlan, { limits: TenantLimits; features: 
       incidentResponse: false,
       vendorRisk: false,
       questionnaireAutomation: false,
+      aiRemediationChat: false,
+      realTimeRegulatoryScan: false,
+      auditBundleExport: false,
+      customDomain: false,
+      scimProvisioning: false,
     },
     price: 0,
+    priceAnnual: 0,
   },
-  startup: {
+  starter: {
     limits: {
       maxUsers: 10,
-      maxControls: 150,
-      maxEvidence: 500,
+      maxControls: 236,
+      maxEvidence: 750,
       maxIntegrations: 5,
       maxStorageGb: 10,
-      retentionDays: 90,
+      retentionDays: 180,
       auditLogDays: 30,
-      apiRateLimit: 1000,
+      apiRateLimit: 60,
     },
     features: {
       cloudIntegrations: true,
       customControls: true,
       apiAccess: false,
       ssoEnabled: false,
-      customBranding: false,
+      customBranding: true,
       advancedReporting: true,
       trustCenter: true,
       incidentResponse: true,
       vendorRisk: false,
       questionnaireAutomation: false,
+      aiRemediationChat: false,
+      realTimeRegulatoryScan: false,
+      auditBundleExport: false,
+      customDomain: false,
+      scimProvisioning: false,
     },
-    price: 299,
+    price: 599,
+    priceAnnual: 5988,
   },
-  business: {
+  growth: {
     limits: {
-      maxUsers: 50,
+      maxUsers: 25,
       maxControls: 500,
-      maxEvidence: 2000,
-      maxIntegrations: 20,
+      maxEvidence: 3000,
+      maxIntegrations: 15,
       maxStorageGb: 50,
       retentionDays: 365,
       auditLogDays: 90,
-      apiRateLimit: 10000,
+      apiRateLimit: 300,
+    },
+    features: {
+      cloudIntegrations: true,
+      customControls: true,
+      apiAccess: true,
+      ssoEnabled: false,
+      customBranding: true,
+      advancedReporting: true,
+      trustCenter: true,
+      incidentResponse: true,
+      vendorRisk: true,
+      questionnaireAutomation: true,
+      aiRemediationChat: true,
+      realTimeRegulatoryScan: false,
+      auditBundleExport: true,
+      customDomain: false,
+      scimProvisioning: false,
+    },
+    price: 1199,
+    priceAnnual: 11988,
+  },
+  scale: {
+    limits: {
+      maxUsers: 75,
+      maxControls: 1500,
+      maxEvidence: 10000,
+      maxIntegrations: 40,
+      maxStorageGb: 200,
+      retentionDays: 730,
+      auditLogDays: 365,
+      apiRateLimit: 1200,
     },
     features: {
       cloudIntegrations: true,
@@ -249,9 +304,15 @@ export const PLAN_CONFIGS: Record<TenantPlan, { limits: TenantLimits; features: 
       trustCenter: true,
       incidentResponse: true,
       vendorRisk: true,
-      questionnaireAutomation: false,
+      questionnaireAutomation: true,
+      aiRemediationChat: true,
+      realTimeRegulatoryScan: true,
+      auditBundleExport: true,
+      customDomain: true,
+      scimProvisioning: false,
     },
-    price: 799,
+    price: 2399,
+    priceAnnual: 23988,
   },
   enterprise: {
     limits: {
@@ -275,8 +336,14 @@ export const PLAN_CONFIGS: Record<TenantPlan, { limits: TenantLimits; features: 
       incidentResponse: true,
       vendorRisk: true,
       questionnaireAutomation: true,
+      aiRemediationChat: true,
+      realTimeRegulatoryScan: true,
+      auditBundleExport: true,
+      customDomain: true,
+      scimProvisioning: true,
     },
-    price: -1, // Custom pricing
+    price: -1,
+    priceAnnual: -1,
   },
 };
 
