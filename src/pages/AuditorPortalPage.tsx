@@ -177,6 +177,9 @@ const AuditorPortalPage: React.FC = () => {
     };
 
     validateToken();
+    // validateToken / loadPortalData are closures over the current token and
+    // portal state; including them would re-run on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Load compliance data for the portal

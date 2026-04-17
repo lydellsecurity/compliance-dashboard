@@ -268,6 +268,10 @@ const PublicTrustCenter: React.FC = () => {
     }
 
     fetchComplianceData();
+    // totalControls is read inside but also written by this effect — adding
+    // it to deps would loop. The fallback read is intentional "last known
+    // value" behavior.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isValid, branding]);
 
   // Calculate overall score

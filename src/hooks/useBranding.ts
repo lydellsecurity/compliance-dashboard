@@ -127,7 +127,10 @@ export function useBranding(organizationId: string | null): BrandingContextValue
   useEffect(() => {
     fetchBranding();
     return () => {
-      // Invalidate in-flight requests on unmount.
+      // Monotonic counter — mutating the live ref in cleanup is the whole
+      // point of the pattern (invalidates any in-flight fetch). The lint
+      // rule warns because the value may have changed; that's intended.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       requestIdRef.current++;
     };
   }, [fetchBranding]);

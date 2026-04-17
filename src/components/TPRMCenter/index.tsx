@@ -152,9 +152,11 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
   const [dashboard, setDashboard] = useState<VendorDashboardData | null>(null);
   const [filterCriticality, setFilterCriticality] = useState<VendorCriticality | null>(null);
 
-  // Load data
+  // Reload when the org changes. loadData is a useCallback over the same
+  // dep; adding it would just double-fire.
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
 
   const loadData = useCallback(async () => {

@@ -185,12 +185,16 @@ const InviteAcceptPage: React.FC = () => {
   };
 
   // Auto-accept if user is logged in with matching email
+  // Auto-accept once the user, invite, and auth state align. acceptInvite is
+  // a closure over the current status/user/invite so including it in deps
+  // would retrigger on every render.
   useEffect(() => {
     if (status === 'valid' && user && invite && !authLoading) {
       if (user.email?.toLowerCase() === invite.email.toLowerCase()) {
         acceptInvite();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, user, invite, authLoading]);
 
   // Loading state

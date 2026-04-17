@@ -53,6 +53,8 @@ export interface IntegrationProvider {
   requiredPermissions?: string[]; // Human-readable permissions needed
 }
 
+export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+
 export interface IntegrationConnection {
   id: string;
   organizationId: string;
@@ -69,6 +71,23 @@ export interface IntegrationConnection {
   lastSyncAt: string | null;
   lastSyncStatus: 'success' | 'error' | null;
   lastSyncError: string | null;
+  // Health probe fields written by netlify/functions/integration-test.cjs.
+  // "Unknown" means no probe has run yet.
+  healthStatus: HealthStatus;
+  lastHealthCheckAt: string | null;
+  consecutiveFailures: number;
+  healthError: string | null;
+  lastHealthLatencyMs: number | null;
+}
+
+export interface HealthCheckResult {
+  success: boolean;
+  connectionId: string;
+  providerId: string;
+  providerName: string;
+  latencyMs: number;
+  testedAt: string;
+  error?: string;
 }
 
 export interface IntegrationSettings {
@@ -730,6 +749,84 @@ class IntegrationHubService {
     }
   }
 
+  /**
+   * Run a live health probe against a connected integration and persist the
+   * result. This is the "user-in-the-loop" probe from the QA plan: when a real
+   * customer has credentials we don't, their health-check result is our
+   * earliest signal that a provider API has changed.
+   *
+   * Prefer this over `testConnection` for ongoing monitoring — it updates the
+   * dedicated `health_status` / `last_health_check_at` columns the fleet view
+   * reads, rather than the one-time setup `status` column.
+   */
+  async runHealthCheck(connectionId: string): Promise<HealthCheckResult> {
+    const notInitialized: HealthCheckResult = {
+      success: false,
+      connectionId,
+      providerId: 'unknown',
+      providerName: 'unknown',
+      latencyMs: 0,
+      testedAt: new Date().toISOString(),
+      error: 'Service not initialized',
+    };
+
+    if (!supabase || !this.organizationId) return notInitialized;
+
+    const connection = await this.getConnection(connectionId);
+    if (!connection) {
+      return { ...notInitialized, error: 'Connection not found' };
+    }
+
+    try {
+      // Pass connectionId so the netlify function persists health columns
+      // (last_health_check_at / health_status / consecutive_failures).
+      const response = await fetch('/.netlify/functions/integration-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerId: connection.providerId,
+          connectionId,
+          config: connection.credentials,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        success?: boolean;
+        provider?: string;
+        providerId?: string;
+        latency?: number;
+        testedAt?: string;
+        error?: string;
+      };
+
+      return {
+        success: !!payload.success,
+        connectionId,
+        providerId: payload.providerId ?? connection.providerId,
+        providerName: payload.provider ?? connection.providerName,
+        latencyMs: payload.latency ?? 0,
+        testedAt: payload.testedAt ?? new Date().toISOString(),
+        error: payload.success ? undefined : payload.error ?? `HTTP ${response.status}`,
+      };
+    } catch (error) {
+      return {
+        ...notInitialized,
+        providerId: connection.providerId,
+        providerName: connection.providerName,
+        error: error instanceof Error ? error.message : 'Health check failed',
+      };
+    }
+  }
+
+  /**
+   * Probe every connection for the current organization concurrently.
+   * Returns the per-connection result so the UI can render progress.
+   */
+  async runAllHealthChecks(): Promise<HealthCheckResult[]> {
+    const connections = await this.getConnections();
+    return Promise.all(connections.map((c) => this.runHealthCheck(c.id)));
+  }
+
   // ---------------------------------------------------------------------------
   // DATA SYNC
   // ---------------------------------------------------------------------------
@@ -1115,6 +1212,11 @@ class IntegrationHubService {
       lastSyncAt: data.last_sync_at as string | null,
       lastSyncStatus: data.last_sync_status as 'success' | 'error' | null,
       lastSyncError: data.last_sync_error as string | null,
+      healthStatus: (data.health_status as HealthStatus | undefined) ?? 'unknown',
+      lastHealthCheckAt: (data.last_health_check_at as string | null) ?? null,
+      consecutiveFailures: (data.consecutive_failures as number | undefined) ?? 0,
+      healthError: (data.error_message as string | null) ?? null,
+      lastHealthLatencyMs: (data.last_health_latency_ms as number | null) ?? null,
     };
   }
 }

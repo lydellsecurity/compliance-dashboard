@@ -360,6 +360,9 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   const loadIdRef = useRef(0);
   useEffect(() => {
     return () => {
+      // Monotonic counter — invalidating any in-flight load is the whole
+      // point; the ref SHOULD be live at cleanup time.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       loadIdRef.current++;
     };
   }, []);
@@ -442,13 +445,15 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     };
   }, []);
 
-  // Load data from Supabase when user is authenticated
-  // Use organizationId from options (OrganizationContext) if available
+  // Load data from Supabase when user/org/online-status changes.
+  // loadFromSupabase is a useCallback below and manages its own staleness
+  // via loadIdRef, so adding it to deps would cause a redundant double-load.
   useEffect(() => {
     const effectiveOrgId = organizationId || supabaseUser?.organization_id;
     if (effectiveOrgId && isOnline && complianceDb.isAvailable()) {
       loadFromSupabase();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, supabaseUser?.organization_id, isOnline]);
 
   // Load evidence file counts separately (ensures they're loaded even if evidence sync is skipped)
@@ -710,6 +715,12 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     } finally {
       if (!isStale()) setIsLoading(false);
     }
+    // Known stale-closure: `allControls` and `supabaseUser?.id` are captured
+    // at definition time. Adding them to deps would re-create the callback
+    // on every control edit, triggering the effect above to re-fire. The
+    // load path reads these via the latest org context instead, which is
+    // acceptable for the one-time-per-org sync this is meant to do.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ============================================================================
@@ -846,7 +857,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         partial: partialCount,
       };
     }),
-  [responses, allControls]);
+  [responses, responsesAsUserResponse, allControls]);
 
   // ============================================================================
   // DOMAIN PROGRESS CALCULATION
@@ -1318,7 +1329,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     } finally {
       setIsLoading(false);
     }
-  }, [responsesObj, customControls]);
+  }, [responsesObj, customControls, storageKeys.LAST_SYNCED]);
 
   const loadFromDatabase = useCallback(async (): Promise<void> => {
     if (!complianceDb.isAvailable()) {

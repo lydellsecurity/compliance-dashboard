@@ -142,10 +142,13 @@ const QuestionnaireAutomation: React.FC<QuestionnaireAutomationProps> = ({
     questionnaireService.setOrganization(organizationId);
   }, [organizationId]);
 
-  // Load initial data
+  // Load initial data on org change. loadQuestionnaires / loadStats are
+  // useCallbacks over organizationId; adding them to deps would just
+  // double-fire right after the org change.
   useEffect(() => {
     loadQuestionnaires();
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
 
   // Load questionnaires

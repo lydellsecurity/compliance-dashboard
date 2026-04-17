@@ -98,10 +98,12 @@ const TenantAdmin: React.FC<TenantAdminProps> = ({ tenantId, userId, userRole })
 
   const canManage = userRole === 'owner' || userRole === 'admin';
 
-  // Initialize
+  // Initialize. loadData is a useCallback over the same deps; including it
+  // just causes a redundant double-fire right after context change.
   useEffect(() => {
     multiTenant.setContext(tenantId, userId);
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, userId]);
 
   const loadData = useCallback(async () => {

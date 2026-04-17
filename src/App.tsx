@@ -89,6 +89,9 @@ const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error('Failed to load compliance data', compliance.loadError);
       compliance.clearLoadError();
     }
+    // We only want to fire on the loadError transition — watching the whole
+    // compliance object would retrigger on every responses change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compliance.loadError, compliance.clearLoadError, toast]);
 
   return <ComplianceContext.Provider value={compliance}>{children}</ComplianceContext.Provider>;

@@ -173,12 +173,15 @@ const IntegrationCallback: React.FC = () => {
   const error = searchParams.get('error');
   const errorDescription = searchParams.get('error_description');
 
-  // Process OAuth callback
+  // Process OAuth callback once on mount. processCallback is a closure over
+  // component state and may change per render; we guard re-entry with
+  // processedRef instead of a dep list.
   useEffect(() => {
     if (processedRef.current) return;
     processedRef.current = true;
 
     processCallback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const completeStep = (step: CallbackStep) => {

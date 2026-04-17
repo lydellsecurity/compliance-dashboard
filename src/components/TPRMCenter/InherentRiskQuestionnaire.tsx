@@ -152,6 +152,11 @@ const InherentRiskQuestionnaire: React.FC<InherentRiskQuestionnaireProps> = ({
     } else {
       setCurrentStep(prev => prev + 1);
     }
+    // handleSubmit is defined below this callback and closes over the
+    // questionnaire state; including it would introduce an initialization
+    // cycle (handleNext references handleSubmit, handleSubmit references
+    // handleNext indirectly through re-renders).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAnswered, isLastStep]);
 
   // Navigate to previous step

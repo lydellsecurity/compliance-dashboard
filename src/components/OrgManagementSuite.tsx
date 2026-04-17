@@ -201,9 +201,13 @@ const OrgManagementSuite: React.FC<OrgManagementSuiteProps> = ({ tenantId, userI
     return role as ExtendedRole;
   };
 
+  // Reload tenant data on identity/tenant change. loadData is a useCallback
+  // over the same inputs; adding it to deps would just double-fire on every
+  // change.
   useEffect(() => {
     multiTenant.setContext(tenantId, userId);
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, userId]);
 
   const loadData = useCallback(async () => {

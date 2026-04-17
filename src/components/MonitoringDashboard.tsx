@@ -307,10 +307,14 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
   const [showResolvedAlerts, setShowResolvedAlerts] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Get trend data
+  // Get trend data. `refreshKey` is a manual bust-the-memo trigger — the
+  // linter can't see through monitoringService's internal mutations so it
+  // flags refreshKey as "unnecessary", but incrementing it is how the UI
+  // says "refetch."
   const overallTrend = useMemo(() => {
     const days = TIME_RANGE_OPTIONS.find(t => t.value === timeRange)?.days || 7;
     return monitoringService.getTrendData('overall', undefined, days);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, refreshKey]);
 
   const frameworkTrends = useMemo(() => {
@@ -320,6 +324,7 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
       trends[fwId] = monitoringService.getTrendData('framework', fwId, days);
     }
     return trends;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frameworkScores, timeRange, refreshKey]);
 
   // Get alerts
@@ -328,8 +333,10 @@ export const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
       ? ['active', 'acknowledged', 'resolved', 'dismissed'] as const
       : ['active', 'acknowledged'] as const;
     return monitoringService.getAlerts({ status: [...statuses], limit: 50 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showResolvedAlerts, refreshKey]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const alertCounts = useMemo(() => monitoringService.getAlertCounts(), [refreshKey]);
 
   // Track if we've recorded a snapshot for this session

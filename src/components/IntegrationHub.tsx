@@ -54,6 +54,7 @@ import {
   type IntegrationConnection,
   type IntegrationCategory,
   type IntegrationStatus,
+  type HealthStatus,
 } from '../services/integration-hub.service';
 import { useEscapeKey } from '../hooks/useEscapeKey';
 
@@ -217,11 +218,14 @@ const IntegrationHub: React.FC<IntegrationHubProps> = ({ organizationId, userId 
     }
   }, [location]);
 
-  // Initialize
+  // Re-initialize whenever the org/user changes. loadConnections is a stable
+  // useCallback over the same deps, so we deliberately exclude it to avoid
+  // a redundant double-load right after org switch.
   useEffect(() => {
     integrationHub.setContext(organizationId, userId);
     setProviders(integrationHub.getProvidersByCategory());
     loadConnections();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, userId]);
 
   const loadConnections = useCallback(async () => {
@@ -305,6 +309,32 @@ const IntegrationHub: React.FC<IntegrationHubProps> = ({ organizationId, userId 
     return sum + (provider?.controlsMapped.length || 0);
   }, 0);
 
+  // Fleet health rollup — drives the summary stat card and the Run-all button.
+  const healthBreakdown = connections
+    .filter((c) => c.status === 'connected')
+    .reduce(
+      (acc, c) => {
+        acc[c.healthStatus] = (acc[c.healthStatus] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<HealthStatus, number>
+    );
+  const healthyCount = healthBreakdown.healthy ?? 0;
+  const degradedCount = healthBreakdown.degraded ?? 0;
+  const unhealthyCount = healthBreakdown.unhealthy ?? 0;
+  const unknownCount = healthBreakdown.unknown ?? 0;
+
+  const [runningFleetCheck, setRunningFleetCheck] = useState(false);
+  const runFleetHealthCheck = useCallback(async () => {
+    setRunningFleetCheck(true);
+    try {
+      await integrationHub.runAllHealthChecks();
+      await loadConnections();
+    } finally {
+      setRunningFleetCheck(false);
+    }
+  }, [loadConnections]);
+
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-midnight-950 -m-6 p-6">
       {/* Success Toast */}
@@ -339,6 +369,17 @@ const IntegrationHub: React.FC<IntegrationHubProps> = ({ organizationId, userId 
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {connectedCount > 0 && (
+              <button
+                onClick={runFleetHealthCheck}
+                disabled={runningFleetCheck}
+                title="Probe every connected integration and record the result. Useful when you suspect a provider API changed."
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-white dark:bg-midnight-800 text-slate-700 dark:text-steel-200 border border-slate-200 dark:border-steel-700 hover:bg-slate-50 dark:hover:bg-steel-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${runningFleetCheck ? 'animate-spin' : ''}`} />
+                {runningFleetCheck ? 'Probing…' : 'Run all health checks'}
+              </button>
+            )}
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-lg transition-colors ${
@@ -382,12 +423,14 @@ const IntegrationHub: React.FC<IntegrationHubProps> = ({ organizationId, userId 
             value={totalControls}
             color="indigo"
           />
-          <StatCard
-            icon={<Activity className="w-5 h-5" />}
-            label="Active Monitoring"
-            value={connectedCount > 0 ? 'ON' : 'OFF'}
-            color={connectedCount > 0 ? 'emerald' : 'slate'}
-            isText
+          {/* Fleet health rollup — derived from each connection's last probe.
+              Color tracks the worst state so problems are obvious at a glance. */}
+          <FleetHealthCard
+            healthy={healthyCount}
+            degraded={degradedCount}
+            unhealthy={unhealthyCount}
+            unknown={unknownCount}
+            totalConnected={connectedCount}
           />
         </div>
       </div>
@@ -523,6 +566,7 @@ const StatCard: React.FC<{
   const colorClasses: Record<string, string> = {
     emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
     red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
     indigo: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
     slate: 'bg-slate-100 dark:bg-steel-800 text-slate-500 dark:text-steel-400',
   };
@@ -537,6 +581,51 @@ const StatCard: React.FC<{
           </p>
           <p className={`text-xl font-bold ${isText ? colorClasses[color].split(' ')[2] : 'text-slate-900 dark:text-steel-100'}`}>
             {value}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FleetHealthCard: React.FC<{
+  healthy: number;
+  degraded: number;
+  unhealthy: number;
+  unknown: number;
+  totalConnected: number;
+}> = ({ healthy, degraded, unhealthy, unknown, totalConnected }) => {
+  // No connections yet — match StatCard's disabled look.
+  if (totalConnected === 0) {
+    return (
+      <StatCard icon={<Activity className="w-5 h-5" />} label="Fleet Health" value="—" color="slate" isText />
+    );
+  }
+
+  // Summary label tracks the worst non-zero bucket.
+  const [summary, color]: [string, 'red' | 'amber' | 'slate' | 'emerald'] =
+    unhealthy > 0 ? [`${unhealthy} unhealthy`, 'red']
+    : degraded > 0 ? [`${degraded} degraded`, 'amber']
+    : unknown === totalConnected ? ['Not probed yet', 'slate']
+    : [`${healthy}/${totalConnected} healthy`, 'emerald'];
+
+  return (
+    <div className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-lg ${
+          color === 'red' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+          : color === 'amber' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+          : color === 'slate' ? 'bg-slate-100 dark:bg-steel-800 text-slate-500 dark:text-steel-400'
+          : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+        }`}>
+          <Activity className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">
+            Fleet Health
+          </p>
+          <p className="text-sm font-bold text-slate-900 dark:text-steel-100 truncate">
+            {summary}
           </p>
         </div>
       </div>
@@ -604,15 +693,32 @@ const IntegrationCard: React.FC<{
       }`}
       onClick={onClick}
     >
-      {/* Status Pulse for Connected */}
-      {connection?.status === 'connected' && (
-        <div className="absolute top-3 right-3">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-          </span>
-        </div>
-      )}
+      {/* Status Pulse for Connected — tint from the latest health probe */}
+      {connection?.status === 'connected' && (() => {
+        const h = connection.healthStatus;
+        const dot = h === 'unhealthy' ? 'bg-red-500'
+          : h === 'degraded' ? 'bg-amber-500'
+          : h === 'unknown' ? 'bg-slate-400'
+          : 'bg-emerald-500';
+        const ring = h === 'unhealthy' ? 'bg-red-400'
+          : h === 'degraded' ? 'bg-amber-400'
+          : h === 'unknown' ? 'bg-slate-300'
+          : 'bg-emerald-400';
+        const titleForHealth = h === 'unhealthy' ? `Unhealthy: ${connection.healthError ?? 'unknown error'}`
+          : h === 'degraded' ? 'Degraded — recent errors'
+          : h === 'unknown' ? 'No health check run yet'
+          : 'Healthy';
+        return (
+          <div className="absolute top-3 right-3" title={titleForHealth}>
+            <span className="relative flex h-3 w-3">
+              {h === 'healthy' && (
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${ring} opacity-75`}></span>
+              )}
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${dot}`}></span>
+            </span>
+          </div>
+        );
+      })()}
 
       {/* Category Gradient Header */}
       <div className={`h-1.5 bg-gradient-to-r ${categoryMeta.color}`} />
@@ -669,9 +775,9 @@ const IntegrationCard: React.FC<{
           </div>
         )}
 
-        {/* Connected: Show Last Sync */}
+        {/* Connected: Last sync + last health check */}
         {connection && (
-          <div className="mb-4 p-3 bg-slate-50 dark:bg-midnight-900 rounded-lg">
+          <div className="mb-4 p-3 bg-slate-50 dark:bg-midnight-900 rounded-lg space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500 dark:text-steel-400 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -681,10 +787,31 @@ const IntegrationCard: React.FC<{
                 {connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : 'Never'}
               </span>
             </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500 dark:text-steel-400 flex items-center gap-1">
+                <Activity className="w-3 h-3" />
+                Last probe
+              </span>
+              <span className="font-medium text-slate-700 dark:text-steel-300">
+                {connection.lastHealthCheckAt
+                  ? `${formatRelativeTime(connection.lastHealthCheckAt)}${
+                      connection.lastHealthLatencyMs != null
+                        ? ` · ${connection.lastHealthLatencyMs}ms`
+                        : ''
+                    }`
+                  : 'Never'}
+              </span>
+            </div>
             {connection.lastSyncStatus === 'error' && (
-              <p className="mt-2 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+              <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 Sync failed - check connection
+              </p>
+            )}
+            {connection.healthStatus === 'unhealthy' && connection.healthError && (
+              <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                {connection.healthError}
               </p>
             )}
           </div>

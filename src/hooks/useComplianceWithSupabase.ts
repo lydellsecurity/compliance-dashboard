@@ -123,7 +123,8 @@ export function useComplianceWithSupabase(): UseComplianceWithSupabaseReturn {
     };
   }, []);
 
-  // Initialize when user is available
+  // Initialize when user is available. loadData is a useCallback below;
+  // including it would retrigger on every load.
   useEffect(() => {
     if (user) {
       const orgId = user.user_metadata?.organization_id;
@@ -136,6 +137,7 @@ export function useComplianceWithSupabase(): UseComplianceWithSupabaseReturn {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadData = useCallback(async () => {

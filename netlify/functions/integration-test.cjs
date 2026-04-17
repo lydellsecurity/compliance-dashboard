@@ -309,15 +309,38 @@ exports.handler = async (event) => {
     // Run connection test
     const result = await testProviderConnection(providerId, testConfig || {});
 
-    // Update connection health status in database if connectionId provided
+    // Update connection health status in database if connectionId provided.
+    // `supabase.raw()` doesn't exist on supabase-js; read-then-write is the
+    // correct pattern for "increment on failure / reset on success."
     if (connectionId) {
+      let nextConsecutive = 0;
+      if (!result.success) {
+        const { data: existing } = await supabase
+          .from('integration_connections')
+          .select('consecutive_failures')
+          .eq('id', connectionId)
+          .single();
+        nextConsecutive = (existing?.consecutive_failures ?? 0) + 1;
+      }
+
+      // After 3 consecutive failures we soften the label from "unhealthy" to
+      // "degraded" never (keep UNHEALTHY); instead flag "degraded" on the
+      // first failure after a healthy run so the UI surfaces a warning
+      // earlier than a hard outage.
+      const healthStatus = result.success
+        ? 'healthy'
+        : nextConsecutive >= 3
+          ? 'unhealthy'
+          : 'degraded';
+
       await supabase
         .from('integration_connections')
         .update({
           last_health_check_at: new Date().toISOString(),
-          health_status: result.success ? 'healthy' : 'unhealthy',
-          consecutive_failures: result.success ? 0 : supabase.raw('consecutive_failures + 1'),
-          error_message: result.error,
+          last_health_latency_ms: result.latency ?? null,
+          health_status: healthStatus,
+          consecutive_failures: nextConsecutive,
+          error_message: result.error ?? null,
         })
         .eq('id', connectionId);
     }

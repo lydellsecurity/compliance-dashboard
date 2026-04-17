@@ -534,7 +534,7 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
     }, 500);
 
     return () => clearInterval(stepInterval);
-  }, [isGenerating, incident]);
+  }, [isGenerating, incident, generationSteps.length]);
 
   const toggleSection = useCallback((phase: string) => {
     setExpandedSections(prev => {

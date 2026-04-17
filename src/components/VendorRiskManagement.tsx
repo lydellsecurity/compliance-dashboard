@@ -127,9 +127,11 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
     });
   };
 
-  // Load data
+  // Reload on org/filter change. loadData is defined below and closes over
+  // the current org/filters so including it in deps would loop.
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, filterCriticality, filterStatus]);
 
   const loadData = async () => {

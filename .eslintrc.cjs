@@ -16,7 +16,10 @@ module.exports = {
   ],
   ignorePatterns: ['dist', 'node_modules', '*.cjs', 'netlify/functions', 'schemas'],
   rules: {
-    'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    // react-refresh hints only affect dev HMR efficiency and produce noise
+    // across files that legitimately co-locate a component with a few
+    // constants/types. Off — it doesn't surface real bugs.
+    'react-refresh/only-export-components': 'off',
     // TypeScript already checks unused vars via noUnusedLocals/noUnusedParameters in tsconfig,
     // and the `_` prefix opt-out is project convention.
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
