@@ -796,7 +796,7 @@ export function getFrameworkComplianceSummary(frameworkId: FrameworkId): Framewo
   let nonCompliant = 0;
   let notStarted = 0;
   let notApplicable = 0;
-  let customGaps = gaps.filter(g => g.status !== 'resolved').length;
+  const customGaps = gaps.filter(g => g.status !== 'resolved').length;
 
   // Count by status
   for (const req of requirements) {

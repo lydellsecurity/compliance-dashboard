@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { FrameworkId } from '../../constants/controls';
 import { FRAMEWORKS } from '../../constants/controls';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface BundleFile {
   name: string;
@@ -141,6 +142,8 @@ const AuditBundleDownloader: React.FC<AuditBundleDownloaderProps> = ({
   isOpen,
   onClose,
 }) => {
+  useEscapeKey(onClose, isOpen);
+
   const [status, setStatus] = useState<'idle' | 'generating' | 'downloading' | 'complete' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);

@@ -510,8 +510,10 @@ class AuditLogService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Failed to query audit logs:', error);
-      return [];
+      console.error('Failed to query audit logs, falling back to local buffer:', error);
+      // Fall back to the local buffer so a network/Supabase outage shows
+      // *something* rather than an empty list that looks like "no activity."
+      return this.queryLocal(filter);
     }
 
     return (data || []).map((log) => ({
@@ -566,7 +568,8 @@ class AuditLogService {
       }
 
       return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    } catch {
+    } catch (err) {
+      console.error('Failed to read local audit buffer:', err);
       return [];
     }
   }

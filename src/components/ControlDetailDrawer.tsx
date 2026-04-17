@@ -30,6 +30,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import type { MasterControl } from '../constants/controls';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface ControlDetailDrawerProps {
   isOpen: boolean;
@@ -76,6 +77,8 @@ const ControlDetailDrawer: React.FC<ControlDetailDrawerProps> = ({
   onGeneratePolicy,
   onUploadEvidence,
 }) => {
+  useEscapeKey(onClose, isOpen);
+
   const [showGuidance, setShowGuidance] = useState(false);
   const [showFrameworks, setShowFrameworks] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);

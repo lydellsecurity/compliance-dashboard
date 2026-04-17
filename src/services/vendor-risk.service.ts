@@ -464,10 +464,11 @@ export function calculateQuestionnaireScore(
           }
         }
         break;
-      case 'scale':
+      case 'scale': {
         const scaleValue = Number(response.answer) || 0;
         questionScore = (scaleValue / 10) * question.weight;
         break;
+      }
       case 'text':
       case 'file_upload':
         // Text/file responses get full weight if provided

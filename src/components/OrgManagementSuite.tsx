@@ -64,6 +64,7 @@ import {
 } from '../services/multi-tenant.service';
 import type { UserRole } from '../lib/database.types';
 import { FRAMEWORKS, type FrameworkId, type ComplianceDomain, COMPLIANCE_DOMAINS } from '../constants/controls';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -2044,6 +2045,8 @@ interface SecureInviteModalProps {
 }
 
 const SecureInviteModal: React.FC<SecureInviteModalProps> = ({ tenantId, tenantName, onClose, onSuccess }) => {
+  useEscapeKey(onClose);
+
   const [email, setEmail] = useState('');
   const [emails, setEmails] = useState<string[]>([]);
   const [role, setRole] = useState<ExtendedRole>('editor');

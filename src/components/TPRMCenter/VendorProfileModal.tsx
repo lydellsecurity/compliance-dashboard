@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import type { Vendor } from '../../services/vendor-risk.service';
 import { CRITICALITY_CONFIG, CATEGORY_LABELS, STATUS_CONFIG } from './index';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface VendorProfileModalProps {
   vendor: Vendor;
@@ -53,6 +54,8 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
   organizationId: _organizationId,
   userId: _userId,
 }) => {
+  useEscapeKey(onClose);
+
   const [activeTab, setActiveTab] = useState<'overview' | 'artifacts' | 'history'>('overview');
   const critConfig = CRITICALITY_CONFIG[vendor.criticality];
   const statusConfig = STATUS_CONFIG[vendor.status];

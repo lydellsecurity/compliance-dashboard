@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { Incident, ThreatCategory } from '../../types/incident.types';
 import { SEVERITY_CONFIG, THREAT_LABELS } from './index';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -499,6 +500,8 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
   incident,
   onClose,
 }) => {
+  useEscapeKey(onClose);
+
   const [isGenerating, setIsGenerating] = useState(true);
   const [generationStep, setGenerationStep] = useState(0);
   const [playbook, setPlaybook] = useState<PlaybookSection[]>([]);

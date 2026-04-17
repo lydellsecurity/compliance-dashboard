@@ -694,7 +694,7 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
           .map(gap => `${gap.id}: ${gap.remediationTip}`);
         break;
 
-      case 'gap_analysis':
+      case 'gap_analysis': {
         // Focus on compliance gaps and remediation priorities
         title = `${engagement.clientName} - Gap Analysis Report`;
         const gapsByRisk = {
@@ -717,8 +717,9 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
           ...gapsByRisk.critical.slice(0, 2).map(g => g.remediationTip),
         ].filter((r): r is string => r !== null);
         break;
+      }
 
-      case 'incident_report':
+      case 'incident_report': {
         // Post-incident findings and security recommendations
         title = `${engagement.clientName} - Incident Response Report`;
         const securityGaps = compliance.criticalGaps.filter(g =>
@@ -739,8 +740,9 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
           ...securityGaps.slice(0, 2).map(g => g.remediationTip),
         ].filter((r): r is string => r !== null);
         break;
+      }
 
-      case 'remediation_status':
+      case 'remediation_status': {
         // Progress on addressing identified gaps
         title = `${engagement.clientName} - Remediation Status Report`;
         const totalGaps = compliance.criticalGaps.length;
@@ -764,6 +766,7 @@ export function useIncidentResponse(options: UseIncidentResponseOptions = {}): U
           'Update risk register with current status',
         ].filter((r): r is string => r !== null);
         break;
+      }
     }
 
     const report: ComplianceReport = {

@@ -24,6 +24,7 @@ import {
   User,
   Clock,
 } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -121,6 +122,8 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({
   incidentId: _incidentId,
   onClose,
 }) => {
+  useEscapeKey(onClose);
+
   const [evidence, setEvidence] = useState<EvidenceItem[]>(MOCK_EVIDENCE);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);

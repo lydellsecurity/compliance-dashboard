@@ -17,6 +17,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import type { FrameworkId } from '../../constants/controls';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface ClarificationRequestFormProps {
   isOpen: boolean;
@@ -56,6 +57,8 @@ const ClarificationRequestForm: React.FC<ClarificationRequestFormProps> = ({
   onSubmit,
   relatedControls = [],
 }) => {
+  useEscapeKey(onClose, isOpen);
+
   const [message, setMessage] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
   const [relatedControlId, setRelatedControlId] = useState<string>('');

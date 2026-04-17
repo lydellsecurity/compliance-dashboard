@@ -12,7 +12,7 @@ import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { OrganizationProvider } from '../contexts/OrganizationContext';
-import { ToastProvider } from '../components/ui';
+import { ToastProvider, ErrorBoundary } from '../components/ui';
 import { Shield, Loader2 } from 'lucide-react';
 
 // Lazy load components for better performance
@@ -72,28 +72,36 @@ const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 // Root layout with providers
 const RootLayout: React.FC = () => {
   return (
-    <AuthProvider>
-      <OrganizationProvider>
-        <ToastProvider>
-          <Suspense fallback={<LoadingScreen />}>
-            <Outlet />
-          </Suspense>
-        </ToastProvider>
-      </OrganizationProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <OrganizationProvider>
+          <ToastProvider>
+            <Suspense fallback={<LoadingScreen />}>
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </Suspense>
+          </ToastProvider>
+        </OrganizationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
 // Public layout without organization provider (for Trust Center, invites)
 const PublicLayout: React.FC = () => {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <Suspense fallback={<LoadingScreen />}>
-          <Outlet />
-        </Suspense>
-      </ToastProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ToastProvider>
+          <Suspense fallback={<LoadingScreen />}>
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </Suspense>
+        </ToastProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

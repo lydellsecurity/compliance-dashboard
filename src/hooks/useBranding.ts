@@ -5,7 +5,7 @@
  * Supports both authenticated (by org_id) and public (by slug) access for Trust Center.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { Organization } from '../lib/database.types';
 import type {
@@ -74,22 +74,26 @@ export function useBranding(organizationId: string | null): BrandingContextValue
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch branding from Supabase
+  // Tracks the latest request so responses from stale orgs (after rapid
+  // switching) never paint over fresh data.
+  const requestIdRef = useRef(0);
+
   const fetchBranding = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!organizationId) {
       setBranding(null);
       setLoading(false);
       return;
     }
 
-    // Try cache first
     const cached = loadCachedBranding(organizationId);
-    if (cached) {
+    if (cached && requestId === requestIdRef.current) {
       setBranding(cached);
     }
 
     if (!isSupabaseConfigured() || !supabase) {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
       return;
     }
 
@@ -99,6 +103,8 @@ export function useBranding(organizationId: string | null): BrandingContextValue
         .select('*')
         .eq('id', organizationId)
         .single();
+
+      if (requestId !== requestIdRef.current) return;
 
       if (fetchError) {
         throw fetchError;
@@ -110,16 +116,20 @@ export function useBranding(organizationId: string | null): BrandingContextValue
         saveBrandingCache(organizationId, brandingData);
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Failed to fetch branding:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch branding');
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [organizationId]);
 
-  // Initial fetch
   useEffect(() => {
     fetchBranding();
+    return () => {
+      // Invalidate in-flight requests on unmount.
+      requestIdRef.current++;
+    };
   }, [fetchBranding]);
 
   // Update branding

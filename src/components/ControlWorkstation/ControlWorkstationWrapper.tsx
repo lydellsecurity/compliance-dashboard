@@ -13,6 +13,7 @@ import ControlWorkstation from './ControlWorkstation';
 import RemediationEngine from '../RemediationEngine';
 import { AIPolicyModal } from '../AIPolicyGenerator';
 import type { FrameworkId, ComplianceDomainMeta, MasterControl } from '../../constants/controls';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface ControlWorkstationWrapperProps {
   initialDomain?: ComplianceDomainMeta;
@@ -26,6 +27,8 @@ const EvidenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
 }> = ({ controlId, controlTitle, isOpen, onClose }) => {
+  useEscapeKey(onClose, isOpen);
+
   if (!isOpen) return null;
 
   return (

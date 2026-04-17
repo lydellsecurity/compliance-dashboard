@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import type { UseComplianceReturn } from '../../hooks/useCompliance';
 import type { OrganizationWithRole } from '../../types/branding.types';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface BundleItem {
   id: string;
@@ -52,6 +53,8 @@ const AuditBundleModal: React.FC<AuditBundleModalProps> = ({
   compliance,
   organization,
 }) => {
+  useEscapeKey(onClose, isOpen);
+
   const [bundleItems, setBundleItems] = useState<BundleItem[]>([
     {
       id: 'executive',

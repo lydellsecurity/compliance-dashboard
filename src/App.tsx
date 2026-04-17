@@ -4,7 +4,7 @@
  * Midnight & Steel Theme
  */
 
-import React, { useState, useMemo, createContext, useContext, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, createContext, useContext, useRef, useEffect, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardCheck, FolderOpen, Building2, Search, Check, X,
@@ -15,31 +15,41 @@ import {
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
+import { useToast } from './components/ui';
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
-import IncidentCommandCenter from './components/IncidentCommandCenter';
-import ReportAnalyticsCenter from './components/ReportAnalyticsCenter';
-import RemediationEngine from './components/RemediationEngine';
-import TrustCenter from './components/TrustCenter';
-import CertificateGenerator from './components/CertificateGenerator';
-import AuditorVerification from './components/AuditorVerification';
-import AuditBundle from './components/AuditBundle';
+// Inline controls (kept eager — rendered on every control card, lazy would cause flicker).
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
-import Settings from './components/Settings';
+
+// Always-mounted overlay modals (isOpen-gated internally). Lazy here would
+// force the chunk to load on every app boot since React still has to render
+// the component to see it returns null.
 import MonitoringDashboard from './components/MonitoringDashboard';
 import AlertConfiguration from './components/AlertConfiguration';
 import CloudVerification from './components/CloudVerification';
-import RemediationChat from './components/RemediationChat';
-import IntegrationHub from './components/IntegrationHub';
-import OrgManagementSuite from './components/OrgManagementSuite';
-import TPRMCenter from './components/TPRMCenter';
-import QuestionnaireCenter from './components/QuestionnaireCenter';
-import OrganizationSetup from './components/OrganizationSetup';
-import FrameworkRequirementsView from './components/FrameworkRequirementsView';
-import EvidenceVault from './components/EvidenceVault';
-import AuditorRequirementView from './components/AuditorRequirementView';
-import RequirementAssessmentWizard from './components/RequirementAssessmentWizard';
-import ControlWorkstationWrapper from './components/ControlWorkstation/ControlWorkstationWrapper';
+
+// Tab-gated feature surfaces — lazy so the initial /app chunk stays lean.
+// Each is only reachable via an AnimatePresence branch or a deeper drawer,
+// both of which are wrapped in <Suspense>.
+const IncidentCommandCenter = lazy(() => import('./components/IncidentCommandCenter'));
+const ReportAnalyticsCenter = lazy(() => import('./components/ReportAnalyticsCenter'));
+const RemediationEngine = lazy(() => import('./components/RemediationEngine'));
+const TrustCenter = lazy(() => import('./components/TrustCenter'));
+const CertificateGenerator = lazy(() => import('./components/CertificateGenerator'));
+const AuditorVerification = lazy(() => import('./components/AuditorVerification'));
+const AuditBundle = lazy(() => import('./components/AuditBundle'));
+const Settings = lazy(() => import('./components/Settings'));
+const RemediationChat = lazy(() => import('./components/RemediationChat'));
+const IntegrationHub = lazy(() => import('./components/IntegrationHub'));
+const OrgManagementSuite = lazy(() => import('./components/OrgManagementSuite'));
+const TPRMCenter = lazy(() => import('./components/TPRMCenter'));
+const QuestionnaireCenter = lazy(() => import('./components/QuestionnaireCenter'));
+const OrganizationSetup = lazy(() => import('./components/OrganizationSetup'));
+const FrameworkRequirementsView = lazy(() => import('./components/FrameworkRequirementsView'));
+const EvidenceVault = lazy(() => import('./components/EvidenceVault'));
+const AuditorRequirementView = lazy(() => import('./components/AuditorRequirementView'));
+const RequirementAssessmentWizard = lazy(() => import('./components/RequirementAssessmentWizard'));
+const ControlWorkstationWrapper = lazy(() => import('./components/ControlWorkstation/ControlWorkstationWrapper'));
 import { monitoringService } from './services/continuous-monitoring.service';
 import { useOrganization } from './contexts/OrganizationContext';
 import { useAuth } from './hooks/useAuth';
@@ -47,6 +57,14 @@ import { CommandPalette, useCommandPalette } from './components/ui';
 import { ThemeToggle } from './components/ThemeToggle';
 
 type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'questionnaires' | 'trust-center' | 'certificate' | 'verify' | 'admin' | 'settings';
+
+// Shown briefly while a lazy tab chunk is loading. Minimal so the transition
+// feels instantaneous on a warm cache and graceful on a cold one.
+const TabLoadingFallback: React.FC = () => (
+  <div className="flex items-center justify-center py-24">
+    <RefreshCw className="w-5 h-5 animate-spin text-slate-400 dark:text-steel-500" />
+  </div>
+);
 
 // ============================================================================
 // CONTEXT
@@ -60,17 +78,18 @@ export const useComplianceContext = () => {
 };
 
 const ComplianceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Get the current organization from context to pass to useCompliance
-  // This ensures data is saved to the correct organization in Supabase
   const { currentOrg } = useOrganization();
   const compliance = useCompliance({ organizationId: currentOrg?.id });
+  const toast = useToast();
 
-  // Debug: log when evidenceFileCounts changes
+  // Surface background load/sync failures so the user isn't staring at
+  // empty-looking data that's actually the result of a Supabase error.
   useEffect(() => {
-    // Test lookup for a known control ID
-    const testResult = compliance.evidenceFileCounts['GV-022'];
-    console.log('[ComplianceProvider] evidenceFileCounts size:', Object.keys(compliance.evidenceFileCounts).length, ', GV-022:', testResult);
-  }, [compliance.evidenceFileCounts]);
+    if (compliance.loadError) {
+      toast.error('Failed to load compliance data', compliance.loadError);
+      compliance.clearLoadError();
+    }
+  }, [compliance.loadError, compliance.clearLoadError, toast]);
 
   return <ComplianceContext.Provider value={compliance}>{children}</ComplianceContext.Provider>;
 };
@@ -2134,6 +2153,9 @@ const AppContent: React.FC = () => {
       {/* Main Content */}
       <main className={`min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-all duration-200 ${sidebarExpanded ? 'ml-56' : 'ml-16'}`}>
         <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Single Suspense boundary covers every lazy tab body + any lazy
+              components nested inside DashboardTab / AssessmentTab. */}
+          <Suspense fallback={<TabLoadingFallback />}>
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -2296,6 +2318,7 @@ const AppContent: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
+          </Suspense>
         </div>
       </main>
 

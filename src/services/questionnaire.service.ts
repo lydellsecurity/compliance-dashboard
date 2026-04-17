@@ -354,7 +354,7 @@ class QuestionnaireService {
 
     try {
       const existingQuestions = await this.getQuestions(questionnaireId);
-      let orderStart = existingQuestions.length;
+      const orderStart = existingQuestions.length;
 
       const questionRecords = questions.map((q, idx) => ({
         questionnaire_id: questionnaireId,

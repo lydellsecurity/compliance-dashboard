@@ -4,3 +4,4 @@ export { useIncidentResponse } from './useIncidentResponse';
 export { useAuth, AuthProvider } from './useAuth';
 export { useComplianceWithSupabase } from './useComplianceWithSupabase';
 export { useReportGeneration } from './useReportGeneration';
+export { useEscapeKey } from './useEscapeKey';

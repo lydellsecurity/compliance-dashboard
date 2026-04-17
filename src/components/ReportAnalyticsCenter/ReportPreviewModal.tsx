@@ -30,6 +30,7 @@ import {
 import type { ReportArtifact } from './index';
 import type { OrganizationWithRole } from '../../types/branding.types';
 import type { FrameworkId } from '../../constants/controls';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const FRAMEWORK_CONFIG: Record<FrameworkId, { name: string; color: string }> = {
   SOC2: { name: 'SOC 2 Type II', color: '#0066FF' },
@@ -53,6 +54,8 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
   onClose,
   organization,
 }) => {
+  useEscapeKey(onClose, isOpen);
+
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [activeTab, setActiveTab] = useState<'preview' | 'details'>('preview');
 

@@ -50,6 +50,7 @@ import {
   type EvidenceSearchParams,
 } from '../services/evidence-repository.service';
 import type { EvidenceStatus } from '../lib/database.types';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -792,6 +793,8 @@ const UploadModal: React.FC<{
   onClose: () => void;
   onSuccess: () => void;
 }> = ({ onClose, onSuccess }) => {
+  useEscapeKey(onClose);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [controlId, setControlId] = useState('');
@@ -1001,6 +1004,8 @@ const FileUploadModal: React.FC<{
   onClose: () => void;
   onSuccess: () => void;
 }> = ({ evidence, onClose, onSuccess }) => {
+  useEscapeKey(onClose);
+
   const [files, setFiles] = useState<File[]>([]);
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1264,6 +1269,8 @@ const FileManagementModal: React.FC<{
   onUploadMore: () => void;
   onFileDeleted: () => void;
 }> = ({ evidence, onClose, onUploadMore, onFileDeleted }) => {
+  useEscapeKey(onClose);
+
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -1478,6 +1485,8 @@ const VersionHistoryModal: React.FC<{
   evidence: EvidenceItem;
   onClose: () => void;
 }> = ({ evidence, onClose }) => {
+  useEscapeKey(onClose);
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleString('en-US', {

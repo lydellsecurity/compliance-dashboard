@@ -25,6 +25,7 @@ import {
   Download,
 } from 'lucide-react';
 import type { Vendor } from '../../services/vendor-risk.service';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface AIVendorReviewProps {
   onClose: () => void;
@@ -53,6 +54,8 @@ const AIVendorReview: React.FC<AIVendorReviewProps> = ({
   vendors,
   organizationId: _organizationId,
 }) => {
+  useEscapeKey(onClose);
+
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

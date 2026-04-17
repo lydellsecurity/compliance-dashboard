@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import type { Vendor } from '../../services/vendor-risk.service';
 import { vendorRiskService, calculateRiskScore, calculateRiskTier } from '../../services/vendor-risk.service';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface InherentRiskQuestionnaireProps {
   vendor: Vendor;
@@ -122,6 +123,8 @@ const InherentRiskQuestionnaire: React.FC<InherentRiskQuestionnaireProps> = ({
   organizationId: _organizationId,
   userId: _userId,
 }) => {
+  useEscapeKey(onClose);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);

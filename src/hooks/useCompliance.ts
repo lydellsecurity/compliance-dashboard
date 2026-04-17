@@ -18,7 +18,7 @@
  * - Maintains full offline functionality
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { complianceDb } from '../services/compliance-database.service';
 import { evidenceRepository } from '../services/evidence-repository.service';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -310,6 +310,11 @@ export interface UseComplianceReturn {
   // Database Sync (placeholder for PostgreSQL integration)
   syncToDatabase: () => Promise<void>;
   loadFromDatabase: () => Promise<void>;
+
+  // Exposed to UI so users see when a load/sync fails instead of silently
+  // assuming empty state means empty data.
+  loadError: string | null;
+  clearLoadError: () => void;
 }
 
 export interface UseComplianceOptions {
@@ -344,9 +349,20 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
   const [syncNotifications, setSyncNotifications] = useState<SyncNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() =>
     loadFromStorage(LEGACY_STORAGE_KEYS.LAST_SYNCED, null)
   );
+
+  // Monotonic id incremented on each loadFromSupabase invocation (and on
+  // unmount). Lets us drop setState work from a stale load when the user
+  // switches orgs mid-fetch or navigates away.
+  const loadIdRef = useRef(0);
+  useEffect(() => {
+    return () => {
+      loadIdRef.current++;
+    };
+  }, []);
 
   // Track if migration has been attempted
   const [migrationAttempted, setMigrationAttempted] = useState(false);
@@ -483,7 +499,11 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   const loadFromSupabase = useCallback(async () => {
     if (!complianceDb.isAvailable()) return;
 
+    const loadId = ++loadIdRef.current;
+    const isStale = () => loadId !== loadIdRef.current;
+
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [userResponses, evidenceRecords, customCtls, notifications] = await Promise.all([
         complianceDb.getUserResponses(),
@@ -491,6 +511,8 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         complianceDb.getCustomControls(),
         complianceDb.getSyncNotifications(),
       ]);
+
+      if (isStale()) return;
 
       // Convert Supabase responses to local format
       const responsesFromDb: Record<string, ControlResponse> = {};
@@ -614,6 +636,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
       const dbUserId = complianceDb.getUserId();
 
       if (evidenceRepository.isAvailable() && dbOrgId && dbUserId) {
+        if (isStale()) return;
         evidenceRepository.setContext(dbOrgId, dbUserId);
         const yesResponses = Object.values(responsesFromDb).filter(r => r.answer === 'yes');
         console.log(`[Evidence Sync] Found ${yesResponses.length} "yes" responses to sync`);
@@ -666,6 +689,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
         // Load evidence file counts for UI indicators
         const counts = await evidenceRepository.getEvidenceCountsByControl();
+        if (isStale()) return;
         const countsObj: Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }> = {};
         counts.forEach((value, key) => {
           countsObj[key] = value;
@@ -680,9 +704,11 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
         });
       }
     } catch (error) {
+      if (isStale()) return;
       console.error('Error loading from Supabase:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load compliance data');
     } finally {
-      setIsLoading(false);
+      if (!isStale()) setIsLoading(false);
     }
   }, []);
 
@@ -1368,6 +1394,10 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     // Database Sync
     syncToDatabase,
     loadFromDatabase,
+
+    // Load/sync error surfacing
+    loadError,
+    clearLoadError: () => setLoadError(null),
   };
 }
 

@@ -1421,7 +1421,7 @@ resource "aws_iam_user_policy_attachment" "developer_s3" {
         commands: [
           '# List all resources with Config\naws configservice select-aggregate-resource-config --expression "SELECT resourceId, resourceType, accountId, awsRegion WHERE resourceType LIKE \'%\'"',
           '# Get SSM inventory\naws ssm describe-instance-information --query "InstanceInformationList[*].[InstanceId,ComputerName,AgentVersion]"',
-          '# List untagged resources\naws resourcegroupstaggingapi get-resources --resources-per-page 100 --query "ResourceTagMappingList[?Tags==\`[]\`]"'
+          '# List untagged resources\naws resourcegroupstaggingapi get-resources --resources-per-page 100 --query "ResourceTagMappingList[?Tags==`[]`]"'
         ],
         consoleSteps: [
           'Navigate to AWS Config > Dashboard',

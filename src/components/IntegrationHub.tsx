@@ -55,6 +55,7 @@ import {
   type IntegrationCategory,
   type IntegrationStatus,
 } from '../services/integration-hub.service';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -771,6 +772,8 @@ const ConnectionWizard: React.FC<{
   onClose: () => void;
   onSuccess: () => void;
 }> = ({ provider, onClose, onSuccess }) => {
+  useEscapeKey(onClose);
+
   const [step, setStep] = useState<WizardStep>('prerequisites');
   const [apiKey, setApiKey] = useState('');
   const [domain, setDomain] = useState('');
@@ -1300,6 +1303,8 @@ const ConnectionSettingsModal: React.FC<{
   onSync: () => Promise<{ success: boolean }>;
   onUpdate: () => void;
 }> = ({ connection, onClose, onDisconnect, onSync, onUpdate }) => {
+  useEscapeKey(onClose);
+
   const [syncing, setSyncing] = useState(false);
   const [syncEnabled, setSyncEnabled] = useState(connection.settings.syncEnabled);
   const [syncInterval, setSyncInterval] = useState(connection.settings.syncIntervalMinutes);

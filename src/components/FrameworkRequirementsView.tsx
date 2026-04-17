@@ -892,14 +892,14 @@ export const FrameworkRequirementsView: React.FC<FrameworkRequirementsViewProps>
     } else {
       // Collect all IDs that have children
       const allIds = new Set<string>();
-      function collectIds(items: RequirementItem[]) {
+      const collectIds = (items: RequirementItem[]) => {
         for (const item of items) {
           if (item.children && item.children.length > 0) {
             allIds.add(item.id);
             collectIds(item.children);
           }
         }
-      }
+      };
       collectIds(requirements);
       setExpandedIds(allIds);
     }

@@ -24,6 +24,7 @@ import {
 } from '../services/vendor-risk.service';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { exportService, type VendorExportData } from '../services/export.service';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface VendorRiskManagementProps {
   organizationId: string;
@@ -831,6 +832,8 @@ const VendorDetailModal: React.FC<{
   organizationId: string;
   userId: string;
 }> = ({ vendor, onClose }) => {
+  useEscapeKey(onClose);
+
   const critColors = CRITICALITY_COLORS[vendor.criticality];
 
   return (
@@ -981,6 +984,8 @@ const AddVendorModal: React.FC<{
   onClose: () => void;
   onSave: (vendor: Partial<Vendor>) => Promise<void>;
 }> = ({ onClose, onSave }) => {
+  useEscapeKey(onClose);
+
   const [formData, setFormData] = useState<Partial<Vendor>>({
     name: '',
     category: 'software',

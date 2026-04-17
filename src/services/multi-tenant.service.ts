@@ -339,8 +339,18 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
 
   setContext(tenantId: string, userId: string): void {
+    // Evict cached tenant data when switching tenants so the next fetch
+    // reflects the new context rather than returning the prior org's state.
+    if (this.currentTenantId && this.currentTenantId !== tenantId) {
+      this.tenantCache.clear();
+    }
     this.currentTenantId = tenantId;
     this.currentUserId = userId;
+  }
+
+  /** Evict a single tenant's cached snapshot. */
+  invalidateTenant(tenantId: string): void {
+    this.tenantCache.delete(tenantId);
   }
 
   isAvailable(): boolean {

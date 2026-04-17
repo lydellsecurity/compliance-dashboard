@@ -36,6 +36,7 @@ import type {
   AttackVector,
 } from '../../types/incident.types';
 import { SEVERITY_CONFIG, THREAT_LABELS } from './index';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -193,6 +194,8 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
   onClose,
   onIncidentCreated,
 }) => {
+  useEscapeKey(onClose);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<CreateIncidentData>>({

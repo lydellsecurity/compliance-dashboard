@@ -37,6 +37,7 @@ import {
   type IntegrationConnection,
 } from '../services/evidence-vault.service';
 import type { EvidenceStatus } from '../lib/database.types';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -1117,6 +1118,8 @@ const UploadModal: React.FC<{
   onClose: () => void;
   onSuccess: () => void;
 }> = ({ onClose, onSuccess }) => {
+  useEscapeKey(onClose);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [controlId, setControlId] = useState('');
@@ -1392,6 +1395,8 @@ const EvidenceDetailDrawer: React.FC<{
   onClose: () => void;
   onUpdate: () => void;
 }> = ({ evidence, onClose, onUpdate: _onUpdate }) => {
+  useEscapeKey(onClose);
+
   // Note: onUpdate will be used when edit functionality is implemented
   void _onUpdate;
   const [activeSection, setActiveSection] = useState<'files' | 'history' | 'frameworks'>('files');
@@ -1682,6 +1687,8 @@ const FilePreviewModal: React.FC<{
   file: SmartArtifact;
   onClose: () => void;
 }> = ({ file, onClose }) => {
+  useEscapeKey(onClose);
+
   const isImage = file.mimeType.startsWith('image/');
   const isPdf = file.mimeType === 'application/pdf';
 

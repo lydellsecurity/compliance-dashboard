@@ -18,6 +18,7 @@ import {
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useOrganization } from '../contexts/OrganizationContext';
 import type { TrustCenterToken } from '../lib/database.types';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -111,6 +112,8 @@ const CreateTokenModal: React.FC<{
   organizationId: string;
   organizationSlug: string;
 }> = ({ isOpen, onClose, onCreated, organizationId, organizationSlug }) => {
+  useEscapeKey(onClose, isOpen);
+
   const [name, setName] = useState('');
   const [hasExpiration, setHasExpiration] = useState(false);
   const [expirationDays, setExpirationDays] = useState(30);

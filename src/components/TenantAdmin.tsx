@@ -51,6 +51,7 @@ import type { UserRole } from '../lib/database.types';
 import { FRAMEWORKS, type FrameworkId } from '../constants/controls';
 import { useComplianceContext } from '../App';
 import { useAuth } from '../hooks/useAuth';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 // ============================================================================
 // TYPES
@@ -1306,6 +1307,8 @@ const InviteModal: React.FC<{
   onClose: () => void;
   onSuccess: () => void;
 }> = ({ tenantId, onClose, onSuccess }) => {
+  useEscapeKey(onClose);
+
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('member');
   const [sending, setSending] = useState(false);

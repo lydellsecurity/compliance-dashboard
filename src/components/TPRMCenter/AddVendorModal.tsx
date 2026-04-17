@@ -10,6 +10,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import {
   X,
   Mail,
@@ -30,6 +31,8 @@ interface AddVendorModalProps {
 }
 
 const AddVendorModal: React.FC<AddVendorModalProps> = ({ onClose, onSave }) => {
+  useEscapeKey(onClose);
+
   const [formData, setFormData] = useState<Partial<Vendor>>({
     name: '',
     description: '',
