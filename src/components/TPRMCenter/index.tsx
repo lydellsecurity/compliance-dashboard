@@ -53,6 +53,7 @@ import AIVendorReview from './AIVendorReview';
 import AddVendorModal from './AddVendorModal';
 import { supabase } from '../../lib/supabase';
 import { useUrlState } from '../../hooks/useUrlState';
+import { DashboardSkeleton } from '../ui';
 // Reserved for future use: SecurityArtifacts, RenewalTracker
 
 // ============================================================================
@@ -273,11 +274,10 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
   }, []);
 
   if (loading && vendors.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-      </div>
-    );
+    // Skeleton over spinner — gives the user a sense of the layout that will
+    // render, reducing perceived latency. Uses the shared DashboardSkeleton
+    // which is already tuned for the TPRM bento-grid shape.
+    return <DashboardSkeleton />;
   }
 
   return (

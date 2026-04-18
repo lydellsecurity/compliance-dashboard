@@ -1317,7 +1317,12 @@ const UploadModal: React.FC<{
 
           {/* File List */}
           {files.length > 0 && (
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              role="status"
+              aria-live="polite"
+              aria-label={uploading ? 'Uploading files' : 'Selected files for upload'}
+            >
               {files.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
@@ -1350,9 +1355,10 @@ const UploadModal: React.FC<{
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
-                        className="p-1 text-slate-400 hover:text-red-500 dark:text-steel-400 dark:hover:text-red-400 rounded"
+                        aria-label={`Remove ${file.name}`}
+                        className="tap-safe p-1 text-slate-500 hover:text-red-600 dark:text-steel-400 dark:hover:text-red-400 rounded"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-4 h-4" aria-hidden />
                       </button>
                     )}
                   </div>

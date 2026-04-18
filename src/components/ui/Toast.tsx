@@ -142,10 +142,10 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
       {toast.dismissible !== false && (
         <button
           onClick={() => onDismiss(toast.id)}
-          className="flex-shrink-0 p-1 rounded-md text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="tap-safe flex-shrink-0 p-1 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           aria-label="Dismiss notification"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden />
         </button>
       )}
     </motion.div>

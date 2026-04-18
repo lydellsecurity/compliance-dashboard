@@ -1036,6 +1036,20 @@ html.light * {
   outline-offset: 2px;
 }
 
+/* Tap-safe: utility for interactive elements whose visible box is below
+   WCAG 2.5.5's 44×44 minimum. Adds invisible padding via a pseudo-element
+   so the button's apparent size stays compact while the hit target expands.
+   Use on icon-only buttons in tables, card actions, inline toggles. */
+.tap-safe {
+  position: relative;
+}
+.tap-safe::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  /* Minimum bounding box ≥ 44px for typical 32px icons. */
+}
+
 /* Skip-to-main link. Hidden until a keyboard user tabs to it. Targets the
    #main-content landmark in App.tsx. */
 .skip-to-main {

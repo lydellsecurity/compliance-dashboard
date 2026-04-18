@@ -26,8 +26,11 @@ import {
 import { awsConnector } from '../services/cloud-integrations/aws-connector.service';
 import { useAuth } from '../hooks/useAuth';
 import { useEntitlement } from '../hooks/useEntitlement';
+import { useUrlState } from '../hooks/useUrlState';
 import { UpgradeModal } from './UpgradeGate';
+import { DowngradeWarning } from './DowngradeWarning';
 import { PLAN_DISPLAY } from '../constants/billing';
+import type { TenantPlan } from '../services/multi-tenant.service';
 
 // ============================================================================
 // TYPES
@@ -792,6 +795,11 @@ const BillingCard: React.FC = () => {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Pre-downgrade loss warning — shown when Stripe Portal redirects back
+  // with ?downgrade=confirm&to=<plan>. Relies on Portal custom-flow config.
+  const [downgradeFlag, setDowngradeFlag] = useUrlState('downgrade');
+  const [downgradeTo] = useUrlState('to');
+
   const display = PLAN_DISPLAY[plan];
   const hasSubscription = !!tenant?.billing?.subscriptionId;
 
@@ -876,6 +884,18 @@ const BillingCard: React.FC = () => {
         onClose={() => setShowUpgrade(false)}
         result={{ allowed: false, currentPlan: plan, requiredPlan: suggestedUpgrade ?? 'growth' }}
         targetPlan={suggestedUpgrade ?? undefined}
+      />
+      <DowngradeWarning
+        open={downgradeFlag === 'confirm' && !!downgradeTo}
+        targetPlan={(downgradeTo as TenantPlan) ?? plan}
+        onCancel={() => {
+          setDowngradeFlag(null);
+        }}
+        onConfirm={() => {
+          // User confirmed — Stripe has already recorded the cancellation at
+          // period end. Just clear the query params.
+          setDowngradeFlag(null);
+        }}
       />
     </>
   );

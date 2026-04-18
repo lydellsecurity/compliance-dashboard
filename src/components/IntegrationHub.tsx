@@ -818,8 +818,12 @@ const IntegrationCard: React.FC<{
               </p>
             )}
             {connection.healthStatus === 'unhealthy' && connection.healthError && (
-              <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
+              <p
+                role="status"
+                aria-live="polite"
+                className="text-xs text-red-700 dark:text-red-400 flex items-center gap-1"
+              >
+                <AlertTriangle className="w-3 h-3" aria-hidden />
                 {connection.healthError}
               </p>
             )}

@@ -105,19 +105,29 @@ const GenerateReportButton: React.FC<GenerateReportButtonProps> = ({
         )}
       </button>
 
-      {/* Progress Bar */}
+      {/* Progress Bar + announced status */}
       {generating && progress > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute -bottom-2 left-0 right-0 h-1 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden"
-        >
+        <>
           <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            className="h-full bg-gradient-to-r from-blue-500 to-violet-500"
-          />
-        </motion.div>
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute -bottom-2 left-0 right-0 h-1 bg-slate-200 dark:bg-steel-700 rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Report generation progress"
+          >
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              className="h-full bg-gradient-to-r from-blue-500 to-violet-500"
+            />
+          </motion.div>
+          <span className="sr-only" aria-live="polite">
+            Generating report — {progress}% complete
+          </span>
+        </>
       )}
 
       {/* Dropdown Menu */}
