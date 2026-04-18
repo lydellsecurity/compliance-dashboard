@@ -70,6 +70,8 @@ export interface Tenant {
   /** True when the user has scheduled a cancellation at period end. */
   cancelAtPeriodEnd: boolean;
   billingInterval: BillingInterval | null;
+  /** First moment this tenant entered dunning/suspension. Cleared on payment success. */
+  suspendedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1227,6 +1229,7 @@ class MultiTenantService {
       trialEndsAt: (data.trial_ends_at as string | null) ?? null,
       cancelAtPeriodEnd: (data.cancel_at_period_end as boolean | null) ?? false,
       billingInterval: (data.billing_interval as BillingInterval | null) ?? null,
+      suspendedAt: (data.suspended_at as string | null) ?? null,
       createdAt: data.created_at as string,
       updatedAt: data.updated_at as string,
     };

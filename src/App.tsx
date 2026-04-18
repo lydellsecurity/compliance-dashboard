@@ -732,9 +732,16 @@ const WelcomeChecklist: React.FC<{
   totalControls: number;
   onStartAssessment: () => void;
   onOpenIntegrations: () => void;
-  onOpenEvidence: () => void;
+  onOpenAdmin: () => void;
   onDismiss: () => void;
-}> = ({ totalControls, onStartAssessment, onOpenIntegrations, onOpenEvidence, onDismiss }) => {
+}> = ({ totalControls, onStartAssessment, onOpenIntegrations, onOpenAdmin, onDismiss }) => {
+  // Three-step sequence ordered by retention impact for SMB GRC:
+  //   1. Invite team — compliance is collaborative; solo tenants churn.
+  //   2. Connect an integration — evidence automation is the time-saver that
+  //      reduces manual assessment load.
+  //   3. Start the first assessment — the core loop. Naturally discoverable
+  //      without this card, but included so the user sees a clear "do it now"
+  //      before they explore.
   const steps: Array<{
     title: string;
     body: string;
@@ -743,25 +750,25 @@ const WelcomeChecklist: React.FC<{
     icon: React.ReactNode;
   }> = [
     {
-      title: 'Answer your first control',
-      body: `${totalControls} controls are ready — start with a domain you already know, and the frameworks fill in as you go.`,
-      cta: 'Start assessment',
-      onClick: onStartAssessment,
-      icon: <ClipboardCheck className="w-5 h-5" />,
+      title: 'Invite your team',
+      body: 'Compliance is a team sport. Bring in your ops lead, security engineer, and anyone who owns a control.',
+      cta: 'Invite teammates',
+      onClick: onOpenAdmin,
+      icon: <Users className="w-5 h-5" />,
     },
     {
       title: 'Connect your first cloud',
-      body: 'AWS, Azure, and GCP connectors pull evidence automatically, so you answer fewer controls by hand.',
+      body: 'AWS, Azure, and GCP connectors auto-populate evidence. Every connected service cuts manual assessment work.',
       cta: 'Browse integrations',
       onClick: onOpenIntegrations,
       icon: <Plug className="w-5 h-5" />,
     },
     {
-      title: 'Upload supporting evidence',
-      body: 'Drop in policies, screenshots, or exports. Evidence links to the controls it satisfies on upload.',
-      cta: 'Open evidence vault',
-      onClick: onOpenEvidence,
-      icon: <FolderOpen className="w-5 h-5" />,
+      title: 'Start your first assessment',
+      body: `${totalControls} controls are ready. Pick a domain you already know — answering one control updates every mapped framework.`,
+      cta: 'Begin assessment',
+      onClick: onStartAssessment,
+      icon: <ClipboardCheck className="w-5 h-5" />,
     },
   ];
 
@@ -889,7 +896,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
           totalControls={stats.totalControls}
           onStartAssessment={() => onNavigate('assessment')}
           onOpenIntegrations={() => onNavigate('integrations')}
-          onOpenEvidence={() => onNavigate('evidence')}
+          onOpenAdmin={() => onNavigate('admin')}
           onDismiss={dismissWelcome}
         />
       )}

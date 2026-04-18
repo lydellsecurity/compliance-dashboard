@@ -19,6 +19,23 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Sparkles, Check, ArrowRight, ArrowUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Modal } from './ui/Modal';
+import { GLOSSARY, GlossaryTerm } from './ui/Tooltip';
+
+/**
+ * Render a feature-highlight string, expanding `@term` tokens into
+ * <GlossaryTerm /> so jargon in the upgrade modal is hoverable.
+ *
+ * Example: "75 users + @sso / @saml" → "75 users + <SSO> / <SAML>"
+ */
+function renderHighlight(text: string): React.ReactNode {
+  const parts = text.split(/(@\w+)/g);
+  return parts.map((part, i) => {
+    if (!part.startsWith('@')) return part;
+    const key = part.slice(1).toLowerCase() as keyof typeof GLOSSARY;
+    if (!(key in GLOSSARY)) return part;
+    return <GlossaryTerm key={i} termKey={key} />;
+  });
+}
 import {
   useEntitlement,
   type EntitlementResult,
@@ -213,7 +230,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               {headline}
             </h2>
             <p className="text-sm text-slate-500 dark:text-steel-400">
-              {display.tagline}
+              {renderHighlight(display.tagline)}
             </p>
           </div>
         </div>
@@ -316,7 +333,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               {display.featureHighlights.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm text-slate-700 dark:text-steel-200">
                   <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span>{f}</span>
+                  <span>{renderHighlight(f)}</span>
                 </li>
               ))}
             </ul>

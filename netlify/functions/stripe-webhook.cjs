@@ -198,19 +198,23 @@ async function handleInvoicePaid(invoice, supabase) {
   // meters are reset implicitly by the next period_start rollover.
   const { data: org } = await supabase
     .from('organizations')
-    .select('usage')
+    .select('usage, status')
     .eq('id', organizationId)
     .single();
 
-  if (org?.usage) {
-    await supabase
-      .from('organizations')
-      .update({
-        usage: { ...org.usage, apiCallsThisMonth: 0 },
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', organizationId);
-  }
+  const update = {
+    usage: org?.usage ? { ...org.usage, apiCallsThisMonth: 0 } : undefined,
+    updated_at: new Date().toISOString(),
+    // Clear dunning state — payment landed, tenant is healthy again.
+    suspended_at: null,
+    ...(org?.status === 'suspended' ? { status: 'active' } : {}),
+  };
+
+  await supabase
+    .from('organizations')
+    .update(update)
+    .eq('id', organizationId);
+
   return organizationId;
 }
 
@@ -218,12 +222,22 @@ async function handleInvoiceFailed(invoice, supabase) {
   const organizationId = await resolveOrgFromCustomerId(invoice.customer, supabase);
   if (!organizationId) return null;
 
-  // Mark the tenant as suspended-in-dunning. The UI banner reads this.
-  // Actual feature soft-block happens on day 10 via a scheduled task.
+  // Mark the tenant as suspended-in-dunning and record when it started.
+  // `suspended_at` is set *only* on the first payment failure — Stripe Smart
+  // Retries will fire additional `invoice.payment_failed` events during the
+  // retry window, and we want to measure days from the *first* failure, not
+  // the last one.
+  const { data: existing } = await supabase
+    .from('organizations')
+    .select('suspended_at')
+    .eq('id', organizationId)
+    .single();
+
   await supabase
     .from('organizations')
     .update({
       status: 'suspended',
+      suspended_at: existing?.suspended_at ?? new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', organizationId);

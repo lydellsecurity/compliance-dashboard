@@ -224,11 +224,59 @@ const PLAN_CONFIGS = {
   },
 };
 
+/**
+ * Atomically increment a usage meter for an organization's current billing
+ * period. Wraps the `increment_usage_meter` RPC so Netlify functions don't
+ * each re-implement period bucketing.
+ *
+ * Failures are logged and swallowed — metering should never block the user
+ * action that's being measured.
+ */
+async function incrementMeter(organizationId, meter, quantity = 1) {
+  try {
+    const supabase = getSupabase();
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('billing')
+      .eq('id', organizationId)
+      .single();
+
+    // Fall back to the calendar month if no subscription period is set
+    // (e.g. Free tier). Keeps the meter bucket stable across calls in a month.
+    const now = new Date();
+    let periodEnd;
+    if (org?.billing?.currentPeriodEnd) {
+      periodEnd = new Date(org.billing.currentPeriodEnd);
+    } else {
+      periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59));
+    }
+    const periodStart = new Date(periodEnd.getTime() - 30 * 24 * 3600 * 1000);
+
+    const { data, error } = await supabase.rpc('increment_usage_meter', {
+      p_organization_id: organizationId,
+      p_meter: meter,
+      p_period_start: periodStart.toISOString(),
+      p_period_end: periodEnd.toISOString(),
+      p_quantity: quantity,
+    });
+
+    if (error) {
+      console.error(`incrementMeter(${meter}) failed for org ${organizationId}:`, error);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error('incrementMeter error:', err);
+    return null;
+  }
+}
+
 module.exports = {
   getStripe,
   getSupabase,
   requireAuthedOrg,
   getOrganization,
   resolvePlanFromPriceId,
+  incrementMeter,
   PLAN_CONFIGS,
 };

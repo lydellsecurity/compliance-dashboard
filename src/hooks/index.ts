@@ -6,6 +6,7 @@ export { useComplianceWithSupabase } from './useComplianceWithSupabase';
 export { useReportGeneration } from './useReportGeneration';
 export { useEscapeKey } from './useEscapeKey';
 export { useEntitlement } from './useEntitlement';
+export { useUrlState } from './useUrlState';
 export type {
   UseEntitlementReturn,
   EntitlementResult,

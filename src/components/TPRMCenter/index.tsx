@@ -51,6 +51,8 @@ import VendorProfileModal from './VendorProfileModal';
 import InherentRiskQuestionnaire from './InherentRiskQuestionnaire';
 import AIVendorReview from './AIVendorReview';
 import AddVendorModal from './AddVendorModal';
+import { supabase } from '../../lib/supabase';
+import { useUrlState } from '../../hooks/useUrlState';
 // Reserved for future use: SecurityArtifacts, RenewalTracker
 
 // ============================================================================
@@ -144,7 +146,18 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [selectedVendor, setSelectedVendorState] = useState<Vendor | null>(null);
+  // Deep-link support: `?vendor=<id>` opens the matching vendor's profile
+  // when the tab loads or when another surface (command palette, shared
+  // link) sets the query param.
+  const [urlVendorId, setUrlVendorId] = useUrlState('vendor');
+  const setSelectedVendor = useCallback(
+    (vendor: Vendor | null) => {
+      setSelectedVendorState(vendor);
+      setUrlVendorId(vendor?.id ?? null);
+    },
+    [setUrlVendorId]
+  );
   const [showAddVendor, setShowAddVendor] = useState(false);
   const [showRiskQuestionnaire, setShowRiskQuestionnaire] = useState(false);
   const [showAIReview, setShowAIReview] = useState(false);
@@ -158,6 +171,13 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
+
+  // Resolve ?vendor=<id> once vendors have loaded.
+  useEffect(() => {
+    if (!urlVendorId || selectedVendor?.id === urlVendorId) return;
+    const match = vendors.find((v) => v.id === urlVendorId);
+    if (match) setSelectedVendorState(match);
+  }, [urlVendorId, vendors, selectedVendor?.id]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -225,6 +245,21 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
       await vendorRiskService.createVendor(organizationId, vendor, userId);
       setShowAddVendor(false);
       loadData();
+      // Fire-and-forget meter increment. Runs through entitlements-check so
+      // the server-side dedups by period and writes through the same RPC as
+      // other surfaces. No await — metering must not block UI feedback.
+      const { data: sessionData } = supabase
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
+      const token = sessionData.session?.access_token ?? '';
+      fetch('/.netlify/functions/entitlements-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ incrementMeter: 'vendors' }),
+      }).catch((err) => console.warn('vendor meter increment failed:', err));
     } catch (error) {
       console.error('Failed to create vendor:', error);
       throw error;

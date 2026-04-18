@@ -4,6 +4,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
+const { incrementMeter } = require('./utils/stripe.cjs');
 
 // Initialize Supabase client
 function getSupabaseClient() {
@@ -494,6 +495,12 @@ exports.handler = async (event) => {
         console.error('Evidence record update error:', evidenceUpdateError);
       }
     }
+
+    // Meter the AI policy generation — this fires on *commit* (saving the
+    // generated policy as evidence), which is the right billing moment:
+    // it excludes drafts the user threw away. Failures are logged and
+    // swallowed inside incrementMeter so metering never blocks the save.
+    await incrementMeter(organizationId, 'ai_policy', 1);
 
     return {
       statusCode: 200,

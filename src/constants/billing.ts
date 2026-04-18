@@ -155,9 +155,12 @@ export const PLAN_DISPLAY: Record<TenantPlan, PlanDisplay> = {
     name: 'Scale',
     tagline: 'Enterprise-grade controls without the enterprise price tag.',
     targetBuyer: '200–500 employees, procurement heat',
+    // Feature strings may reference glossary keys via the pattern `@sso` /
+    // `@saml` / `@scim` / `@rbac` / `@mfa`. UpgradeGate renders those with a
+    // tooltip so non-technical admins can see definitions inline.
     featureHighlights: [
       'All 6 frameworks',
-      '75 users + SSO/SAML',
+      '75 users + @sso / @saml',
       'Real-time regulatory scanning',
       'White-label Trust Center + custom domain',
       'Full read/write API',
@@ -168,11 +171,11 @@ export const PLAN_DISPLAY: Record<TenantPlan, PlanDisplay> = {
   enterprise: {
     key: 'enterprise',
     name: 'Enterprise',
-    tagline: 'Custom frameworks, SCIM, and a dedicated CSM.',
+    tagline: 'Custom frameworks, @scim, and a dedicated CSM.',
     targetBuyer: '500+ employees, FedRAMP / PCI L1 / on-prem',
     featureHighlights: [
       'Unlimited everything',
-      'SCIM provisioning',
+      '@scim provisioning',
       'Custom frameworks + mappings',
       'Dedicated CSM, 1-hour SLA',
       'DPA, MSA, custom terms',

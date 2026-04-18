@@ -242,6 +242,13 @@ Question: ${question}`;
         : [],
     };
 
+    // Meter the questionnaire autofill if the caller provided their org id.
+    // Not required — this function is also callable unauthed for demos.
+    if (payload.organizationId && typeof payload.organizationId === 'string') {
+      const { incrementMeter } = require('./utils/stripe.cjs');
+      await incrementMeter(payload.organizationId, 'questionnaire', 1);
+    }
+
     return successResponse(normalizedResponse, origin);
   } catch (error) {
     console.error('AI questionnaire answer generation error:', error);

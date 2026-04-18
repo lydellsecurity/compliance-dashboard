@@ -36,6 +36,9 @@ export type { CommandItem, CommandCategory } from './CommandPalette';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
 
+// Tooltip primitive + compliance-term glossary
+export { Tooltip, GlossaryTerm, GLOSSARY } from './Tooltip';
+
 // Export menu
 export {
   ExportMenu,

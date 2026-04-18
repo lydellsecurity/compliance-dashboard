@@ -22,7 +22,7 @@
  * `trial_ending` in final 24h) are not dismissible.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, CreditCard, X, Zap } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -85,22 +85,62 @@ interface BannerSpec {
 
 export const BillingStatusBar: React.FC = () => {
   const { session } = useAuth();
-  const { tenant, plan, loading } = useEntitlement();
+  const { tenant, plan, loading, refresh } = useEntitlement();
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<TenantPlan | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(() => loadDismissed());
+
+  // Post-checkout provisional state — lifted from BillingCard so users who
+  // land on any tab after Stripe Checkout see a "finishing your upgrade"
+  // banner rather than their old plan silently. Polls refresh() until the
+  // tenant's plan advances or 60s elapses.
+  const provisioningRef = useRef<{ startedAt: number; lastPlan: TenantPlan } | null>(null);
+  const [provisioning, setProvisioning] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('checkout') === 'success';
+  });
+  useEffect(() => {
+    if (!provisioning) return;
+    if (!provisioningRef.current) {
+      provisioningRef.current = { startedAt: Date.now(), lastPlan: plan };
+    }
+    if (tenant && plan !== provisioningRef.current.lastPlan && plan !== 'free') {
+      setProvisioning(false);
+      provisioningRef.current = null;
+      const url = new URL(window.location.href);
+      url.searchParams.delete('checkout');
+      url.searchParams.delete('session_id');
+      window.history.replaceState({}, '', url.toString());
+      return;
+    }
+    if (Date.now() - provisioningRef.current.startedAt > 60_000) {
+      setProvisioning(false);
+      provisioningRef.current = null;
+      return;
+    }
+    const id = setTimeout(() => refresh(), 2_000);
+    return () => clearTimeout(id);
+  }, [provisioning, plan, tenant, refresh]);
 
   const banners = useMemo<BannerSpec[]>(() => {
     if (!tenant) return [];
     const out: BannerSpec[] = [];
 
     // 1. Payment failed — tenant.status = 'suspended' set by invoice.payment_failed webhook.
+    // Escalates to "service blocked" copy past day 10 when the server actually
+    // starts returning 402 on paid-feature writes.
     if (tenant.status === 'suspended' && tenant.billing?.subscriptionId) {
+      const suspendedDays = tenant.suspendedAt
+        ? Math.floor((Date.now() - new Date(tenant.suspendedAt).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      const blocked = suspendedDays >= 10;
       out.push({
         kind: 'payment_failed',
         severity: 'critical',
-        headline: 'Payment failed',
-        body: 'Update your payment method to avoid service interruption. Paid features will be blocked if the payment stays unresolved.',
+        headline: blocked ? 'Paid features blocked — payment failed' : 'Payment failed',
+        body: blocked
+          ? `Payment has been failing for ${suspendedDays} days. Update your payment method now to restore paid features — your data remains safe.`
+          : 'Update your payment method to avoid service interruption. Paid features will be blocked after 10 days.',
         primaryLabel: 'Update payment method',
         primaryAction: 'portal',
       });
@@ -225,19 +265,35 @@ export const BillingStatusBar: React.FC = () => {
     });
   }, []);
 
-  if (loading || !tenant || banners.length === 0) return null;
+  if (loading || !tenant) return null;
+  if (!provisioning && banners.length === 0) return null;
 
-  // Show only the top-priority banner to avoid fatigue.
+  // Show the post-checkout banner (if provisioning) OR the top-priority
+  // banner. Provisioning takes precedence — the user just paid and deserves
+  // immediate acknowledgement before anything else competes for attention.
   const top = banners[0];
 
   return (
     <>
-      <BannerRow
-        spec={top}
-        loading={top.primaryAction === 'portal' && portalLoading}
-        onPrimary={() => handlePrimary(top)}
-        onDismiss={top.dismissKey ? () => handleDismiss(top.dismissKey!) : undefined}
-      />
+      {provisioning && (
+        <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 flex items-center gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" aria-hidden />
+          <div className="text-sm text-indigo-900 dark:text-indigo-100">
+            <span className="font-semibold">Finishing your upgrade…</span>{' '}
+            <span className="opacity-80">
+              Stripe confirmed your payment. Provisioning your new plan (this takes a few seconds).
+            </span>
+          </div>
+        </div>
+      )}
+      {!provisioning && top && (
+        <BannerRow
+          spec={top}
+          loading={top.primaryAction === 'portal' && portalLoading}
+          onPrimary={() => handlePrimary(top)}
+          onDismiss={top.dismissKey ? () => handleDismiss(top.dismissKey!) : undefined}
+        />
+      )}
       <UpgradeModal
         open={upgradeTarget !== null}
         onClose={() => setUpgradeTarget(null)}

@@ -49,6 +49,28 @@ exports.handler = async (event) => {
     const org = await getOrganization(organizationId);
     const plan = org.plan;
 
+    // --- dunning soft-block ----------------------------------------------
+    // Per monetization plan §8.4: after day 10 of suspended status, block
+    // paid-feature writes (which is everything this function is asked about).
+    // Reads are left open so the tenant's audit data doesn't disappear.
+    if (org.status === 'suspended' && org.suspended_at) {
+      const suspendedMs = Date.now() - new Date(org.suspended_at).getTime();
+      const suspendedDays = suspendedMs / (1000 * 60 * 60 * 24);
+      if (suspendedDays >= 10) {
+        return {
+          statusCode: 402,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': origin || '*' },
+          body: JSON.stringify({
+            allowed: false,
+            reason: 'dunning_blocked',
+            currentPlan: plan,
+            message: 'Payment has been failing for over 10 days. Update your payment method to restore access.',
+            suspendedSince: org.suspended_at,
+          }),
+        };
+      }
+    }
+
     // --- feature flag check ----------------------------------------------
     if (feature) {
       const enabled = org.features?.[feature] === true;
