@@ -404,8 +404,8 @@ const TeamTab: React.FC<{
       </div>
 
       {/* Members List */}
-      <div className="bg-white dark:bg-midnight-800 rounded-lg border border-slate-200 dark:border-steel-700 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white dark:bg-midnight-800 rounded-lg border border-slate-200 dark:border-steel-700 overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="bg-slate-50 dark:bg-midnight-900">
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase">
@@ -933,8 +933,8 @@ const AuditLogTab: React.FC<{ logs: TenantAuditLog[] }> = ({ logs }) => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-midnight-800 rounded-lg border border-slate-200 dark:border-steel-700 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white dark:bg-midnight-800 rounded-lg border border-slate-200 dark:border-steel-700 overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="bg-slate-50 dark:bg-midnight-900">
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-steel-400 uppercase">

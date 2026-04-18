@@ -404,63 +404,81 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({ isOpen, onComplet
                 className="space-y-5"
               >
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Organization Name *
+                  <label htmlFor="org-setup-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Organization Name <span aria-hidden className="text-rose-500">*</span>
+                    <span className="sr-only"> (required)</span>
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" aria-hidden />
                     <input
+                      id="org-setup-name"
                       type="text"
                       value={form.name}
                       onChange={(e) => updateName(e.target.value)}
                       placeholder="Acme Corporation"
+                      required
+                      autoComplete="organization"
                       className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    URL Slug *
+                  <label htmlFor="org-setup-slug" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    URL Slug <span aria-hidden className="text-rose-500">*</span>
+                    <span className="sr-only"> (required)</span>
                   </label>
                   <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" aria-hidden />
                     <input
+                      id="org-setup-slug"
                       type="text"
                       value={form.slug}
                       onChange={(e) => updateSlug(e.target.value)}
                       placeholder="acme-corp"
+                      required
+                      aria-busy={checkingSlug}
+                      aria-invalid={slugAvailable === false ? 'true' : 'false'}
+                      aria-describedby="org-setup-slug-hint org-setup-slug-error"
                       className="w-full pl-10 pr-10 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     {checkingSlug && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 animate-spin" />
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 animate-spin" aria-hidden />
                     )}
                     {!checkingSlug && slugAvailable === true && form.slug && (
-                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" aria-hidden />
                     )}
                     {!checkingSlug && slugAvailable === false && (
-                      <X className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-500" />
+                      <X className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-500" aria-hidden />
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1.5">
+                  <p id="org-setup-slug-hint" className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                     Your Trust Center will be at: <code className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">/trust/{form.slug || 'your-slug'}</code>
                   </p>
                   {slugAvailable === false && (
-                    <p className="text-xs text-red-500 mt-1">This slug is already taken</p>
+                    <p id="org-setup-slug-error" role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      This slug is already taken
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label htmlFor="org-setup-description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                     Description (optional)
                   </label>
                   <textarea
+                    id="org-setup-description"
                     value={form.description}
-                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value.slice(0, 500) }))}
                     placeholder="Brief description of your organization..."
                     rows={3}
+                    maxLength={500}
+                    aria-describedby="org-setup-description-count"
                     className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
+                  <p id="org-setup-description-count" className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">
+                    {form.description.length}/500
+                  </p>
                 </div>
               </motion.div>
             )}
@@ -487,17 +505,19 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({ isOpen, onComplet
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label htmlFor="org-setup-contact-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                     Contact Email (optional)
                   </label>
                   <input
+                    id="org-setup-contact-email"
                     type="email"
                     value={form.contactEmail}
                     onChange={(e) => setForm((prev) => ({ ...prev, contactEmail: e.target.value }))}
                     placeholder="security@company.com"
+                    autoComplete="email"
                     className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-slate-500 mt-1.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                     Displayed on your Trust Center for security inquiries
                   </p>
                 </div>

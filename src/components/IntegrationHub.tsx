@@ -12,8 +12,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import EmptyState from './ui/EmptyState';
 import {
-  Plug,
   Search,
   X,
   AlertCircle,
@@ -507,11 +507,20 @@ const IntegrationHub: React.FC<IntegrationHubProps> = ({ organizationId, userId 
         )}
 
         {!loading && getFilteredProviders().length === 0 && (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-steel-400">
-            <Plug className="w-16 h-16 mb-4 opacity-30" />
-            <p className="text-lg font-medium">No integrations found</p>
-            <p className="text-sm mt-1">Try a different search or category</p>
-          </div>
+          <EmptyState
+            type="generic"
+            title={searchText ? 'No integrations match your search' : 'No integrations in this category'}
+            description={
+              searchText
+                ? 'Try a different search term, or clear the filter to browse the full catalog.'
+                : 'Pick another category, or connect your first tool to start pulling compliance evidence automatically.'
+            }
+            action={
+              searchText
+                ? { label: 'Clear search', onClick: () => setSearchText('') }
+                : undefined
+            }
+          />
         )}
       </div>
 

@@ -677,8 +677,8 @@ const TeamTab: React.FC<TeamTabProps> = ({
       {filteredMembers.length === 0 ? (
         <EmptyTeamState onInvite={canManage ? onInvite : undefined} />
       ) : (
-        <div className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-x-auto">
+          <table className="w-full min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 dark:bg-midnight-900 border-b border-slate-200 dark:border-steel-700">
                 {canManage && (

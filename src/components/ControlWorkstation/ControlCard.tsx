@@ -320,7 +320,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="w-[400px]">
+                        <div className="w-[min(400px,calc(100vw-2rem))]">
                           <RequirementTransparency
                             requirements={requirements}
                             isImplemented={isImplemented}

@@ -32,6 +32,10 @@ export {
 export { CommandPalette, useCommandPalette } from './CommandPalette';
 export type { CommandItem, CommandCategory } from './CommandPalette';
 
+// Modal primitive
+export { Modal } from './Modal';
+export type { ModalProps } from './Modal';
+
 // Export menu
 export {
   ExportMenu,

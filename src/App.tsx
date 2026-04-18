@@ -16,6 +16,7 @@ import {
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
 import { useToast } from './components/ui';
+import EmptyState from './components/ui/EmptyState';
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
 // Inline controls (kept eager — rendered on every control card, lazy would cause flicker).
 import { PolicyGeneratorButton } from './components/PolicyGenerator';
@@ -1717,13 +1718,36 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         {viewMode === 'controls' && (
           <div className="space-y-3">
             {controls.length === 0 ? (
-              <Card className="p-16 text-center">
-                <div className="w-12 h-12 bg-slate-100 dark:bg-steel-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-6 h-6 text-slate-400 dark:text-steel-500" />
-                </div>
-                <p className="text-slate-500 dark:text-steel-400">
-                  {(activeDomain.id as string) === 'company_specific' ? 'No custom controls yet.' : 'No controls found'}
-                </p>
+              <Card>
+                <EmptyState
+                  type="controls"
+                  title={
+                    (activeDomain.id as string) === 'company_specific'
+                      ? 'No custom controls yet'
+                      : search
+                        ? 'No controls match your search'
+                        : 'No controls in this domain'
+                  }
+                  description={
+                    (activeDomain.id as string) === 'company_specific'
+                      ? 'Add controls specific to your organization — they appear alongside framework controls in assessments and count toward your compliance score.'
+                      : search
+                        ? 'Try a different search term, or clear filters to see all controls.'
+                        : 'Controls will appear here once your frameworks are configured.'
+                  }
+                  action={
+                    (activeDomain.id as string) === 'company_specific'
+                      ? { label: 'Create custom control', onClick: () => {
+                          const url = new URL(window.location.href);
+                          url.searchParams.set('tab', 'admin');
+                          window.history.pushState({}, '', url.toString());
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        } }
+                      : search
+                        ? { label: 'Clear search', onClick: () => setSearch('') }
+                        : undefined
+                  }
+                />
               </Card>
             ) : selectedFramework !== 'all' || search ? (
               // Group controls by domain when filtering by framework or searching
@@ -1870,10 +1894,13 @@ const CommandSidebar: React.FC<{
   onSyncClick: () => void;
   expanded: boolean;
   onToggle: () => void;
+  /** On small screens the sidebar is a drawer; this controls its visibility. */
+  mobileOpen: boolean;
+  onMobileClose: () => void;
   organizationName?: string;
   organizationLogo?: string | null;
   primaryColor?: string;
-}> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle, organizationName, organizationLogo, primaryColor }) => {
+}> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle, mobileOpen, onMobileClose, organizationName, organizationLogo, primaryColor }) => {
   const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number }> = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-5 h-5" /> },
@@ -1890,8 +1917,31 @@ const CommandSidebar: React.FC<{
     { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-5 h-5" />, badge: alertCount > 0 ? alertCount : undefined },
   ];
 
+  // On tab change inside the mobile drawer, auto-close so the user sees the
+  // new surface instead of being stuck staring at the open drawer.
+  const handleTabSelect = (tab: TabId) => {
+    onTabChange(tab);
+    if (mobileOpen) onMobileClose();
+  };
+
   return (
-    <aside className={`glass-sidebar fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-200 ${expanded ? 'w-56' : 'w-16'}`}>
+    <>
+      {/* Mobile backdrop — only renders while the drawer is open. */}
+      {mobileOpen && (
+        <button
+          type="button"
+          onClick={onMobileClose}
+          aria-label="Close navigation"
+          className="lg:hidden fixed inset-0 z-30 bg-slate-900/60 backdrop-blur-sm"
+        />
+      )}
+      <aside
+        className={`glass-sidebar fixed left-0 top-0 h-full z-40 flex flex-col transition-transform lg:transition-all duration-200
+          ${expanded ? 'w-56' : 'w-16'}
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0`}
+        aria-label="Primary navigation"
+      >
       {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-steel-800">
         {organizationLogo ? (
@@ -1930,7 +1980,7 @@ const CommandSidebar: React.FC<{
             return (
               <div key={tab.id} className="relative group">
                 <button
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => handleTabSelect(tab.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive
                     ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 font-medium'
                     : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
@@ -2000,6 +2050,7 @@ const CommandSidebar: React.FC<{
         </button>
       </div>
     </aside>
+    </>
   );
 };
 
@@ -2016,9 +2067,45 @@ const AppContent: React.FC = () => {
 
   // Use actual user ID from auth, fallback for offline/development mode
   const currentUserId = user?.id || 'anonymous-user';
-  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+
+  // activeTab is mirrored to the URL (?tab=X) so users can share links and
+  // browser back/forward works. We hydrate once from the URL, then keep it in
+  // sync on every change.
+  const VALID_TABS: TabId[] = [
+    'dashboard', 'assessment', 'incidents', 'reporting', 'evidence',
+    'integrations', 'vendors', 'questionnaires', 'trust-center',
+    'certificate', 'verify', 'admin', 'settings',
+  ];
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const fromUrl = new URLSearchParams(window.location.search).get('tab') as TabId | null;
+    return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : 'dashboard';
+  });
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Sync activeTab → URL on every change.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('tab') === activeTab) return;
+    url.searchParams.set('tab', activeTab);
+    window.history.replaceState({}, '', url.toString());
+  }, [activeTab]);
+
+  // Respond to back/forward so the UI follows the URL.
+  useEffect(() => {
+    const onPop = () => {
+      const fromUrl = new URLSearchParams(window.location.search).get('tab') as TabId | null;
+      if (fromUrl && VALID_TABS.includes(fromUrl)) {
+        setActiveTab(fromUrl);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selectedDomain, setSelectedDomain] = useState<ComplianceDomainMeta | undefined>();
 
   // Modal states for new features
@@ -2141,6 +2228,9 @@ const AppContent: React.FC = () => {
         placeholder="Search controls, domains, or commands..."
       />
 
+      {/* Skip to main content — visible only when a keyboard user tabs to it. */}
+      <a href="#main-content" className="skip-to-main">Skip to main content</a>
+
       {/* Command Center Sidebar */}
       <CommandSidebar
         activeTab={activeTab}
@@ -2151,14 +2241,33 @@ const AppContent: React.FC = () => {
         onSyncClick={() => setShowSidebar(!showSidebar)}
         expanded={sidebarExpanded}
         onToggle={() => setSidebarExpanded(!sidebarExpanded)}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
         organizationName={currentOrg?.name}
         organizationLogo={currentOrg?.logoUrl}
         primaryColor={currentOrg?.primaryColor}
       />
 
       {/* Main Content */}
-      <main className={`min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-all duration-200 ${sidebarExpanded ? 'ml-56' : 'ml-16'}`}>
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main
+        id="main-content"
+        className={`min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-all duration-200 ml-0 ${sidebarExpanded ? 'lg:ml-56' : 'lg:ml-16'}`}
+      >
+        {/* Mobile top bar with hamburger — hidden on lg+ where the sidebar is persistent. */}
+        <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-white/95 dark:bg-midnight-900/95 backdrop-blur border-b border-slate-200 dark:border-steel-800">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open navigation"
+            className="p-2 -ml-2 rounded-md text-slate-700 dark:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="text-sm font-semibold text-slate-900 dark:text-steel-100 truncate">
+            {currentOrg?.name || 'AttestAI'}
+          </span>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <BillingStatusBar />
           {/* Single Suspense boundary covers every lazy tab body + any lazy
               components nested inside DashboardTab / AssessmentTab. */}

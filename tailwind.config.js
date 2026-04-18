@@ -161,6 +161,15 @@ export default {
         'xs': '2px',
         'command': '12px',
       },
+      // Named z-scale — prevents collisions when modals stack on top of
+      // drawers / popovers. Matches Modal.tsx (base 50, +10 per nested modal).
+      zIndex: {
+        'sidebar': '30',
+        'toast': '70',
+        'modal-base': '50',
+        'modal-stacked': '60',
+        'command-palette': '80',
+      },
       animation: {
         'fade-in': 'fade-in 0.5s ease-out forwards',
         'slide-up': 'slide-up 0.5s ease-out forwards',

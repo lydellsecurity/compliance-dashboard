@@ -69,8 +69,8 @@ const STATUS_CONFIG = {
   compliant: { label: 'Compliant', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800', icon: CheckCircle2 },
   partially_compliant: { label: 'Partially Compliant', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800', icon: AlertCircle },
   non_compliant: { label: 'Non-Compliant', color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800', icon: XCircle },
-  not_applicable: { label: 'Not Applicable', color: 'text-slate-500', bg: 'bg-slate-50 dark:bg-steel-800', border: 'border-slate-200 dark:border-steel-700', icon: Minus },
-  not_assessed: { label: 'Not Assessed', color: 'text-slate-400', bg: 'bg-white dark:bg-steel-800', border: 'border-slate-200 dark:border-steel-700', icon: Circle },
+  not_applicable: { label: 'Not Applicable', color: 'text-slate-600 dark:text-steel-300', bg: 'bg-slate-50 dark:bg-steel-800', border: 'border-slate-200 dark:border-steel-700', icon: Minus },
+  not_assessed: { label: 'Not Assessed', color: 'text-slate-600 dark:text-steel-300', bg: 'bg-white dark:bg-steel-800', border: 'border-slate-200 dark:border-steel-700', icon: Circle },
 };
 
 // ============================================

@@ -277,7 +277,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
       {/* Dual Pane Layout */}
       <div className="grid grid-cols-12 gap-6">
         {/* Left Pane: Question List */}
-        <div className="col-span-5 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 overflow-hidden">
+        <div className="col-span-12 lg:col-span-5 bg-white dark:bg-midnight-900 rounded-2xl border border-slate-200 dark:border-steel-700 overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
             <h3 className="font-semibold text-slate-900 dark:text-steel-100 text-sm flex items-center gap-2">
               <FileText className="w-4 h-4 text-slate-500 dark:text-steel-400" />
@@ -365,7 +365,7 @@ const DualPaneReview: React.FC<DualPaneReviewProps> = ({
         </div>
 
         {/* Right Pane: AI Suggestion & Actions */}
-        <div className="col-span-7">
+        <div className="col-span-12 lg:col-span-7">
           {selectedQuestion ? (
             <motion.div
               key={selectedQuestion.id}

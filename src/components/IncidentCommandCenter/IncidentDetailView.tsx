@@ -379,7 +379,7 @@ Generated: ${new Date().toLocaleString()}
               {/* Impact Summary */}
               <div className="col-span-12 lg:col-span-8 space-y-6">
                 {/* Key Metrics */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-white dark:bg-midnight-900 rounded-xl border border-slate-200 dark:border-steel-700 p-4">
                     <div className="flex items-center gap-2 text-slate-500 dark:text-steel-400 mb-2">
                       <Server className="w-4 h-4" />

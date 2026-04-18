@@ -16,8 +16,9 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { X, Sparkles, Check, ArrowRight, ArrowUp } from 'lucide-react';
+import { Sparkles, Check, ArrowRight, ArrowUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { Modal } from './ui/Modal';
 import {
   useEntitlement,
   type EntitlementResult,
@@ -197,36 +198,28 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     return `${display.name} unlocks this feature`;
   }, [result, display.name, current]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-midnight-800 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-2xl max-w-lg w-full">
-        <div className="flex items-start justify-between p-6 border-b border-slate-200 dark:border-steel-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
-                {headline}
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-steel-400">
-                {display.tagline}
-              </p>
-            </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="lg"
+      titleNode={
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" aria-hidden />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-steel-200"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
+              {headline}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-steel-400">
+              {display.tagline}
+            </p>
+          </div>
         </div>
-
-        <div className="p-6 space-y-5">
+      }
+    >
+      <div className="p-5 sm:p-6 space-y-5">
           {plan !== 'enterprise' && plan !== 'free' && (
             <div className="flex items-center gap-2 p-1 rounded-lg bg-slate-100 dark:bg-steel-900 text-sm">
               <button
@@ -345,12 +338,11 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
 
-          <p className="text-xs text-center text-slate-400 dark:text-steel-500">
+          <p className="text-xs text-center text-slate-500 dark:text-steel-500">
             {plan !== 'enterprise' && '14-day free trial. Cancel anytime.'}
           </p>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -917,7 +917,7 @@ const LandingPage: React.FC = () => {
                       <div key={i} className="w-2 h-2 bg-accent-300 rounded-full" />
                     ))}
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {['SOC 2', 'ISO 27001', 'HIPAA', 'NIST CSF', 'PCI DSS', 'GDPR'].map((fw) => (
                       <div
                         key={fw}
@@ -971,15 +971,15 @@ const LandingPage: React.FC = () => {
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
-            <div className="comparison-table max-w-4xl mx-auto">
-              {/* Header */}
-              <div className="grid grid-cols-3 bg-slate-50 border-b border-slate-200">
-                <div className="comparison-header text-slate-500">Feature</div>
+            <div className="comparison-table max-w-4xl mx-auto overflow-x-auto">
+              {/* Header (hidden on mobile — rows are self-describing there) */}
+              <div className="hidden sm:grid grid-cols-3 bg-slate-50 border-b border-slate-200">
+                <div className="comparison-header text-slate-600">Feature</div>
                 <div className="comparison-header text-red-500 text-center">Legacy Approach</div>
                 <div className="comparison-header text-emerald-600 text-center">Lydell.AI</div>
               </div>
 
-              {/* Rows */}
+              {/* Rows — stack as label→legacy→lydell on mobile, 3 columns on sm+. */}
               {comparisonData.map((row, index) => (
                 <motion.div
                   key={row.feature}
@@ -987,7 +987,7 @@ const LandingPage: React.FC = () => {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="grid grid-cols-3 border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-y-2 sm:gap-y-0 border-b border-slate-100 py-3 sm:py-0 hover:bg-slate-50/50 transition-colors"
                 >
                   <div className="comparison-cell font-medium text-slate-900">{row.feature}</div>
                   <div className="comparison-cell text-center">

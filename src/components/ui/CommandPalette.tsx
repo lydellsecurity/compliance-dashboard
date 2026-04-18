@@ -266,7 +266,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   placeholder={placeholder}
                   className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 outline-none text-sm"
                 />
-                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 rounded">
+                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded">
                   ESC
                 </kbd>
               </div>
@@ -319,7 +319,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                               )}
                             </div>
                             {cmd.shortcut && (
-                              <kbd className="flex-shrink-0 px-2 py-1 text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 rounded">
+                              <kbd className="flex-shrink-0 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded">
                                 {cmd.shortcut}
                               </kbd>
                             )}
