@@ -22,8 +22,11 @@ import {
   FileCheck, AlertTriangle, Database,
   CheckCheck, X, Building2, Users,
   Layers, BarChart3, RefreshCw, FileText, ShieldCheck,
-  Hash, Timer, Verified, MousePointer, Bot
+  Hash, Timer, Verified, MousePointer, Bot,
+  Zap, Gift, TrendingDown, ChevronDown,
 } from 'lucide-react';
+import { PLAN_CONFIGS, type TenantPlan } from '../services/multi-tenant.service';
+import { PLAN_DISPLAY } from '../constants/billing';
 
 // ============================================================================
 // TYPES
@@ -404,6 +407,591 @@ const LivePulseTicker: React.FC = () => {
     </div>
   );
 };
+
+// ============================================================================
+// PRICING SECTION
+// ============================================================================
+
+/**
+ * Pricing section reads from PLAN_CONFIGS so the landing page stays in sync
+ * with the app's canonical prices.
+ *
+ * CRO levers applied, each with a specific mechanism:
+ *  - Annual default + "save 17%" badge     → anchor on lower effective price
+ *  - "Most popular" on Growth              → decoy effect; steers mid-tier
+ *  - Per-card target-buyer line            → self-select ICP
+ *  - "Compare at ~$25K/yr" strike-through  → loss aversion via contrast with Vanta
+ *  - Launch promo callout                  → scarcity + reciprocity
+ *  - Risk-reversal strip                   → kill the three biggest objections
+ *  - Switcher credit card                  → reciprocity + unlock stuck buyers
+ *  - Expandable feature comparison         → progressive disclosure
+ *  - FAQ accordion                         → last-mile objection handling
+ *  - Sticky trust microcopy under each CTA → risk reduction at decision point
+ *
+ * Every CTA routes to /login?plan=<tier> so post-auth we can preselect the
+ * plan in Stripe Checkout (wiring lives in AuthScreen + BillingCard — TODO
+ * when Stripe provisioning is complete).
+ */
+const PricingSection: React.FC = () => {
+  const [interval, setInterval] = useState<'annual' | 'monthly'>('annual');
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  const displayPlans: TenantPlan[] = ['free', 'starter', 'growth', 'scale'];
+  const mostPopular: TenantPlan = 'growth';
+
+  // Rough cost anchor vs. competitors — sourced from docs/COMPETITOR_ANALYSIS.md.
+  // Used as strike-through "compare at" copy to make our price feel like a deal.
+  const competitorAnchor: Partial<Record<TenantPlan, string>> = {
+    starter: '$7.5K/yr with Secureframe',
+    growth: '$25K/yr with Vanta',
+    scale: '$45K/yr with Drata',
+  };
+
+  return (
+    <section id="pricing" className="py-20 bg-[#F8F9FA]">
+      <div className="container mx-auto px-4">
+        {/* Section header + trust bar */}
+        <ScrollReveal>
+          <div className="text-center mb-10 max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-full mb-6">
+              <TrendingDown className="w-4 h-4 text-emerald-600" aria-hidden />
+              <span className="text-sm font-medium text-emerald-700">
+                Up to 60% less than Vanta, Drata, and Secureframe
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Pricing that scales with your compliance program
+            </h2>
+            <p className="text-lg text-slate-600">
+              Start free. Upgrade when you're ready for your first audit. No hidden fees,
+              no surprise renewals, no per-framework add-ons.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        {/* Risk-reversal strip — addresses the three biggest objections before
+            the user even sees the price. */}
+        <ScrollReveal delay={0.1}>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-8 text-sm text-slate-700">
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden />
+              14-day free trial
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden />
+              No credit card for Free
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden />
+              Cancel anytime
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden />
+              30-day money-back guarantee on annual
+            </span>
+          </div>
+        </ScrollReveal>
+
+        {/* Billing toggle — annual is pre-selected so the anchor price is the
+            lower effective monthly rate. */}
+        <ScrollReveal delay={0.15}>
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex items-center p-1 rounded-full bg-white border border-slate-200 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setInterval('annual')}
+                aria-pressed={interval === 'annual'}
+                className={`relative px-5 py-2 rounded-full text-sm font-medium transition ${
+                  interval === 'annual'
+                    ? 'bg-slate-900 text-white shadow'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Annual
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  interval === 'annual'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  Save 17%
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setInterval('monthly')}
+                aria-pressed={interval === 'monthly'}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                  interval === 'monthly'
+                    ? 'bg-slate-900 text-white shadow'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Launch promo — scarcity cue. Real coupon LAUNCH20 exists in
+            src/constants/billing.ts. */}
+        <ScrollReveal delay={0.2}>
+          <div className="max-w-2xl mx-auto mb-10 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <Gift className="w-5 h-5 text-indigo-600" aria-hidden />
+            </div>
+            <div className="flex-1 text-sm">
+              <span className="font-semibold text-slate-900">Launch pricing:</span>{' '}
+              <span className="text-slate-700">
+                Get an extra <span className="font-semibold text-indigo-700">20% off</span> your first year with code{' '}
+              </span>
+              <code className="px-2 py-0.5 rounded bg-white border border-slate-200 font-mono text-xs font-semibold text-slate-900">
+                LAUNCH20
+              </code>
+              <span className="text-slate-500"> · Limited availability</span>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Plan cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
+          {displayPlans.map((plan, i) => (
+            <PricingCard
+              key={plan}
+              plan={plan}
+              interval={interval}
+              highlighted={plan === mostPopular}
+              competitorAnchor={competitorAnchor[plan]}
+              revealDelay={0.25 + i * 0.05}
+            />
+          ))}
+        </div>
+
+        {/* Enterprise band */}
+        <ScrollReveal delay={0.5}>
+          <div className="max-w-5xl mx-auto mb-10 p-6 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <Building2 className="w-6 h-6 text-white" aria-hidden />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold mb-1">
+                Enterprise — built for 500+ employees
+              </h3>
+              <p className="text-sm text-slate-300">
+                Unlimited frameworks, SCIM provisioning, dedicated CSM, custom SLAs,
+                on-prem deployment. Typical contracts land between $36K and $72K/year.
+              </p>
+            </div>
+            <a
+              href="mailto:sales@lydellsecurity.com?subject=Enterprise%20plan%20enquiry"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-slate-900 font-medium text-sm hover:bg-slate-100 transition-colors"
+            >
+              Talk to sales
+              <ArrowRight className="w-4 h-4" aria-hidden />
+            </a>
+          </div>
+        </ScrollReveal>
+
+        {/* Switcher credit — reciprocity trigger; explicit call to competitors'
+            price pain. */}
+        <ScrollReveal delay={0.55}>
+          <div className="max-w-3xl mx-auto mb-14 p-5 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5 text-white" aria-hidden />
+            </div>
+            <div className="flex-1 text-sm text-slate-700">
+              <span className="font-semibold text-slate-900">Switching from Vanta, Drata, or Secureframe?</span>{' '}
+              Get <span className="font-semibold text-emerald-700">$2,000 in account credit</span> with proof of a prior invoice.
+            </div>
+            <a
+              href="mailto:sales@lydellsecurity.com?subject=Switcher%20credit%20enquiry"
+              className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1 shrink-0"
+            >
+              Claim credit
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+            </a>
+          </div>
+        </ScrollReveal>
+
+        {/* Feature comparison — progressive disclosure. Most users decide on
+            the card view; this is here for the ones who need to diligence. */}
+        <ScrollReveal delay={0.6}>
+          <div className="max-w-6xl mx-auto mb-14">
+            <button
+              type="button"
+              onClick={() => setCompareOpen((v) => !v)}
+              aria-expanded={compareOpen}
+              aria-controls="pricing-compare"
+              className="w-full flex items-center justify-between p-4 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors text-left"
+            >
+              <span className="font-semibold text-slate-900">
+                Compare all features across plans
+              </span>
+              <ChevronDown
+                className={`w-5 h-5 text-slate-500 transition-transform ${compareOpen ? 'rotate-180' : ''}`}
+                aria-hidden
+              />
+            </button>
+            {compareOpen && (
+              <div id="pricing-compare" className="mt-4 overflow-x-auto rounded-xl bg-white border border-slate-200">
+                <ComparisonTable />
+              </div>
+            )}
+          </div>
+        </ScrollReveal>
+
+        {/* FAQ — last-mile objection handling. */}
+        <ScrollReveal delay={0.65}>
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-2xl font-bold text-slate-900 text-center mb-8">
+              Questions buyers ask us
+            </h3>
+            <div className="space-y-3">
+              {PRICING_FAQS.map((faq, idx) => {
+                const isOpen = expandedFaq === idx;
+                return (
+                  <div
+                    key={faq.q}
+                    className="rounded-xl bg-white border border-slate-200 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setExpandedFaq(isOpen ? null : idx)}
+                      aria-expanded={isOpen}
+                      className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+                    >
+                      <span className="font-medium text-slate-900">{faq.q}</span>
+                      <ChevronDown
+                        className={`w-5 h-5 text-slate-500 shrink-0 ml-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        aria-hidden
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </ScrollReveal>
+      </div>
+    </section>
+  );
+};
+
+// ============================================================================
+// PRICING SUB-COMPONENTS
+// ============================================================================
+
+const PricingCard: React.FC<{
+  plan: TenantPlan;
+  interval: 'annual' | 'monthly';
+  highlighted: boolean;
+  competitorAnchor?: string;
+  revealDelay: number;
+}> = ({ plan, interval, highlighted, competitorAnchor, revealDelay }) => {
+  const display = PLAN_DISPLAY[plan];
+  const config = PLAN_CONFIGS[plan];
+
+  const priceDisplay = (() => {
+    if (plan === 'free') return { value: '$0', suffix: 'forever' };
+    if (plan === 'enterprise') return { value: 'Custom', suffix: '' };
+    const monthlyEquivalent = interval === 'annual'
+      ? Math.round(config.priceAnnual / 12)
+      : config.price;
+    return {
+      value: `$${monthlyEquivalent.toLocaleString()}`,
+      suffix: interval === 'annual' ? '/mo, billed annually' : '/month',
+    };
+  })();
+
+  const savingsLine = interval === 'annual' && plan !== 'free' && config.price > 0
+    ? `Save $${(config.price * 12 - config.priceAnnual).toLocaleString()}/yr vs. monthly`
+    : null;
+
+  const ctaLabel = plan === 'free'
+    ? 'Start free'
+    : plan === 'enterprise'
+      ? 'Talk to sales'
+      : 'Start 14-day trial';
+
+  const ctaHref = plan === 'enterprise'
+    ? 'mailto:sales@lydellsecurity.com?subject=Enterprise%20plan%20enquiry'
+    : `/login?plan=${plan}&interval=${interval}`;
+
+  return (
+    <ScrollReveal delay={revealDelay}>
+      <div
+        className={`relative h-full flex flex-col rounded-2xl p-6 transition-all ${
+          highlighted
+            ? 'bg-white border-2 border-indigo-500 shadow-xl shadow-indigo-500/10 xl:-mt-4 xl:mb-4'
+            : 'bg-white border border-slate-200 shadow-sm hover:shadow-md'
+        }`}
+      >
+        {highlighted && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <div className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold shadow-lg">
+              Most popular
+            </div>
+          </div>
+        )}
+
+        <div className="mb-5">
+          <h3 className="text-lg font-bold text-slate-900 mb-1">{display.name}</h3>
+          <p className="text-xs text-slate-500 min-h-[2.25rem]">{display.targetBuyer}</p>
+        </div>
+
+        {/* Price */}
+        <div className="mb-1">
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl font-bold text-slate-900 tracking-tight">
+              {priceDisplay.value}
+            </span>
+            {priceDisplay.suffix && (
+              <span className="text-sm text-slate-500">{priceDisplay.suffix}</span>
+            )}
+          </div>
+          {savingsLine && (
+            <p className="text-xs text-emerald-600 font-medium mt-1">{savingsLine}</p>
+          )}
+          {competitorAnchor && (
+            <p className="text-xs text-slate-400 mt-1">
+              <span className="line-through">{competitorAnchor}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Feature list */}
+        <ul className="space-y-2.5 my-6 flex-1">
+          {display.featureHighlights.map((feature) => (
+            <li key={feature} className="flex items-start gap-2 text-sm text-slate-700">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" aria-hidden />
+              <span>{feature.replace(/@(\w+)/g, (_, k) => k.toUpperCase())}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* CTA */}
+        {plan === 'enterprise' ? (
+          <a
+            href={ctaHref}
+            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition ${
+              highlighted
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-slate-900 text-white hover:bg-slate-800'
+            }`}
+          >
+            {ctaLabel}
+            <ArrowRight className="w-4 h-4" aria-hidden />
+          </a>
+        ) : (
+          <Link
+            to={ctaHref}
+            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition ${
+              highlighted
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/25'
+                : plan === 'free'
+                  ? 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                  : 'bg-slate-900 text-white hover:bg-slate-800'
+            }`}
+          >
+            {ctaLabel}
+            <ArrowRight className="w-4 h-4" aria-hidden />
+          </Link>
+        )}
+
+        {/* Microcopy under CTA — risk reduction at the moment of decision. */}
+        <p className="mt-3 text-xs text-center text-slate-500">
+          {plan === 'free'
+            ? 'No credit card required'
+            : plan === 'enterprise'
+              ? 'Custom SLA · DPA · MSA'
+              : 'No card for first 14 days'}
+        </p>
+      </div>
+    </ScrollReveal>
+  );
+};
+
+/**
+ * Feature-comparison table. Progressive disclosure — shown when the user
+ * clicks "Compare all features." Diligence-friendly readers get the detail
+ * they need; everyone else decides from the card view without friction.
+ */
+const ComparisonTable: React.FC = () => {
+  type Row = {
+    label: string;
+    values: Record<Exclude<TenantPlan, 'enterprise'>, string | boolean>;
+  };
+  const rows: Row[] = [
+    { label: 'Frameworks',
+      values: {
+        free: '1',
+        starter: '1',
+        growth: '3 with crosswalk',
+        scale: 'All 6',
+      } },
+    { label: 'Users',
+      values: { free: '3', starter: '10', growth: '25', scale: '75' } },
+    { label: 'Cloud integrations',
+      values: { free: 'AWS only', starter: 'AWS + 1', growth: 'AWS / Azure / GCP', scale: 'All' } },
+    { label: 'Vendor Risk Management',
+      values: { free: false, starter: false, growth: '25 vendors', scale: '150 vendors' } },
+    { label: 'AI Remediation Chat',
+      values: { free: false, starter: false, growth: true, scale: true } },
+    { label: 'AI Questionnaire Autofill',
+      values: { free: false, starter: false, growth: '5/mo', scale: '25/mo' } },
+    { label: 'Real-time Regulatory Scanning',
+      values: { free: false, starter: false, growth: 'Daily', scale: 'Real-time' } },
+    { label: 'SSO / SAML',
+      values: { free: false, starter: false, growth: false, scale: true } },
+    { label: 'Custom Trust Center domain',
+      values: { free: false, starter: false, growth: false, scale: true } },
+    { label: 'API access',
+      values: { free: false, starter: false, growth: 'Read-only', scale: 'Read + Write' } },
+    { label: 'Audit-ready export',
+      values: { free: false, starter: false, growth: true, scale: true } },
+    { label: 'Support SLA',
+      values: { free: 'Community', starter: '48h email', growth: '24h email', scale: '4h priority' } },
+  ];
+
+  const paidPlans: Exclude<TenantPlan, 'enterprise'>[] = ['free', 'starter', 'growth', 'scale'];
+
+  return (
+    <table className="w-full min-w-[720px] text-sm">
+      <thead>
+        <tr className="bg-slate-50 border-b border-slate-200">
+          <th className="px-4 py-3 text-left font-semibold text-slate-900 w-1/3">Feature</th>
+          {paidPlans.map((p) => (
+            <th
+              key={p}
+              className={`px-4 py-3 text-center font-semibold ${
+                p === 'growth' ? 'text-indigo-700 bg-indigo-50' : 'text-slate-900'
+              }`}
+            >
+              {PLAN_DISPLAY[p].name}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.label} className="border-b border-slate-100 last:border-0">
+            <td className="px-4 py-3 font-medium text-slate-700">{row.label}</td>
+            {paidPlans.map((p) => {
+              const v = row.values[p];
+              return (
+                <td
+                  key={p}
+                  className={`px-4 py-3 text-center ${
+                    p === 'growth' ? 'bg-indigo-50/60' : ''
+                  }`}
+                >
+                  {v === true ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 inline" aria-label="Included" />
+                  ) : v === false ? (
+                    <span className="text-slate-300">—</span>
+                  ) : (
+                    <span className="text-slate-700">{v}</span>
+                  )}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
+// Last-mile objections. Phrased as the questions prospects actually ask on
+// intro calls; answers kept short and direct.
+const PRICING_FAQS: Array<{ q: string; a: React.ReactNode }> = [
+  {
+    q: 'What if I need to downgrade or cancel?',
+    a: (
+      <>
+        Downgrades take effect at the end of your billing period — you keep full access
+        until then. Monthly plans cancel immediately; annual plans get a prorated refund
+        within the first 30 days, after which we honor the rest of your term. No exit fees.
+      </>
+    ),
+  },
+  {
+    q: "What's included in the 14-day trial?",
+    a: (
+      <>
+        Everything on the plan you pick. No feature gating, no watermarks. You won't be
+        charged until day 15, and we'll email you 3 days before the trial ends so nothing
+        surprises you.
+      </>
+    ),
+  },
+  {
+    q: 'How does pricing compare to Vanta or Drata?',
+    a: (
+      <>
+        Published tier pricing puts us <strong>40–60% below</strong> Vanta and Drata at
+        equivalent feature sets. They charge $25K–$100K+/year and often add per-framework
+        fees; we bundle frameworks into the plan tier. If you have a Vanta/Drata invoice,
+        we'll credit $2K toward your first year.
+      </>
+    ),
+  },
+  {
+    q: 'Can I pay by invoice / purchase order?',
+    a: (
+      <>
+        Yes — on Scale and Enterprise plans, and on Growth for annual commitments. Reach
+        out to <a href="mailto:sales@lydellsecurity.com" className="text-indigo-600 hover:underline">sales@lydellsecurity.com</a> with
+        your AP process and we'll set up NET-30 terms.
+      </>
+    ),
+  },
+  {
+    q: 'Do you offer a discount for non-profits or early-stage startups?',
+    a: (
+      <>
+        Yes. <strong>30% off any tier</strong> for non-profits and pre-Series-A startups
+        (&lt;$1M ARR). YC, Techstars, and a few partner portfolios also get 3 months free
+        on Starter or Growth. Ask during trial signup.
+      </>
+    ),
+  },
+  {
+    q: 'Who owns my data, and what happens if I leave?',
+    a: (
+      <>
+        You own everything you put in. On cancellation we keep your data read-only for
+        90 days so you can export evidence, policies, and audit bundles. After that it's
+        permanently deleted. Nothing gets sold or reused to train our models.
+      </>
+    ),
+  },
+  {
+    q: 'Is the AI trained on my compliance data?',
+    a: (
+      <>
+        No. We use Anthropic's Claude API with zero-retention data processing — your
+        controls, policies, and evidence never enter a training set. Prompts and
+        responses are dropped after the request completes.
+      </>
+    ),
+  },
+  {
+    q: "What if I outgrow my plan mid-year?",
+    a: (
+      <>
+        Upgrade anytime — Stripe prorates the difference and you pay only for the time
+        remaining in your current period. Your compliance progress, evidence, and controls
+        carry over without any migration.
+      </>
+    ),
+  },
+];
 
 // ============================================================================
 // MAIN LANDING PAGE COMPONENT
@@ -1078,6 +1666,9 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
 
       {/* Final CTA Section */}
       <section className="py-24 cta-section">
