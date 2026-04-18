@@ -1,157 +1,77 @@
 # Follow-ups — Monetization + UI/UX pass
 
-**Authored:** 2026-04-17
-**Scope:** Open items from the Stripe/monetization rollout and the UI/UX review pass. Each item names the files involved and what's blocking it (product decision, more data, or just mechanical work).
+**Last updated:** 2026-04-18
+**Scope:** Open items from the Stripe/monetization rollout and the UI/UX review pass. The previous version of this doc had 21 items; most have shipped. What remains is below.
 
 ---
 
-## Stripe / Monetization
+## External prerequisites (can't be done from code)
 
 ### 1. Provision Stripe Products and Prices in the Stripe dashboard
-- **Why:** The code resolves `VITE_STRIPE_PRICE_*` env vars at runtime. Until those are set, Checkout fails with "Stripe is not configured in this environment."
-- **Where:** [src/constants/billing.ts](../src/constants/billing.ts), [netlify/functions/utils/stripe.cjs](../netlify/functions/utils/stripe.cjs)
-- **Need:** Create Products/Prices in Stripe (dashboard or API), copy Price IDs to env in Netlify + `.env.local`. List of required env vars is in the header of `src/constants/billing.ts`.
-- **Status:** Blocked on GTM — once pricing is committed, ~1 hour of work.
+The code resolves `VITE_STRIPE_PRICE_*` env vars at runtime. Until set, Checkout surfaces a clear error in the UpgradeModal. Required env vars are listed in the header of [src/constants/billing.ts](../src/constants/billing.ts).
 
 ### 2. Register the Stripe webhook endpoint
-- **Why:** Without it, subscription lifecycle events don't reach the app — tenants stay on their pre-checkout plan forever.
-- **Where:** Stripe dashboard → Developers → Webhooks → Add endpoint → point at `https://<domain>/.netlify/functions/stripe-webhook`, subscribe to the events in [stripe-webhook.cjs:95-120](../netlify/functions/stripe-webhook.cjs). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
-- **Status:** Mechanical.
+Stripe dashboard → Developers → Webhooks → Add endpoint. Point at `https://<domain>/.netlify/functions/stripe-webhook`. Subscribe to `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.payment_succeeded|failed`, `customer.subscription.trial_will_end`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 
-### 3. Wire usage-meter increments at the AI-policy and questionnaire call sites
-- **Why:** The `usage_meters` table exists and `stripe-report-usage` reports daily, but nothing currently *increments* meters. Metered overage add-ons never bill.
-- **Where:**
-  - AI policy generation: [netlify/functions/generate-ai-policy.cjs](../netlify/functions/generate-ai-policy.cjs) — after a successful generation, POST to `/entitlements-check` with `{ feature: 'advancedReporting', incrementMeter: 'ai_policy' }` *or* call the Supabase RPC `increment_usage_meter` directly from the server.
-  - Questionnaire autofill: [netlify/functions/generate-questionnaire-answer.cjs](../netlify/functions/generate-questionnaire-answer.cjs) — increment `questionnaire` meter.
-  - Vendor add: [src/components/TPRMCenter/index.tsx](../src/components/TPRMCenter/index.tsx) `handleVendorCreated` — increment `vendors`.
-- **Status:** Mechanical (~2-3 hours).
+### 3. Stripe Portal custom flow for downgrade warnings
+To fire the `<DowngradeWarning>` component, configure Stripe Portal:
+Customer Portal → Subscriptions → Custom confirmation URL →
+`https://<app>/settings/billing?downgrade=confirm&to={plan}`.
 
-### 4. Day-10 soft-block on payment-failed dunning
-- **Why:** The webhook sets `status='suspended'` on `invoice.payment_failed`, and the banner surfaces that, but paid-feature *writes* are not actually blocked. Per monetization plan §8.4, day 10 should soft-block paid-feature writes.
-- **Where:** `entitlements-check.cjs` at [netlify/functions/entitlements-check.cjs](../netlify/functions/entitlements-check.cjs) — add a check that if `tenant.status === 'suspended'` and it's been >10 days since the failed invoice, return 402 even for features the tenant's *plan* would allow.
-- **Need:** Track days-in-suspension on the org row (add column, set on `invoice.payment_failed`, clear on `invoice.payment_succeeded`).
-- **Status:** Small migration + logic tweak.
-
-### 5. Pre-downgrade loss warning
-- **Why:** When a user downgrades via Stripe Portal, Growth-only data (vendors, multi-framework assessments) becomes inaccessible at period end with no warning inside our UI.
-- **Where:** Stripe Portal Configuration → enable custom confirmation URL → point at `/settings/billing?downgrade=confirm` and intercept in [src/components/Settings.tsx BillingCard](../src/components/Settings.tsx). Show a loss summary with counts of each affected resource before the user leaves the portal.
-- **Need:** Portal config change + new downgrade-warning component.
-- **Status:** Moderate.
+Until configured, the component is dormant (the query param is never present).
 
 ---
 
-## UI / UX
+## Structural refactors (non-trivial, deferred intentionally)
 
-### 6. Fuller Settings IA refactor
-- **Why:** [Settings.tsx](../src/components/Settings.tsx), [OrgManagementSuite.tsx](../src/components/OrgManagementSuite.tsx), and the deprecated [TenantAdmin.tsx](../src/components/TenantAdmin.tsx) still have overlap: notification preferences, monitoring, security settings exist in multiple places. The deprecation note + copy tightening this session was a patch, not the fix.
-- **Where:** Product-owned. Decide canonical home for each category (notifications, monitoring, regulatory updates, branding). Likely outcome: all org-level config moves into `OrgManagementSuite`; `Settings` becomes app-level prefs (theme, shortcuts).
-- **Need:** Design review + migration plan for bookmarks. Not a mechanical fix.
-- **Status:** Blocked on product.
+### 4. Full Settings / Admin consolidation
+Partial consolidation shipped: removed the duplicative "Cloud Integrations" sub-section from Settings; clarified descriptions. A full merge (kill the top-level Admin tab entirely, embed `OrgManagementSuite` inside Settings) was deferred because:
+- OrgManagementSuite is a rich multi-tab surface — embedding it nests two levels of tabs, which is confusing.
+- Existing bookmarks and external docs may link to `?tab=admin`.
+- Product should decide: is Settings user-scoped prefs only, with Admin as the org surface? Or merge into a single Settings?
 
-### 7. Command palette — real vendor/evidence indexing
-- **Why:** The palette's `useCommandPalette` accepts `vendors` and `evidence` arrays, but App.tsx currently passes empty arrays and falls back to tab navigation on selection. Users can't jump to "vendor X" by name.
-- **Where:** Need tenant-scoped vendor + evidence stores hoisted out of per-tab components and into a global hook (e.g. `useVendors()`, `useEvidenceIndex()`). Wire them at [App.tsx:2175](../src/App.tsx:2175).
-- **Status:** Moderate refactor — touches TPRMCenter and EvidenceVault data paths.
+When ready: add a redirect in [App.tsx](../src/App.tsx) from `?tab=admin` → `?tab=settings&section=admin`, then move `OrgManagementSuite` to render inside the Settings admin section and delete the top-level Admin tab from the sidebar.
 
-### 8. Welcome checklist content
-- **Why:** The first-run card ([App.tsx WelcomeChecklist](../src/App.tsx)) has three reasonable default steps, but product owns the onboarding narrative.
-- **Where:** Same component. Could be dynamic (based on integrations connected, framework selected) or tied into Stripe plan (nudge toward Growth features early).
-- **Status:** Blocked on product/marketing copy.
+### 5. Hoist vendor + evidence stores into global state
+Current implementation ([usePaletteIndex](../src/hooks/usePaletteIndex.ts)) fetches lightweight id+name index directly from Supabase for the command palette. This works for search but duplicates data that TPRMCenter and EvidenceVault already fetch on their own mount.
 
-### 9. Migrate remaining modal-ish surfaces to `<Modal>` primitive
-- **Why:** Seven modals migrated this session. Others still exist with ad-hoc implementations.
-- **Where (unmigrated as of this session):**
-  - `IncidentDetail.tsx` — full-screen modal pattern.
-  - `IncidentCommandCenter/NewIncidentWizard.tsx`
-  - `QuestionnaireCenter/UploadWizard.tsx`
-  - `CertificateGenerator.tsx` — download flow
-  - `AuditBundle.tsx` — has its own modal shell
-  - `TPRMCenter/InherentRiskQuestionnaire.tsx`
-  - Any remaining `fixed inset-0 z-50 ... modal-content` patterns (grep for the class).
-- **Status:** Mechanical. Same recipe as the seven done this session.
-
-### 10. Complete the contrast audit with axe-core in CI
-- **Why:** Hand-audited a handful of slate-400 offenders; there are certainly more in components not reviewed line-by-line.
-- **Where:** Add `@axe-core/react` to the Vite dev server in dev mode; add `vitest-axe` or Playwright with axe snapshots in CI.
-- **Status:** ~1 hour setup + follow-up fixes.
-
-### 11. `aria-live` for remaining async flows
-- **Why:** AI policy + remediation chat + toasts are covered. Evidence upload progress, report generation status, and integration test results still run silently to screen readers.
-- **Where:**
-  - [src/components/EvidenceVault.tsx](../src/components/EvidenceVault.tsx) — upload progress area.
-  - [src/components/ClientReporting.tsx](../src/components/ClientReporting.tsx) — generation status.
-  - [src/components/IntegrationHub.tsx](../src/components/IntegrationHub.tsx) — test-connection status.
-- **Status:** Mechanical.
-
-### 12. Touch-target audit beyond the sidebar
-- **Why:** Sidebar bumped to 44×44 this session. Icon-only buttons in tables, card actions, and inline toggles likely still land <44px on mobile.
-- **Where:** Grep for `<button` with only a lucide icon child and no `min-h-` or `p-3+`. Good hit list:
-  - Close buttons inside drawers (now handled by Modal's built-in close).
-  - Action menus in tables (OrgManagementSuite, EvidenceVault).
-  - Inline edit/delete icons (TPRMCenter vendor cards).
-- **Status:** Mechanical.
-
-### 13. Landing-page blob overflow check on real devices
-- **Why:** [LandingPage.tsx:473](../src/components/LandingPage.tsx:473) uses `w-[600px]` decorative blobs inside an `overflow-hidden` container. Should be fine, but worth visual QA on 320px viewports.
-- **Status:** Trivial check.
-
-### 14. Jargon tooltips for SSO / SAML / SCIM / MFA / RBAC
-- **Why:** Called out in the UX review. These terms appear across Settings, UpgradeGate, and admin surfaces without inline help. Non-technical admins bounce.
-- **Where:** Lightweight `<Tooltip>` primitive + a domain-terms glossary. Apply at first mention per page.
-- **Need:** Copy + short definitions.
-- **Status:** Moderate.
-
-### 15. URL state for deep objects (beyond tabs)
-- **Why:** `?tab=X` works now. Sharing a link to a specific control, incident, or vendor does not.
-- **Where:** Add `?id=` query params and wire to opening the matching drawer on load. Files: `ControlDetailDrawer`, `VendorProfileModal`, `IncidentDetail`.
-- **Status:** Moderate.
-
-### 16. Skeleton adoption on main tabs
-- **Why:** The `Skeleton` primitives exist but load-time placeholders are only used on lazy tabs. Dashboard / Assessment / TPRM show spinners or blank space during slow fetches.
-- **Where:** [src/App.tsx DashboardTab](../src/App.tsx), [AssessmentTab](../src/App.tsx), [TPRMCenter/index.tsx:240](../src/components/TPRMCenter/index.tsx:240).
-- **Status:** Mechanical.
-
-### 17. Post-checkout provisional banner
-- **Why:** Implemented on the Billing card ([BillingCard](../src/components/Settings.tsx) polls after `?checkout=success`), but a user who lands on `/dashboard` after checkout instead of billing sees no "Upgrading…" indicator.
-- **Where:** Lift the provisioning detection into [BillingStatusBar.tsx](../src/components/BillingStatusBar.tsx) so the banner shows globally, not just on Settings.
-- **Status:** Small refactor.
+When those tabs are refactored to share a global store (via Zustand or a React context), wire the palette to read from that instead of re-fetching. Not urgent — the lightweight index is snappy.
 
 ---
 
-## Testing / CI
+## Nice-to-haves
 
-### 18. Integration tests for the Stripe webhook
-- **Why:** `stripe-webhook.cjs` has substantial branching logic (6 event types, org resolution, idempotency dedup). No current tests.
-- **Where:** `tests/netlify-functions/stripe-webhook.test.ts` using MSW or stripe-mock. Validate:
-  - Idempotency on duplicate `event.id`.
-  - `checkout.session.completed` → plan/limits/features applied.
-  - `customer.subscription.deleted` → downgrade to free at period end.
-  - Signature verification rejects tampered bodies.
-- **Status:** 2-3 hours.
+### 6. Welcome checklist dynamics
+Static copy shipped: "Invite team / Connect integration / Start assessment." Could become dynamic:
+- Skip "Invite team" if >1 user already exists
+- Show framework-specific next steps (e.g. "SOC 2 needs evidence for CC-series — connect AWS first")
+- Tie Step 2 to the Growth plan sell ("Multi-cloud unlocks on Growth →")
 
-### 19. E2E test for the upgrade flow
-- **Why:** The full journey (click "Upgrade" → Stripe Checkout → webhook → plan reflect) has no end-to-end coverage.
-- **Where:** Playwright with a mocked Stripe (stripe-mock) + webhook injection.
-- **Status:** 1 day.
+Needs product/marketing input on the narrative. The component ([App.tsx WelcomeChecklist](../src/App.tsx)) is ready to accept config.
 
-### 20. Axe-core snapshot tests on key surfaces
-- **Why:** No automated a11y regressions today.
-- **Where:** Playwright + `@axe-core/playwright` on Landing, Dashboard, Assessment, Settings, UpgradeModal.
-- **Status:** See item 10.
+### 7. URL state for the remaining drawer surfaces
+`?vendor=<id>` shipped. Similar work needed for:
+- `?control=<id>` → opens ControlDetailDrawer. Currently requires lifting the drawer state up from ControlCard into AssessmentTab (comment at [App.tsx:2239](../src/App.tsx:2239) notes this).
+- `?incident=<id>` → IncidentDetail. Requires IncidentCommandCenter to accept a URL-driven selection.
 
----
+Use the existing [useUrlState](../src/hooks/useUrlState.ts) hook — the pattern is in place.
 
-## Bundle / Performance
+### 8. E2E test for the upgrade flow
+The webhook internals have unit coverage now. A full Playwright flow (click Upgrade → mock Stripe → webhook → plan flips) would catch integration regressions. Needs stripe-mock or Playwright + webhook fixture. ~1 day.
 
-### 21. Code-split the index chunk
-- **Why:** Main bundle is 548 kB (165 kB gzipped). Vite warns at 500 kB.
-- **Where:** `vite.config.ts` — add `build.rollupOptions.output.manualChunks` for `@supabase/supabase-js`, `framer-motion`, `recharts`, `pdfkit`.
-- **Status:** 1-2 hours.
+### 9. axe-core CI snapshot tests
+Spot-audit shipped. CI coverage via `@axe-core/playwright` snapshots on Landing, Dashboard, Assessment, Settings, UpgradeModal would catch regressions. Adds ~30s to CI.
+
+### 10. Expand regulatory updates & notifications sections
+These Settings sections exist but are placeholder-heavy. Product decision needed on:
+- Notifications: which events trigger alerts, per-user or per-org preferences?
+- Regulatory Updates: which frameworks track, update cadence, diff presentation?
 
 ---
 
 ## How to consume this list
 
-- Items flagged **Blocked on product** need a decision meeting first. Don't merge speculative implementations.
-- Items flagged **Mechanical** are safe for any contributor to pick up.
-- When completing an item, delete it from this file in the same PR. Don't let this doc grow stale — the value is in what's still open.
+- External prereqs (1–3): need Stripe dashboard access. Engineering can't ship these.
+- Structural (4–5): engineering can ship, but waiting on product direction to avoid churn.
+- Nice-to-haves (6–10): ship individually as time allows. Each is scoped to a few hours or a day.
+- Delete items from this file in the PR that ships them. The value is in what's still open, not a changelog.

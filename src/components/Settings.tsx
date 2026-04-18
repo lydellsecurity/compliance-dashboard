@@ -49,15 +49,18 @@ interface SettingsProps {
 // CONSTANTS
 // ============================================================================
 
+// Settings sections are app-level configuration and personal preferences.
+// Org-scoped management (team, billing, security, branding, audit) lives on
+// the Admin tab via OrgManagementSuite. The "Cloud Integrations" section was
+// removed to eliminate duplication with the top-level Integrations tab.
 const SECTIONS: { id: SettingsSection; label: string; icon: React.ReactNode; description: string }[] = [
   { id: 'overview', label: 'Overview', icon: <SettingsIcon className="w-5 h-5" />, description: 'Quick access to all settings' },
   { id: 'monitoring', label: 'Continuous Monitoring', icon: <Activity className="w-5 h-5" />, description: 'Configure real-time compliance tracking' },
-  { id: 'integrations', label: 'Cloud Integrations', icon: <Cloud className="w-5 h-5" />, description: 'Connect AWS, Azure, and GCP' },
   { id: 'alerts', label: 'Alert Rules', icon: <Bell className="w-5 h-5" />, description: 'Configure alert thresholds and triggers' },
-  { id: 'notifications', label: 'Notifications', icon: <Mail className="w-5 h-5" />, description: 'Email, Slack, and webhook settings' },
-  { id: 'organization', label: 'Organization', icon: <Building2 className="w-5 h-5" />, description: 'Company settings and preferences' },
+  { id: 'notifications', label: 'Notifications', icon: <Mail className="w-5 h-5" />, description: 'Email, Slack, and webhook delivery preferences' },
+  { id: 'organization', label: 'Organization', icon: <Building2 className="w-5 h-5" />, description: 'App-level org preferences — for team, billing, and branding, use the Admin tab' },
   { id: 'regulatory', label: 'Regulatory Updates', icon: <GitCompare className="w-5 h-5" />, description: 'Track framework changes and compliance drift' },
-  { id: 'admin', label: 'Admin', icon: <UserCog className="w-5 h-5" />, description: 'Team, billing, security, and audit logs' },
+  { id: 'admin', label: 'Admin', icon: <UserCog className="w-5 h-5" />, description: 'Open the Admin dashboard for team, billing, security, and audit logs' },
 ];
 
 // ============================================================================

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
+import { usePaletteIndex } from './hooks/usePaletteIndex';
 import { useToast } from './components/ui';
 import EmptyState from './components/ui/EmptyState';
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
@@ -2276,6 +2277,10 @@ const AppContent: React.FC = () => {
       controlCount: allControls.filter(c => c.domain === d.id).length,
     })), [allDomains, allControls]);
 
+  // Lightweight vendor + evidence index for the command palette. Pulls id +
+  // display fields only so palette open is fast on large tenants.
+  const paletteIndex = usePaletteIndex(currentOrg?.id);
+
   // Command palette for quick navigation
   const { isOpen: commandPaletteOpen, setIsOpen: setCommandPaletteOpen, commands } = useCommandPalette({
     onNavigate: (tab) => setActiveTab(tab as TabId),
@@ -2299,18 +2304,29 @@ const AppContent: React.FC = () => {
       }
     },
     recentControls,
-    // Object indexing: incidents live in-memory via the IR hook. Vendors and
-    // evidence are owned by per-tab stores today and aren't pre-loaded here —
-    // selecting them simply navigates to the tab. When those stores migrate
-    // into global state we can pass them through for true jump-to-object.
+    // Object indexing:
+    // - Incidents come from the in-memory IR hook.
+    // - Vendors + evidence are pulled lazily via usePaletteIndex — minimal
+    //   columns only, capped at 200 each to keep the palette snappy.
+    //   Selecting a vendor sets the URL `?vendor=<id>` so TPRMCenter opens
+    //   the profile on mount. Evidence selection still routes to the tab
+    //   since there's no drawer URL state for individual evidence items.
     incidents: ir.incidents.map((inc) => ({
       id: inc.id,
       title: inc.title,
       severity: inc.severity,
       status: inc.status,
     })),
+    vendors: paletteIndex.vendors,
+    evidence: paletteIndex.evidence,
     onSelectIncident: () => setActiveTab('incidents'),
-    onSelectVendor: () => setActiveTab('vendors'),
+    onSelectVendor: (vendorId) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'vendors');
+      url.searchParams.set('vendor', vendorId);
+      window.history.replaceState({}, '', url.toString());
+      setActiveTab('vendors');
+    },
     onSelectEvidence: () => setActiveTab('evidence'),
   });
 

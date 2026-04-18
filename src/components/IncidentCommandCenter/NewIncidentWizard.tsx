@@ -11,6 +11,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '../ui/Modal';
 import {
   X,
   ChevronLeft,
@@ -46,6 +47,7 @@ interface NewIncidentWizardProps {
   ir: UseIncidentResponseReturn;
   organizationId: string;
   userId: string;
+  open?: boolean;
   onClose: () => void;
   onIncidentCreated: (incident: Incident) => void;
 }
@@ -191,6 +193,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
   ir,
   organizationId: _organizationId,
   userId: _userId,
+  open = true,
   onClose,
   onIncidentCreated,
 }) => {
@@ -776,20 +779,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
-      >
+    <Modal open={open} onClose={onClose} size="3xl" hideCloseButton>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-red-600 to-orange-600">
           <div className="flex items-center gap-3 text-white">
@@ -921,8 +911,7 @@ const NewIncidentWizard: React.FC<NewIncidentWizardProps> = ({
             </button>
           )}
         </div>
-      </motion.div>
-    </motion.div>
+    </Modal>
   );
 };
 

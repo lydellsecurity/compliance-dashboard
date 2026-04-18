@@ -343,3 +343,21 @@ async function resolveOrgFromObject(obj, supabase) {
   if (obj?.customer) return resolveOrgFromCustomerId(obj.customer, supabase);
   return null;
 }
+
+// ============================================================================
+// TEST EXPORTS
+// ============================================================================
+// Internals exposed for unit tests. These let test files drive the dispatch
+// handlers against a mock Supabase without going through signature
+// verification (Stripe's webhooks.constructEvent can't be sensibly mocked
+// from CommonJS callers under Vitest).
+
+exports._test = {
+  dispatch,
+  handleCheckoutCompleted,
+  handleSubscriptionUpsert,
+  handleSubscriptionDeleted,
+  handleInvoicePaid,
+  handleInvoiceFailed,
+  handleTrialEnding,
+};

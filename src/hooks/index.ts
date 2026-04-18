@@ -7,6 +7,7 @@ export { useReportGeneration } from './useReportGeneration';
 export { useEscapeKey } from './useEscapeKey';
 export { useEntitlement } from './useEntitlement';
 export { useUrlState } from './useUrlState';
+export { usePaletteIndex } from './usePaletteIndex';
 export type {
   UseEntitlementReturn,
   EntitlementResult,
