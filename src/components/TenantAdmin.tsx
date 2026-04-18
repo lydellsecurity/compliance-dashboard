@@ -1,5 +1,10 @@
 /**
- * Tenant Admin Component
+ * @deprecated Not wired into the app. The canonical admin surface is
+ * `OrgManagementSuite` (mounted on the Admin tab in App.tsx). Kept temporarily
+ * as a reference implementation for the tabbed-admin layout; do NOT add new
+ * functionality here. Route new admin features into `OrgManagementSuite`.
+ *
+ * Tenant Admin Component (legacy)
  *
  * Administrative dashboard for tenant management:
  * - Tenant settings configuration

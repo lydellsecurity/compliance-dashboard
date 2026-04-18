@@ -57,6 +57,9 @@ export type CommandCategory =
   | 'navigation'
   | 'controls'
   | 'domains'
+  | 'incidents'
+  | 'evidence'
+  | 'vendors'
   | 'actions'
   | 'settings'
   | 'help';
@@ -76,9 +79,12 @@ const CATEGORY_CONFIG: Record<CommandCategory, { label: string; order: number }>
   navigation: { label: 'Navigation', order: 1 },
   controls: { label: 'Controls', order: 2 },
   domains: { label: 'Domains', order: 3 },
-  actions: { label: 'Actions', order: 4 },
-  settings: { label: 'Settings', order: 5 },
-  help: { label: 'Help', order: 6 },
+  incidents: { label: 'Incidents', order: 4 },
+  vendors: { label: 'Vendors', order: 5 },
+  evidence: { label: 'Evidence', order: 6 },
+  actions: { label: 'Actions', order: 7 },
+  settings: { label: 'Settings', order: 8 },
+  help: { label: 'Help', order: 9 },
 };
 
 // ============================================================================
@@ -141,6 +147,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       navigation: [],
       controls: [],
       domains: [],
+      incidents: [],
+      vendors: [],
+      evidence: [],
       actions: [],
       settings: [],
       help: [],
@@ -251,12 +260,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-xl z-50"
+            className="fixed top-[20%] left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-50"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
           >
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
               {/* Search input */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                <Search className="w-5 h-5 text-slate-400" />
+                <Search className="w-5 h-5 text-slate-400" aria-hidden />
                 <input
                   ref={inputRef}
                   type="text"
@@ -264,6 +276,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={placeholder}
+                  aria-label="Search commands"
+                  aria-autocomplete="list"
+                  aria-controls="command-palette-list"
                   className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 outline-none text-sm"
                 />
                 <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded">
@@ -273,7 +288,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
               {/* Command list */}
               <div
+                id="command-palette-list"
                 ref={listRef}
+                role="listbox"
+                aria-live="polite"
                 className="max-h-80 overflow-y-auto py-2"
               >
                 {groupedCommands.length === 0 ? (
@@ -375,6 +393,23 @@ export interface SearchableDomain {
   controlCount: number;
 }
 
+export interface SearchableIncident {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+}
+export interface SearchableVendor {
+  id: string;
+  name: string;
+  category?: string;
+}
+export interface SearchableEvidence {
+  id: string;
+  title: string;
+  controlId?: string | null;
+}
+
 interface UseCommandPaletteOptions {
   onNavigate?: (tab: string) => void;
   onToggleTheme?: () => void;
@@ -384,6 +419,15 @@ interface UseCommandPaletteOptions {
   onSelectControl?: (controlId: string) => void;
   onFilterDomain?: (domainId: string) => void;
   recentControls?: string[]; // IDs of recently viewed controls
+  // Expanded indexing — if provided, the palette offers direct jump-to for
+  // each object. Callers decide how to resolve the selection (navigate to the
+  // tab, open a detail drawer, etc.).
+  incidents?: SearchableIncident[];
+  vendors?: SearchableVendor[];
+  evidence?: SearchableEvidence[];
+  onSelectIncident?: (incidentId: string) => void;
+  onSelectVendor?: (vendorId: string) => void;
+  onSelectEvidence?: (evidenceId: string) => void;
 }
 
 export function useCommandPalette(options: UseCommandPaletteOptions = {}) {
@@ -609,6 +653,54 @@ export function useCommandPalette(options: UseCommandPaletteOptions = {}) {
       action: () => options.onFilterDomain?.(domain.id),
     }));
 
+    // Object indexing: incidents, vendors, evidence.
+    // Cap each list so the palette stays snappy; search still matches on the
+    // visible entries (not the full backing list).
+    const incidentCommands: CommandItem[] = (options.incidents || [])
+      .slice(0, 50)
+      .map((inc) => ({
+        id: `incident-${inc.id}`,
+        title: inc.title,
+        description: `${inc.id} \u00B7 ${inc.severity} \u00B7 ${inc.status}`,
+        icon: <AlertTriangle className="w-4 h-4 text-rose-500" />,
+        category: 'incidents' as CommandCategory,
+        keywords: [inc.id, inc.severity, inc.status],
+        action: () => {
+          if (options.onSelectIncident) options.onSelectIncident(inc.id);
+          else options.onNavigate?.('incidents');
+        },
+      }));
+
+    const vendorCommands: CommandItem[] = (options.vendors || [])
+      .slice(0, 50)
+      .map((v) => ({
+        id: `vendor-${v.id}`,
+        title: v.name,
+        description: v.category ? `Vendor \u00B7 ${v.category}` : 'Vendor',
+        icon: <ShoppingBag className="w-4 h-4 text-pink-500" />,
+        category: 'vendors' as CommandCategory,
+        keywords: [v.id, v.name, v.category || ''],
+        action: () => {
+          if (options.onSelectVendor) options.onSelectVendor(v.id);
+          else options.onNavigate?.('vendors');
+        },
+      }));
+
+    const evidenceCommands: CommandItem[] = (options.evidence || [])
+      .slice(0, 50)
+      .map((e) => ({
+        id: `evidence-${e.id}`,
+        title: e.title,
+        description: e.controlId ? `Evidence \u00B7 ${e.controlId}` : 'Evidence',
+        icon: <FolderOpen className="w-4 h-4 text-indigo-500" />,
+        category: 'evidence' as CommandCategory,
+        keywords: [e.id, e.title, e.controlId || ''],
+        action: () => {
+          if (options.onSelectEvidence) options.onSelectEvidence(e.id);
+          else options.onNavigate?.('evidence');
+        },
+      }));
+
     // Recent controls get priority
     const recentControlCommands: CommandItem[] = (options.recentControls || [])
       .slice(0, 5)
@@ -632,6 +724,9 @@ export function useCommandPalette(options: UseCommandPaletteOptions = {}) {
       ...recentControlCommands,
       ...controlCommands,
       ...domainCommands,
+      ...incidentCommands,
+      ...vendorCommands,
+      ...evidenceCommands,
       ...settingsCommands,
       ...helpCommands,
     ];

@@ -9,10 +9,8 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { Modal } from '../ui/Modal';
 import {
-  X,
   Mail,
   Phone,
   Globe,
@@ -26,12 +24,12 @@ import type { Vendor } from '../../services/vendor-risk.service';
 import { CRITICALITY_CONFIG, CATEGORY_LABELS } from './index';
 
 interface AddVendorModalProps {
+  open: boolean;
   onClose: () => void;
   onSave: (vendor: Partial<Vendor>) => Promise<void>;
 }
 
-const AddVendorModal: React.FC<AddVendorModalProps> = ({ onClose, onSave }) => {
-  useEscapeKey(onClose);
+const AddVendorModal: React.FC<AddVendorModalProps> = ({ open, onClose, onSave }) => {
 
   const [formData, setFormData] = useState<Partial<Vendor>>({
     name: '',
@@ -99,39 +97,13 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ onClose, onSave }) => {
   }, [formData, validate, onSave]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="xl"
+      title="Add New Vendor"
+      description={`Step ${currentStep} of 3`}
     >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-violet-600">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <Plus className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold">Add New Vendor</h2>
-              <p className="text-sm text-white/80">Step {currentStep} of 3</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
         {/* Progress */}
         <div className="px-6 py-3 bg-slate-50 dark:bg-midnight-800 border-b border-slate-200 dark:border-steel-700">
           <div className="flex items-center gap-2">
@@ -429,9 +401,9 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ onClose, onSave }) => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
+        <div className="flex items-center justify-between pt-2">
           <button
+            type="button"
             onClick={() => currentStep > 1 ? setCurrentStep((currentStep - 1) as 1 | 2) : onClose()}
             className="px-4 py-2 text-slate-600 dark:text-steel-300 hover:text-slate-800 dark:hover:text-steel-100 transition-colors"
           >
@@ -439,6 +411,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ onClose, onSave }) => {
           </button>
 
           <button
+            type="button"
             onClick={() => {
               if (currentStep < 3) {
                 setCurrentStep((currentStep + 1) as 2 | 3);
@@ -451,21 +424,20 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ onClose, onSave }) => {
           >
             {saving ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin" aria-hidden />
                 Saving...
               </>
             ) : currentStep < 3 ? (
               'Next'
             ) : (
               <>
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4" aria-hidden />
                 Add Vendor
               </>
             )}
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+    </Modal>
   );
 };
 

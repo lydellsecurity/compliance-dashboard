@@ -10,7 +10,7 @@
  * - Implementation guidance
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -30,7 +30,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import type { MasterControl } from '../constants/controls';
-import { useEscapeKey } from '../hooks/useEscapeKey';
+import { Modal } from './ui/Modal';
 
 interface ControlDetailDrawerProps {
   isOpen: boolean;
@@ -77,11 +77,9 @@ const ControlDetailDrawer: React.FC<ControlDetailDrawerProps> = ({
   onGeneratePolicy,
   onUploadEvidence,
 }) => {
-  useEscapeKey(onClose, isOpen);
 
   const [showGuidance, setShowGuidance] = useState(false);
   const [showFrameworks, setShowFrameworks] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
 
   const riskStyle = RISK_COLORS[control.riskLevel];
 
@@ -104,27 +102,7 @@ const ControlDetailDrawer: React.FC<ControlDetailDrawerProps> = ({
   const status = getStatusDisplay();
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/20 dark:bg-black/40 backdrop-blur-sm z-50"
-            onClick={onClose}
-          />
-
-          {/* Drawer Panel */}
-          <motion.div
-            ref={drawerRef}
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full max-w-xl bg-white dark:bg-midnight-900 shadow-2xl z-50 flex flex-col"
-          >
+    <Modal open={isOpen} onClose={onClose} variant="drawer-right" size="xl" hideCloseButton>
             {/* Header */}
             <div className="flex items-start justify-between px-6 py-4 border-b border-slate-200 dark:border-steel-800">
               <div className="flex-1 pr-4">
@@ -140,10 +118,12 @@ const ControlDetailDrawer: React.FC<ControlDetailDrawerProps> = ({
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">{control.title}</h2>
               </div>
               <button
+                type="button"
                 onClick={onClose}
+                aria-label="Close control details"
                 className="p-2 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-slate-500 dark:text-steel-400" />
+                <X className="w-5 h-5 text-slate-500 dark:text-steel-400" aria-hidden />
               </button>
             </div>
 
@@ -387,10 +367,7 @@ const ControlDetailDrawer: React.FC<ControlDetailDrawerProps> = ({
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    </Modal>
   );
 };
 

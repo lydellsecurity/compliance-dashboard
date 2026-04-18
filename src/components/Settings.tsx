@@ -973,23 +973,25 @@ const AdminSection: React.FC<{ onOpenAdmin: () => void }> = ({ onOpenAdmin }) =>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-primary mb-1">Admin Settings</h2>
-          <p className="text-secondary">Manage your organization, team, and security settings</p>
+          <p className="text-secondary">
+            Billing, team, security, and audit logs — all live on the Admin tab.
+          </p>
         </div>
         <button onClick={onOpenAdmin} className="btn-primary">
           <ExternalLink className="w-4 h-4" />
-          Open Admin Dashboard
+          Open Admin
         </button>
       </div>
 
       <BillingCard />
 
-
-      {/* Admin Features Grid */}
+      {/* Category shortcuts — all open the Admin tab; copy makes that explicit. */}
       <div className="grid md:grid-cols-2 gap-4">
         {adminFeatures.map(feature => (
           <button
             key={feature.id}
             onClick={onOpenAdmin}
+            aria-label={`Open ${feature.title} in the Admin dashboard`}
             className="p-5 bg-slate-50 dark:bg-steel-800/50 rounded-xl border border-slate-200 dark:border-steel-700 text-left transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-accent-500/30"
           >
             <div className="flex items-start gap-4">
@@ -1000,24 +1002,10 @@ const AdminSection: React.FC<{ onOpenAdmin: () => void }> = ({ onOpenAdmin }) =>
                 <h3 className="font-semibold text-primary mb-1">{feature.title}</h3>
                 <p className="text-sm text-secondary">{feature.description}</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-400 dark:text-steel-600 flex-shrink-0 mt-1" />
+              <ChevronRight className="w-5 h-5 text-slate-500 dark:text-steel-500 flex-shrink-0 mt-1" />
             </div>
           </button>
         ))}
-      </div>
-
-      {/* Quick Stats */}
-      <div className="p-5 bg-accent-500/5 border border-accent-500/20 rounded-xl">
-        <div className="flex items-start gap-3">
-          <Shield className="w-5 h-5 text-accent-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-semibold text-primary mb-1">Admin Access Required</h4>
-            <p className="text-sm text-secondary">
-              Full admin settings including team management, billing, and audit logs are available in the dedicated Admin Dashboard.
-              Owner and Admin roles have access to all administrative features.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '../ui/Modal';
 import {
   X,
   Download,
@@ -30,7 +31,6 @@ import {
 import type { ReportArtifact } from './index';
 import type { OrganizationWithRole } from '../../types/branding.types';
 import type { FrameworkId } from '../../constants/controls';
-import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const FRAMEWORK_CONFIG: Record<FrameworkId, { name: string; color: string }> = {
   SOC2: { name: 'SOC 2 Type II', color: '#0066FF' },
@@ -54,12 +54,10 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
   onClose,
   organization,
 }) => {
-  useEscapeKey(onClose, isOpen);
-
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [activeTab, setActiveTab] = useState<'preview' | 'details'>('preview');
 
-  if (!isOpen || !report) return null;
+  if (!report) return null;
 
   // Mock version history
   const versionHistory = [
@@ -69,21 +67,7 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
   ].filter(v => v.version > 0);
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
-        >
+    <Modal open={isOpen} onClose={onClose} size="5xl" hideCloseButton>
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex items-center gap-4">
@@ -388,9 +372,7 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
               </button>
             </div>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+    </Modal>
   );
 };
 

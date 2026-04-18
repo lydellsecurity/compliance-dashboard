@@ -724,6 +724,100 @@ const ProtocolCard: React.FC<{ control: MasterControl; onOpenRemediation?: (cont
 // DASHBOARD TAB - Premium Bento Grid Layout
 // ============================================================================
 
+// ============================================================================
+// FIRST-RUN WELCOME CHECKLIST
+// ============================================================================
+
+const WelcomeChecklist: React.FC<{
+  totalControls: number;
+  onStartAssessment: () => void;
+  onOpenIntegrations: () => void;
+  onOpenEvidence: () => void;
+  onDismiss: () => void;
+}> = ({ totalControls, onStartAssessment, onOpenIntegrations, onOpenEvidence, onDismiss }) => {
+  const steps: Array<{
+    title: string;
+    body: string;
+    cta: string;
+    onClick: () => void;
+    icon: React.ReactNode;
+  }> = [
+    {
+      title: 'Answer your first control',
+      body: `${totalControls} controls are ready — start with a domain you already know, and the frameworks fill in as you go.`,
+      cta: 'Start assessment',
+      onClick: onStartAssessment,
+      icon: <ClipboardCheck className="w-5 h-5" />,
+    },
+    {
+      title: 'Connect your first cloud',
+      body: 'AWS, Azure, and GCP connectors pull evidence automatically, so you answer fewer controls by hand.',
+      cta: 'Browse integrations',
+      onClick: onOpenIntegrations,
+      icon: <Plug className="w-5 h-5" />,
+    },
+    {
+      title: 'Upload supporting evidence',
+      body: 'Drop in policies, screenshots, or exports. Evidence links to the controls it satisfies on upload.',
+      cta: 'Open evidence vault',
+      onClick: onOpenEvidence,
+      icon: <FolderOpen className="w-5 h-5" />,
+    },
+  ];
+
+  return (
+    <div className="relative bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-indigo-950/40 dark:via-midnight-800 dark:to-violet-950/40 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-6">
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss welcome checklist"
+        className="absolute top-3 right-3 text-slate-400 hover:text-slate-700 dark:hover:text-steel-200 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+          <Sparkles className="w-5 h-5" aria-hidden />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-steel-100">
+            Welcome to AttestAI
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-steel-300">
+            Three steps to get from zero to audit-ready. Do them in any order.
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {steps.map((step) => (
+          <div
+            key={step.title}
+            className="bg-white dark:bg-midnight-900 border border-slate-200 dark:border-steel-700 rounded-xl p-4 flex flex-col"
+          >
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 flex items-center justify-center mb-3">
+              {step.icon}
+            </div>
+            <h3 className="font-semibold text-slate-900 dark:text-steel-100 text-sm">
+              {step.title}
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-steel-400 mt-1 flex-1">
+              {step.body}
+            </p>
+            <button
+              type="button"
+              onClick={step.onClick}
+              className="mt-3 w-full text-sm px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium inline-flex items-center justify-center gap-1.5"
+            >
+              {step.cta}
+              <ChevronRight className="w-4 h-4" aria-hidden />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomainMeta) => void }> = ({ onNavigate }) => {
   const { frameworkProgress, stats, criticalGaps, domainProgress, allDomains, allControls, getResponse } = useComplianceContext();
 
@@ -756,6 +850,18 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
     return tasks.slice(0, 3);
   }, [criticalGaps, allControls, getResponse]);
 
+  // First-run state: show a welcome checklist instead of (or above) the dense
+  // bento grid so new users have a clear next step rather than a 0% gauge.
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('dashboard_welcome_dismissed') === '1';
+  });
+  const isFirstRun = stats.answeredControls === 0 && !welcomeDismissed;
+  const dismissWelcome = () => {
+    setWelcomeDismissed(true);
+    try { localStorage.setItem('dashboard_welcome_dismissed', '1'); } catch { /* storage unavailable */ }
+  };
+
   return (
     <motion.div
       className="space-y-6"
@@ -777,6 +883,16 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
           Export Report
         </button>
       </div>
+
+      {isFirstRun && (
+        <WelcomeChecklist
+          totalControls={stats.totalControls}
+          onStartAssessment={() => onNavigate('assessment')}
+          onOpenIntegrations={() => onNavigate('integrations')}
+          onOpenEvidence={() => onNavigate('evidence')}
+          onDismiss={dismissWelcome}
+        />
+      )}
 
       {/* Bento Grid - Premium Layout */}
       <div className="grid grid-cols-12 gap-5">
@@ -1981,7 +2097,7 @@ const CommandSidebar: React.FC<{
               <div key={tab.id} className="relative group">
                 <button
                   onClick={() => handleTabSelect(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive
+                  className={`w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg transition-all duration-200 ${isActive
                     ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 font-medium'
                     : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
                   }`}
@@ -2014,7 +2130,7 @@ const CommandSidebar: React.FC<{
         <div className="relative group">
           <button
             onClick={onSyncClick}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${syncCount > 0
+            className={`w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg transition-all duration-200 ${syncCount > 0
               ? 'text-emerald-600 dark:text-status-success bg-emerald-50 dark:bg-status-success/10'
               : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
             }`}
@@ -2043,7 +2159,7 @@ const CommandSidebar: React.FC<{
         {/* Toggle Expand */}
         <button
           onClick={onToggle}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50 transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-slate-500 dark:text-steel-400 hover:text-slate-700 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50 transition-all duration-200"
         >
           <Menu className="w-5 h-5 flex-shrink-0" />
           {expanded && <span className="text-sm font-medium">Collapse</span>}
@@ -2176,6 +2292,19 @@ const AppContent: React.FC = () => {
       }
     },
     recentControls,
+    // Object indexing: incidents live in-memory via the IR hook. Vendors and
+    // evidence are owned by per-tab stores today and aren't pre-loaded here —
+    // selecting them simply navigates to the tab. When those stores migrate
+    // into global state we can pass them through for true jump-to-object.
+    incidents: ir.incidents.map((inc) => ({
+      id: inc.id,
+      title: inc.title,
+      severity: inc.severity,
+      status: inc.status,
+    })),
+    onSelectIncident: () => setActiveTab('incidents'),
+    onSelectVendor: () => setActiveTab('vendors'),
+    onSelectEvidence: () => setActiveTab('evidence'),
   });
 
   // Get alert counts from monitoring service

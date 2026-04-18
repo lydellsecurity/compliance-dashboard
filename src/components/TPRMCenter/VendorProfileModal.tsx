@@ -35,10 +35,11 @@ import {
 } from 'lucide-react';
 import type { Vendor } from '../../services/vendor-risk.service';
 import { CRITICALITY_CONFIG, CATEGORY_LABELS, STATUS_CONFIG } from './index';
-import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { Modal } from '../ui/Modal';
 
 interface VendorProfileModalProps {
   vendor: Vendor;
+  open?: boolean;
   onClose: () => void;
   onStartAssessment: () => void;
   onRefresh: () => void;
@@ -48,13 +49,13 @@ interface VendorProfileModalProps {
 
 const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
   vendor,
+  open = true,
   onClose,
   onStartAssessment,
   onRefresh: _onRefresh,
   organizationId: _organizationId,
   userId: _userId,
 }) => {
-  useEscapeKey(onClose);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'artifacts' | 'history'>('overview');
   const critConfig = CRITICALITY_CONFIG[vendor.criticality];
@@ -71,20 +72,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
     : null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-midnight-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-      >
+    <Modal open={open} onClose={onClose} size="4xl" hideCloseButton>
         {/* Header */}
         <div className="flex items-start justify-between px-6 py-5 border-b border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-800">
           <div className="flex items-center gap-4">
@@ -497,8 +485,7 @@ const VendorProfileModal: React.FC<VendorProfileModalProps> = ({
             </button>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+    </Modal>
   );
 };
 

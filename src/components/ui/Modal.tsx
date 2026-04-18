@@ -35,7 +35,8 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 // TYPES
 // ============================================================================
 
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+type ModalVariant = 'centered' | 'drawer-right' | 'drawer-left';
 
 export interface ModalProps {
   open: boolean;
@@ -51,6 +52,8 @@ export interface ModalProps {
   /** Short description read after the title. */
   description?: string;
   size?: ModalSize;
+  /** 'centered' (default) | 'drawer-right' | 'drawer-left'. */
+  variant?: ModalVariant;
   /** Disable close-on-backdrop-click (destructive confirmations). */
   dismissOnBackdrop?: boolean;
   /** Disable ESC-to-close. Defaults to true. */
@@ -63,6 +66,8 @@ export interface ModalProps {
    * the modal container itself receives focus.
    */
   initialFocusId?: string;
+  /** Optional custom footer — sticks to the bottom of the scroll region. */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -77,6 +82,8 @@ const SIZE_CLASSES: Record<ModalSize, string> = {
   xl: 'max-w-xl',
   '2xl': 'max-w-2xl',
   '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
 };
 
 const ModalStackContext = createContext<{ depth: number }>({ depth: 0 });
@@ -92,10 +99,12 @@ export const Modal: React.FC<ModalProps> = ({
   titleNode,
   description,
   size = 'lg',
+  variant = 'centered',
   dismissOnBackdrop = true,
   dismissOnEscape = true,
   hideCloseButton = false,
   initialFocusId,
+  footer,
   children,
 }) => {
   const { depth: parentDepth } = useContext(ModalStackContext);
@@ -199,6 +208,30 @@ export const Modal: React.FC<ModalProps> = ({
   // Z-scale: nested modals bump up by 10 so backdrops layer correctly.
   const zIndex = 40 + depth * 10;
 
+  const isDrawer = variant === 'drawer-right' || variant === 'drawer-left';
+  const drawerSide = variant === 'drawer-left' ? 'left-0' : 'right-0';
+
+  // Motion variants — centered scales in; drawers slide in from their side.
+  const contentMotion = isDrawer
+    ? {
+        initial: { x: variant === 'drawer-left' ? '-100%' : '100%' },
+        animate: { x: 0 },
+        exit: { x: variant === 'drawer-left' ? '-100%' : '100%' },
+      }
+    : {
+        initial: { opacity: 0, scale: 0.96, y: 8 },
+        animate: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.98, y: 4 },
+      };
+
+  const backdropLayout = isDrawer
+    ? 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm'
+    : 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6';
+
+  const contentLayout = isDrawer
+    ? `fixed top-0 ${drawerSide} h-full w-full ${SIZE_CLASSES[size]} bg-white dark:bg-midnight-800 border-l border-slate-200 dark:border-steel-700 shadow-2xl flex flex-col`
+    : `w-full ${SIZE_CLASSES[size]} bg-white dark:bg-midnight-800 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-2xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-hidden flex flex-col`;
+
   return (
     <AnimatePresence>
       {open && (
@@ -210,7 +243,7 @@ export const Modal: React.FC<ModalProps> = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={handleBackdrop}
-            className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+            className={backdropLayout}
             style={{ zIndex }}
           >
             <motion.div
@@ -221,11 +254,11 @@ export const Modal: React.FC<ModalProps> = ({
               aria-labelledby={title ? titleId : undefined}
               aria-describedby={description ? descriptionId : undefined}
               onClick={stop}
-              initial={{ opacity: 0, scale: 0.96, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: 4 }}
+              initial={contentMotion.initial}
+              animate={contentMotion.animate}
+              exit={contentMotion.exit}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className={`w-full ${SIZE_CLASSES[size]} bg-white dark:bg-midnight-800 rounded-2xl border border-slate-200 dark:border-steel-700 shadow-2xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-hidden flex flex-col`}
+              className={contentLayout}
             >
               {(title || titleNode || !hideCloseButton) && (
                 <div className="flex items-start justify-between gap-3 p-5 sm:p-6 border-b border-slate-200 dark:border-steel-700">
@@ -262,6 +295,12 @@ export const Modal: React.FC<ModalProps> = ({
               )}
 
               <div className="flex-1 overflow-y-auto">{children}</div>
+
+              {footer && (
+                <div className="border-t border-slate-200 dark:border-steel-700 p-4 sm:p-5 bg-slate-50 dark:bg-midnight-900">
+                  {footer}
+                </div>
+              )}
             </motion.div>
           </motion.div>
         </ModalStackContext.Provider>

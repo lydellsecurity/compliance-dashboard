@@ -8,6 +8,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from './ui/Modal';
 import {
   X, Send, Bot, User, Copy, Check, Loader2, AlertCircle,
   Terminal, Shield, FileText, Sparkles,
@@ -396,29 +397,13 @@ What would you like help with? You can ask me:
   }, [control, userAnswer]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="modal-backdrop"
-          />
-
-          {/* Chat Modal */}
-          <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`
-              fixed right-0 top-0 h-full modal-content z-50 shadow-2xl flex flex-col
-              ${isExpanded ? 'w-full max-w-4xl' : 'w-full max-w-lg'}
-            `}
-          >
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      variant="drawer-right"
+      size={isExpanded ? '4xl' : 'lg'}
+      hideCloseButton
+    >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-steel-700">
               <div className="flex items-center gap-3">
@@ -468,7 +453,12 @@ What would you like help with? You can ask me:
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div
+              role="log"
+              aria-live="polite"
+              aria-label="Remediation conversation"
+              className="flex-1 overflow-y-auto p-4 space-y-4"
+            >
               <AnimatePresence>
                 {messages.map(message => (
                   <MessageBubble key={message.id} message={message} />
@@ -539,10 +529,7 @@ What would you like help with? You can ask me:
                 Press Enter to send, Shift+Enter for new line
               </p>
             </form>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    </Modal>
   );
 };
 

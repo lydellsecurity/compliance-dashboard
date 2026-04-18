@@ -396,6 +396,10 @@ const StreamingDisplay: React.FC<{ content: string; isStreaming: boolean }> = ({
   return (
     <div
       ref={containerRef}
+      role="log"
+      aria-live="polite"
+      aria-busy={isStreaming}
+      aria-label={isStreaming ? 'Policy generation in progress' : 'Generated policy'}
       className="relative p-6 card rounded-xl overflow-auto max-h-[50vh] font-mono text-sm"
     >
       <div
@@ -403,7 +407,7 @@ const StreamingDisplay: React.FC<{ content: string; isStreaming: boolean }> = ({
         dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
       />
       {isStreaming && (
-        <span className="inline-block w-2 h-5 bg-violet-500 animate-pulse ml-1" />
+        <span className="inline-block w-2 h-5 bg-violet-500 animate-pulse ml-1" aria-hidden />
       )}
     </div>
   );

@@ -815,12 +815,11 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
           />
         )}
 
-        {showAddVendor && (
-          <AddVendorModal
-            onClose={() => setShowAddVendor(false)}
-            onSave={handleVendorCreated}
-          />
-        )}
+        <AddVendorModal
+          open={showAddVendor}
+          onClose={() => setShowAddVendor(false)}
+          onSave={handleVendorCreated}
+        />
 
         {showRiskQuestionnaire && questionnaireVendor && (
           <InherentRiskQuestionnaire
