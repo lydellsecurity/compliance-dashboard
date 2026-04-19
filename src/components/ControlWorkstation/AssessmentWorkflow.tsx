@@ -310,7 +310,7 @@ const AssessmentWorkflow: React.FC<AssessmentWorkflowProps> = ({
           <p className={`text-sm font-medium ${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-steel-400'}`}>
             {isDragging ? 'Drop files here' : 'Drag and drop evidence files'}
           </p>
-          <p className="text-xs text-slate-500 dark:text-steel-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-steel-400 mt-1">
             or click to browse • PDF, images, docs up to 10MB
           </p>
         </div>

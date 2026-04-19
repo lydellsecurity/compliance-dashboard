@@ -189,13 +189,13 @@ const ClarificationRequestForm: React.FC<ClarificationRequestFormProps> = ({
                 {/* Auditor info (read-only) */}
                 <div className="flex items-center gap-4 text-sm">
                   <div>
-                    <span className="text-slate-500 dark:text-steel-500">From:</span>
+                    <span className="text-slate-500 dark:text-steel-400">From:</span>
                     <span className="ml-2 font-medium text-slate-800 dark:text-steel-200">
                       {auditorName}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-steel-500">Email:</span>
+                    <span className="text-slate-500 dark:text-steel-400">Email:</span>
                     <span className="ml-2 text-slate-600 dark:text-steel-400">
                       {auditorEmail}
                     </span>
@@ -238,7 +238,7 @@ const ClarificationRequestForm: React.FC<ClarificationRequestFormProps> = ({
                         }`}>
                           {option.label}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-steel-500 mt-0.5">
+                        <div className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">
                           {option.description}
                         </div>
                       </button>

@@ -103,7 +103,7 @@ const FrameworkSelector: React.FC<{
               <div className={`font-semibold ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-steel-200'}`}>
                 {framework.name}
               </div>
-              <div className="text-xs text-slate-500 dark:text-steel-500 flex items-center gap-2">
+              <div className="text-xs text-slate-500 dark:text-steel-400 flex items-center gap-2">
                 <span>{percentage}% compliant</span>
                 {stats && (
                   <span className="text-slate-400">({stats.compliant}/{stats.total})</span>
@@ -141,16 +141,16 @@ const StatsBar: React.FC<{
       <div className="bg-white dark:bg-steel-750 rounded-lg p-4 border border-slate-200 dark:border-steel-600">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: frameworkColor }} />
-          <span className="text-xs text-slate-500 dark:text-steel-500 uppercase tracking-wide">Total</span>
+          <span className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">Total</span>
         </div>
         <div className="text-2xl font-bold text-slate-900 dark:text-white">{total}</div>
-        <div className="text-xs text-slate-500 dark:text-steel-500">Requirements</div>
+        <div className="text-xs text-slate-500 dark:text-steel-400">Requirements</div>
       </div>
 
       <div className="bg-white dark:bg-steel-750 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800/30">
         <div className="flex items-center gap-2 mb-1">
           <CheckCircle className="w-4 h-4 text-emerald-500" />
-          <span className="text-xs text-slate-500 dark:text-steel-500 uppercase tracking-wide">Compliant</span>
+          <span className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">Compliant</span>
         </div>
         <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{compliant}</div>
         <div className="text-xs text-emerald-600 dark:text-emerald-400">{total > 0 ? Math.round((compliant / total) * 100) : 0}%</div>
@@ -159,7 +159,7 @@ const StatsBar: React.FC<{
       <div className="bg-white dark:bg-steel-750 rounded-lg p-4 border border-amber-200 dark:border-amber-800/30">
         <div className="flex items-center gap-2 mb-1">
           <Clock className="w-4 h-4 text-amber-500" />
-          <span className="text-xs text-slate-500 dark:text-steel-500 uppercase tracking-wide">Partial</span>
+          <span className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">Partial</span>
         </div>
         <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{partial}</div>
         <div className="text-xs text-amber-600 dark:text-amber-400">{total > 0 ? Math.round((partial / total) * 100) : 0}%</div>
@@ -168,7 +168,7 @@ const StatsBar: React.FC<{
       <div className="bg-white dark:bg-steel-750 rounded-lg p-4 border border-red-200 dark:border-red-800/30">
         <div className="flex items-center gap-2 mb-1">
           <AlertCircle className="w-4 h-4 text-red-500" />
-          <span className="text-xs text-slate-500 dark:text-steel-500 uppercase tracking-wide">Gaps</span>
+          <span className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">Gaps</span>
         </div>
         <div className="text-2xl font-bold text-red-600 dark:text-red-400">{gaps}</div>
         <div className="text-xs text-red-600 dark:text-red-400">{total > 0 ? Math.round((gaps / total) * 100) : 0}%</div>
@@ -177,7 +177,7 @@ const StatsBar: React.FC<{
       <div className="bg-white dark:bg-steel-750 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800/30">
         <div className="flex items-center gap-2 mb-1">
           <FileText className="w-4 h-4 text-indigo-500" />
-          <span className="text-xs text-slate-500 dark:text-steel-500 uppercase tracking-wide">Evidence</span>
+          <span className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">Evidence</span>
         </div>
         <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{evidenceCount}</div>
         <div className="text-xs text-indigo-600 dark:text-indigo-400">Artifacts</div>
@@ -186,7 +186,7 @@ const StatsBar: React.FC<{
       <div className="bg-white dark:bg-steel-750 rounded-lg p-4 border border-purple-200 dark:border-purple-800/30">
         <div className="flex items-center gap-2 mb-1">
           <MessageSquare className="w-4 h-4 text-purple-500" />
-          <span className="text-xs text-slate-500 dark:text-steel-500 uppercase tracking-wide">Requests</span>
+          <span className="text-xs text-slate-500 dark:text-steel-400 uppercase tracking-wide">Requests</span>
         </div>
         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{pendingRequests}</div>
         <div className="text-xs text-purple-600 dark:text-purple-400">Pending</div>
@@ -435,7 +435,7 @@ const AuditorPortal: React.FC<AuditorPortalProps> = ({
                 <h1 className="font-semibold text-slate-900 dark:text-white">
                   {accessLink.organizationName || 'Compliance'} Audit Portal
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-steel-500">
+                <p className="text-xs text-slate-500 dark:text-steel-400">
                   Read-Only Verification Access
                 </p>
               </div>
@@ -454,7 +454,7 @@ const AuditorPortal: React.FC<AuditorPortalProps> = ({
                 )}
               </div>
               <div className="w-px h-6 bg-slate-200 dark:bg-steel-700" />
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-steel-500">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-steel-400">
                 <Calendar className="w-4 h-4" />
                 <span>Expires: {expiryDate}</span>
               </div>
@@ -654,7 +654,7 @@ const AuditorPortal: React.FC<AuditorPortalProps> = ({
       {/* Footer */}
       <footer className="border-t border-slate-200 dark:border-steel-700 bg-white dark:bg-steel-800 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between text-sm text-slate-500 dark:text-steel-500">
+          <div className="flex items-center justify-between text-sm text-slate-500 dark:text-steel-400">
             <div className="flex items-center gap-4">
               <span>Powered by <span className="font-semibold">Lydell Security</span></span>
               <span className="flex items-center gap-1">

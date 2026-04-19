@@ -974,7 +974,7 @@ const AdminSection: React.FC<{ onOpenAdmin: () => void }> = ({ onOpenAdmin }) =>
                 <h3 className="font-semibold text-primary mb-1">{feature.title}</h3>
                 <p className="text-sm text-secondary">{feature.description}</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-500 dark:text-steel-500 flex-shrink-0 mt-1" />
+              <ChevronRight className="w-5 h-5 text-slate-500 dark:text-steel-400 flex-shrink-0 mt-1" />
             </div>
           </button>
         ))}

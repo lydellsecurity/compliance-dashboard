@@ -129,7 +129,7 @@ const ControlMappingCard: React.FC<{
             <div className="text-sm font-medium text-slate-700 dark:text-steel-300">
               {mapping.coveragePercentage}%
             </div>
-            <div className="text-xs text-slate-500 dark:text-steel-500">coverage</div>
+            <div className="text-xs text-slate-500 dark:text-steel-400">coverage</div>
           </div>
         </div>
       </div>

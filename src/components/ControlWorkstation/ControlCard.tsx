@@ -54,21 +54,31 @@ interface ControlCardProps {
   onToggleExpand?: () => void;
 }
 
+// Dark-mode variants use /15 bg + /30 ring instead of /30 bg + 800 border,
+// so the risk chip reads with equal punch whether it sits on a neutral
+// card or one that carries a light color wash. Text bumped to 200 in
+// dark mode for better contrast against the lower bg alpha.
 const RISK_BADGES = {
-  critical: { label: 'Critical', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },
-  high: { label: 'High', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
-  medium: { label: 'Medium', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
-  low: { label: 'Low', color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 border-slate-200 dark:border-steel-600' },
+  critical: { label: 'Critical', color: 'bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-200 ring-1 ring-red-200/60 dark:ring-red-500/30' },
+  high: { label: 'High', color: 'bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-200 ring-1 ring-orange-200/60 dark:ring-orange-500/30' },
+  medium: { label: 'Medium', color: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200 ring-1 ring-amber-200/60 dark:ring-amber-500/30' },
+  low: { label: 'Low', color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-300 ring-1 ring-slate-200/60 dark:ring-steel-600' },
 };
 
 // Visuals stay locally scoped; copy comes from ASSESSMENT_LABELS so badges,
 // reports, and the auditor view speak the same language.
+//
+// Dark-mode pills bumped from /30 → /20 backgrounds with /40 border and a
+// brighter text shade (200 over 300). The /30 variant was washing out
+// against card backgrounds that already carried a colored tint, making the
+// "Implemented" badge nearly invisible on implemented cards in the
+// screenshot. Light-mode 100/700 unchanged — that pairing already pops.
 const STATUS_VISUAL = {
-  yes: { icon: CheckCircle, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
-  partial: { icon: Clock, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
-  no: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400' },
-  na: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-500' },
-  unassessed: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-400 dark:text-steel-500' },
+  yes: { icon: CheckCircle, color: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 ring-1 ring-emerald-200/60 dark:ring-emerald-500/30' },
+  partial: { icon: Clock, color: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200 ring-1 ring-amber-200/60 dark:ring-amber-500/30' },
+  no: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-300 ring-1 ring-slate-200/60 dark:ring-steel-600' },
+  na: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 ring-1 ring-slate-200/60 dark:ring-steel-600' },
+  unassessed: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700/70 text-slate-500 dark:text-steel-400 ring-1 ring-slate-200/60 dark:ring-steel-600' },
 } as const;
 
 const ControlCard: React.FC<ControlCardProps> = ({
@@ -161,14 +171,19 @@ const ControlCard: React.FC<ControlCardProps> = ({
       aria-labelledby={`control-${control.id}-title`}
       aria-describedby={`control-${control.id}-status`}
       className={`
-        bg-white dark:bg-steel-800 rounded-xl border overflow-hidden transition-all duration-200
-        ${isImplemented
-          ? 'border-emerald-200 dark:border-emerald-800 shadow-emerald-100 dark:shadow-none'
-          : 'border-slate-200 dark:border-steel-700'
-        }
-        ${isExpanded ? 'shadow-lg' : 'shadow-sm hover:shadow-md'}
+        relative bg-white dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden transition-all duration-200
+        ${isExpanded ? 'shadow-lg dark:shadow-black/30' : 'shadow-sm hover:shadow-md dark:shadow-black/20'}
       `}
     >
+      {/* Implemented affordance: a 3px left bar instead of tinting the whole
+          border. Lets inner badges (Unverified / Needs re-review / status)
+          keep their own color language without fighting an emerald wash. */}
+      {isImplemented && (
+        <span
+          aria-hidden="true"
+          className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r bg-emerald-500 dark:bg-emerald-400"
+        />
+      )}
       {/* Card Header - Always visible */}
       <div
         role={onToggleExpand ? 'button' : undefined}
@@ -206,7 +221,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
                     {control.id}
                   </span>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full border ${riskBadge.color}`}
+                    className={`text-xs px-2 py-0.5 rounded-full ${riskBadge.color}`}
                     aria-label={`Risk level: ${riskBadge.label}`}
                   >
                     {riskBadge.label}
@@ -222,7 +237,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
                   )}
                   {showUnverified && (
                     <span
-                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200 ring-1 ring-amber-200/60 dark:ring-amber-500/30"
                       aria-label="Marked as implemented but no evidence attached — auditors will flag this"
                       title="Marked Implemented but no evidence attached yet — upload a file to verify."
                     >
@@ -232,7 +247,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
                   )}
                   {isStale && staleness && (
                     <span
-                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200 ring-1 ring-amber-200/60 dark:ring-amber-500/30"
                       aria-label={`Stale: last reviewed ${staleness.days} days ago. Needs re-assessment.`}
                       title={`Last reviewed ${staleness.days} days ago — review recommended.`}
                     >

@@ -82,7 +82,7 @@ const StatusProgressBar: React.FC<{
                   ? 'bg-status-success text-white'
                   : isCurrent
                     ? 'bg-accent-500 text-white ring-4 ring-accent-500/30'
-                    : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-500'
+                    : 'bg-slate-200 dark:bg-steel-700 text-slate-500 dark:text-steel-400'
               }`}
               title={STATUS_LABELS[status]}
             >

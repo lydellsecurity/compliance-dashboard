@@ -120,15 +120,22 @@ const FrameworkSelectionStep: React.FC<{
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-slate-500 dark:text-steel-400">Control Coverage</span>
                   <span
-                    className="font-medium"
-                    style={{ color: stats.averageCoverage > 50 ? '#10b981' : stats.averageCoverage > 25 ? '#f59e0b' : '#ef4444' }}
+                    className={`font-medium ${
+                      stats.averageCoverage > 50
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : stats.averageCoverage > 25
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-rose-600 dark:text-rose-400'
+                    }`}
                   >
                     {Math.round(stats.averageCoverage)}%
                   </span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-slate-500 dark:text-steel-400">Unmapped</span>
-                  <span className={stats.unmappedRequirements > 0 ? 'text-amber-600' : 'text-green-600'}>
+                  <span className={stats.unmappedRequirements > 0
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400'}>
                     {stats.unmappedRequirements} requirements
                   </span>
                 </div>

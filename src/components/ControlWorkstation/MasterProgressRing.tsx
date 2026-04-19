@@ -143,7 +143,7 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
               <TrendingUp className="w-4 h-4" aria-hidden="true" />
               Framework clause coverage
             </h3>
-            <p className="text-xs text-slate-500 dark:text-steel-500 mb-2">
+            <p className="text-xs text-slate-500 dark:text-steel-400 mb-2">
               % of clauses with at least one implemented control
             </p>
             <div className="space-y-2">

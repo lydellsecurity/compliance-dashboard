@@ -290,7 +290,7 @@ const AuditBundleDownloader: React.FC<AuditBundleDownloaderProps> = ({
                 <span className="text-sm font-medium text-slate-700 dark:text-steel-300">
                   Bundle Contents
                 </span>
-                <span className="text-sm text-slate-500 dark:text-steel-500">
+                <span className="text-sm text-slate-500 dark:text-steel-400">
                   {formatFileSize(totalSize)} total
                 </span>
               </div>
@@ -380,7 +380,7 @@ const AuditBundleDownloader: React.FC<AuditBundleDownloaderProps> = ({
 
           {/* Footer */}
           <div className="px-6 py-4 bg-slate-50 dark:bg-steel-750 border-t border-slate-200 dark:border-steel-700 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-steel-500">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-steel-400">
               <Clock className="w-3.5 h-3.5" />
               <span>Generated {new Date().toLocaleDateString()}</span>
             </div>

@@ -193,7 +193,7 @@ const ControlItem: React.FC<{ control: MappedControl }> = ({ control }) => {
             <p className="text-sm text-slate-600 dark:text-steel-400">
               {control.description}
             </p>
-            <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-steel-500">
+            <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-steel-400">
               <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-steel-700 rounded">
                 {control.domain.replace('_', ' ')}
               </span>
@@ -237,11 +237,11 @@ const EvidenceItem: React.FC<{
             {evidence.title}
           </span>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-slate-500 dark:text-steel-500">
+            <span className="text-xs text-slate-500 dark:text-steel-400">
               {evidence.files.length} file{evidence.files.length !== 1 ? 's' : ''}
             </span>
             <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs text-slate-500 dark:text-steel-500 capitalize">
+            <span className="text-xs text-slate-500 dark:text-steel-400 capitalize">
               {evidence.type}
             </span>
           </div>
@@ -295,18 +295,18 @@ const EvidenceItem: React.FC<{
                       {file.filename}
                     </div>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-slate-500 dark:text-steel-500">
+                      <span className="text-xs text-slate-500 dark:text-steel-400">
                         {formatFileSize(file.size)}
                       </span>
                       <span className="text-xs text-slate-400">•</span>
-                      <span className="text-xs text-slate-500 dark:text-steel-500 flex items-center gap-1">
+                      <span className="text-xs text-slate-500 dark:text-steel-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatDate(file.uploadedAt)}
                       </span>
                     </div>
                     {/* SHA-256 Hash */}
                     <div className="mt-2">
-                      <div className="text-xs text-slate-500 dark:text-steel-500 mb-1">
+                      <div className="text-xs text-slate-500 dark:text-steel-400 mb-1">
                         SHA-256 Hash Verified:
                       </div>
                       <HashBadge hash={file.checksum_sha256} verified={true} />

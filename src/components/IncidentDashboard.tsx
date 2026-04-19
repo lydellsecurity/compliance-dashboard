@@ -613,7 +613,7 @@ const IncidentDashboard: React.FC<IncidentDashboardProps> = ({ compliance, ir, o
 
       {/* Pending Notifications Alert */}
       {ir.stats.pendingNotifications > 0 && (
-        <Card className="p-4" style={{ borderLeftWidth: '4px', borderLeftColor: '#f59e0b' }}>
+        <Card className="p-4 border-l-4 border-l-amber-500 dark:border-l-amber-400">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-status-warning/20">
               <AlertTriangle className="w-5 h-5 text-status-warning" />

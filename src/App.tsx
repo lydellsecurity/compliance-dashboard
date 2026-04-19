@@ -266,7 +266,7 @@ const CircularGauge: React.FC<{
           {label}
         </div>
         {variant === 'compact' && (
-          <div className="text-xs text-slate-500 dark:text-steel-500 mt-0.5">{count}</div>
+          <div className="text-xs text-slate-500 dark:text-steel-400 mt-0.5">{count}</div>
         )}
       </div>
     </div>
@@ -1006,7 +1006,7 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xs font-mono text-slate-500 dark:text-steel-500">{task.control.id}</span>
+                            <span className="text-xs font-mono text-slate-500 dark:text-steel-400">{task.control.id}</span>
                             <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
                               task.priority === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' :
                               task.priority === 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' :
@@ -1276,7 +1276,7 @@ const MoreViewsMenu: React.FC<{
             <Shield className="w-4 h-4" aria-hidden="true" />
             <div className="text-left">
               <div className="font-medium">Legacy list</div>
-              <div className="text-xs text-slate-500 dark:text-steel-500">Original controls view</div>
+              <div className="text-xs text-slate-500 dark:text-steel-400">Original controls view</div>
             </div>
           </button>
           <button
@@ -1291,7 +1291,7 @@ const MoreViewsMenu: React.FC<{
             <Eye className="w-4 h-4" aria-hidden="true" />
             <div className="text-left">
               <div className="font-medium">Auditor view</div>
-              <div className="text-xs text-slate-500 dark:text-steel-500">Coverage and gaps report</div>
+              <div className="text-xs text-slate-500 dark:text-steel-400">Coverage and gaps report</div>
             </div>
           </button>
         </div>
@@ -1568,7 +1568,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
                               style={{ width: `${domain.percentage}%`, backgroundColor: complete ? '#10b981' : '#4f46e5' }}
                             />
                           </div>
-                          <span className="text-xs text-slate-500 dark:text-steel-500">{domain.answered}/{domain.total}</span>
+                          <span className="text-xs text-slate-500 dark:text-steel-400">{domain.answered}/{domain.total}</span>
                         </div>
                       </div>
                     </div>
@@ -1642,7 +1642,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: FRAMEWORK_COLORS[fw.id] }} />
                     <div className="flex-1">
                       <div className="font-medium">{fw.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-steel-500">{fw.fullName}</div>
+                      <div className="text-xs text-slate-500 dark:text-steel-400">{fw.fullName}</div>
                     </div>
                     {selectedFramework === fw.id && <Check className="w-4 h-4" />}
                   </button>
@@ -1781,7 +1781,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             </div>
 
             {/* Info text based on view mode */}
-            <p className="text-xs text-slate-500 dark:text-steel-500">
+            <p className="text-xs text-slate-500 dark:text-steel-400">
               {viewMode === 'controls'
                 ? `${controls.length} controls mapped to this framework`
                 : 'Viewing framework requirements with evidence tracking'
@@ -1805,7 +1805,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-indigo-600 dark:text-accent-400">{currentDomainProgress.answered}/{currentDomainProgress.total}</div>
-                <div className="text-xs text-slate-500 dark:text-steel-500">Completed</div>
+                <div className="text-xs text-slate-500 dark:text-steel-400">Completed</div>
               </div>
             </div>
           </Card>
@@ -1981,7 +1981,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
                               <h3 className="text-sm font-semibold text-slate-700 dark:text-steel-300">
                                 {domainMeta?.title || domainId}
                               </h3>
-                              <p className="text-xs text-slate-500 dark:text-steel-500">
+                              <p className="text-xs text-slate-500 dark:text-steel-400">
                                 {domainControls.length} control{domainControls.length !== 1 ? 's' : ''}
                               </p>
                             </div>

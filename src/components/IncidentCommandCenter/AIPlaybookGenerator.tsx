@@ -737,7 +737,7 @@ const AIPlaybookGenerator: React.FC<AIPlaybookGeneratorProps> = ({
                               </button>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h5 className={`font-medium ${isCompleted ? 'text-slate-500 dark:text-steel-500 line-through' : 'text-slate-900 dark:text-steel-100'}`}>
+                                  <h5 className={`font-medium ${isCompleted ? 'text-slate-500 dark:text-steel-400 line-through' : 'text-slate-900 dark:text-steel-100'}`}>
                                     {step.title}
                                   </h5>
                                   <span

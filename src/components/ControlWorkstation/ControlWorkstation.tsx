@@ -564,8 +564,8 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
               className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
                 ${isStatusPaneCollapsed
-                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50'
-                  : 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 hover:bg-slate-200 dark:hover:bg-steel-600'
+                  ? 'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-200 dark:hover:bg-indigo-500/25 ring-1 ring-indigo-200/60 dark:ring-indigo-500/30'
+                  : 'bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-200 hover:bg-slate-200 dark:hover:bg-steel-600'
                 }
               `}
             >

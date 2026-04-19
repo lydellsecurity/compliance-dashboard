@@ -537,7 +537,7 @@ export const AlertConfiguration: React.FC<AlertConfigurationProps> = ({
                       onChange={e => monitoringService.updateConfig({ notificationEmail: e.target.value })}
                       className="w-full px-4 py-2.5 bg-white dark:bg-steel-900 border border-slate-200 dark:border-steel-700 rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
-                    <p className="text-xs text-slate-500 dark:text-steel-500 mt-2">
+                    <p className="text-xs text-slate-500 dark:text-steel-400 mt-2">
                       Configure email notifications for alerts marked with the Email channel
                     </p>
                   </div>
@@ -554,7 +554,7 @@ export const AlertConfiguration: React.FC<AlertConfigurationProps> = ({
                       onChange={e => monitoringService.updateConfig({ slackWebhook: e.target.value })}
                       className="w-full px-4 py-2.5 bg-white dark:bg-steel-900 border border-slate-200 dark:border-steel-700 rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
-                    <p className="text-xs text-slate-500 dark:text-steel-500 mt-2">
+                    <p className="text-xs text-slate-500 dark:text-steel-400 mt-2">
                       Add your Slack incoming webhook URL for Slack notifications
                     </p>
                   </div>
@@ -571,7 +571,7 @@ export const AlertConfiguration: React.FC<AlertConfigurationProps> = ({
                       onChange={e => monitoringService.updateConfig({ webhookUrl: e.target.value })}
                       className="w-full px-4 py-2.5 bg-white dark:bg-steel-900 border border-slate-200 dark:border-steel-700 rounded-lg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
-                    <p className="text-xs text-slate-500 dark:text-steel-500 mt-2">
+                    <p className="text-xs text-slate-500 dark:text-steel-400 mt-2">
                       Send alerts to a custom webhook endpoint (JSON POST)
                     </p>
                   </div>

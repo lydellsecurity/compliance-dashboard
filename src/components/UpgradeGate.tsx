@@ -355,7 +355,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
 
-          <p className="text-xs text-center text-slate-500 dark:text-steel-500">
+          <p className="text-xs text-center text-slate-500 dark:text-steel-400">
             {plan !== 'enterprise' && '14-day free trial. Cancel anytime.'}
           </p>
         </div>

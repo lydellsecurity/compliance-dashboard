@@ -165,7 +165,7 @@ const AuditorPortalLogin: React.FC<AuditorPortalLoginProps> = ({
 
         {/* Branding footer */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-slate-500 dark:text-steel-500">
+          <p className="text-sm text-slate-500 dark:text-steel-400">
             Powered by <span className="font-semibold">Lydell Security</span>
           </p>
         </div>
