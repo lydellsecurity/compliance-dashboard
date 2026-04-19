@@ -23,7 +23,12 @@ export default {
           900: '#1E293B',
           950: '#0F172A',
         },
-        // Steel gray palette for UI elements
+        // Steel gray palette for UI elements.
+        // `steel-750` is a half-step between 700 and 800 used extensively
+        // for input backgrounds and card-hover surfaces. It was missing
+        // from the config, so every `dark:bg-steel-750` / `dark:hover:bg-steel-750`
+        // silently fell back to the light-mode class — creating white
+        // hover flashes in dark mode (e.g. the ControlCard hover).
         steel: {
           50: '#f8fafc',
           100: '#f1f5f9',
@@ -33,8 +38,10 @@ export default {
           500: '#64748b',
           600: '#475569',
           700: '#334155',
+          750: '#293548',
           800: '#1e293b',
           900: '#0f172a',
+          950: '#030712',
         },
         // Midnight dark mode palette
         midnight: {
@@ -78,6 +85,11 @@ export default {
           'warning-dim': '#fffbeb',
           risk: '#ef4444',         // Red-500
           'risk-dim': '#fef2f2',
+          // `error` is an alias for `risk` used by CloudVerification and
+          // MonitoringDashboard. Keep both so existing class names keep
+          // working without a bulk rename.
+          error: '#ef4444',
+          'error-dim': '#fef2f2',
           info: '#3b82f6',         // Blue-500
           'info-dim': '#eff6ff',
           neutral: '#64748b',      // Slate-500
