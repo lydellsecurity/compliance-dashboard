@@ -312,7 +312,7 @@ const AIVendorReview: React.FC<AIVendorReviewProps> = ({
                     </div>
                     <button
                       onClick={() => setUploadedFile(null)}
-                      className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      className="p-2 text-slate-400 dark:text-steel-500 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -499,7 +499,7 @@ const AIVendorReview: React.FC<AIVendorReviewProps> = ({
                 Analyze Another
               </button>
               <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:bg-white transition-colors">
+                <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-steel-700 rounded-lg text-slate-700 dark:text-steel-200 hover:bg-white dark:hover:bg-steel-800 transition-colors">
                   <Download className="w-4 h-4" />
                   Export Report
                 </button>

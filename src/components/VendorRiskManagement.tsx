@@ -78,7 +78,7 @@ const RISK_TIER_CONFIG: Record<VendorRiskTier, { label: string; color: string; f
 const STATUS_CONFIG: Record<VendorStatus, { label: string; icon: React.ReactNode; color: string }> = {
   active: { label: 'Active', icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-green-400' },
   pending: { label: 'Pending', icon: <Clock className="w-4 h-4" />, color: 'text-yellow-400' },
-  inactive: { label: 'Inactive', icon: <XCircle className="w-4 h-4" />, color: 'text-slate-400' },
+  inactive: { label: 'Inactive', icon: <XCircle className="w-4 h-4" />, color: 'text-slate-600 dark:text-slate-400' },
   offboarding: { label: 'Offboarding', icon: <AlertCircle className="w-4 h-4" />, color: 'text-orange-400' },
   terminated: { label: 'Terminated', icon: <XCircle className="w-4 h-4" />, color: 'text-red-400' },
 };
@@ -164,26 +164,26 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-3">
             <ShoppingBag className="w-7 h-7 text-violet-400" />
             Vendor Risk Management
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
             Assess, monitor, and manage third-party vendor risks
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => loadData()}
-            className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
-          <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
             <button
               onClick={handleExportPDF}
-              className="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
+              className="px-3 py-1.5 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
               title="Export as PDF"
             >
               <FileText className="w-4 h-4" />
@@ -191,7 +191,7 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
             </button>
             <button
               onClick={handleExportCSV}
-              className="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
+              className="px-3 py-1.5 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
               title="Export as CSV"
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -209,7 +209,7 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-slate-800 w-fit">
+      <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-200 dark:border-slate-800 w-fit">
         {(['dashboard', 'vendors', 'assessments', 'questionnaires'] as const).map((tab) => (
           <button
             key={tab}
@@ -217,7 +217,7 @@ const VendorRiskManagement: React.FC<VendorRiskManagementProps> = ({ organizatio
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
               activeTab === tab
                 ? 'bg-violet-600 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800'
             }`}
           >
             {tab}
@@ -359,7 +359,7 @@ const DashboardView: React.FC<{
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Risk Distribution */}
-        <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
+        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
             <Shield className="w-5 h-5 text-violet-400" />
             Risk Tier Distribution
@@ -372,9 +372,9 @@ const DashboardView: React.FC<{
                 <div key={tier}>
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-sm ${config.color}`}>{config.label}</span>
-                    <span className="text-sm text-slate-400">{count} vendors ({percentage.toFixed(0)}%)</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{count} vendors ({percentage.toFixed(0)}%)</span>
                   </div>
-                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-white dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
                         tier === 'tier1' ? 'bg-red-500' :
@@ -391,7 +391,7 @@ const DashboardView: React.FC<{
         </div>
 
         {/* Criticality Breakdown */}
-        <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
+        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-violet-400" />
             Vendor Criticality
@@ -405,7 +405,7 @@ const DashboardView: React.FC<{
                   className={`p-4 rounded-lg ${colors.bg} border ${colors.border}`}
                 >
                   <div className={`text-2xl font-bold ${colors.text}`}>{count}</div>
-                  <div className="text-sm text-slate-400 capitalize">{criticality} Risk</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 capitalize">{criticality} Risk</div>
                 </div>
               );
             })}
@@ -414,7 +414,7 @@ const DashboardView: React.FC<{
       </div>
 
       {/* High Risk Vendors */}
-      <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
+      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
         <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-red-400" />
           High Risk Vendors Requiring Attention
@@ -427,7 +427,7 @@ const DashboardView: React.FC<{
               <div
                 key={vendor.id}
                 onClick={() => onVendorClick(vendor)}
-                className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors"
+                className="flex items-center justify-between p-4 bg-slate-100 dark:bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-lg ${CRITICALITY_COLORS[vendor.criticality].bg} flex items-center justify-center`}>
@@ -435,7 +435,7 @@ const DashboardView: React.FC<{
                   </div>
                   <div>
                     <div className="font-medium text-white">{vendor.name}</div>
-                    <div className="text-sm text-slate-400">{CATEGORY_LABELS[vendor.category]}</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">{CATEGORY_LABELS[vendor.category]}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -456,7 +456,7 @@ const DashboardView: React.FC<{
               </div>
             ))}
           {vendors.filter(v => v.criticality === 'critical' || v.criticality === 'high').length === 0 && (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-slate-600 dark:text-slate-400">
               No high-risk vendors found
             </div>
           )}
@@ -500,13 +500,13 @@ const VendorListView: React.FC<{
       {/* Search & Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-slate-400" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search vendors..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-violet-500"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-violet-500"
           />
         </div>
         <button
@@ -514,7 +514,7 @@ const VendorListView: React.FC<{
           className={`px-4 py-2.5 rounded-lg border transition-colors flex items-center gap-2 ${
             showFilters || filterCriticality.length > 0 || filterStatus.length > 0
               ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
-              : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
         >
           <Filter className="w-4 h-4" />
@@ -534,11 +534,11 @@ const VendorListView: React.FC<{
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-slate-900/50 rounded-xl border border-slate-800 p-4"
+            className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-4"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Criticality</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Criticality</label>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(CRITICALITY_COLORS) as VendorCriticality[]).map((crit) => (
                     <button
@@ -553,7 +553,7 @@ const VendorListView: React.FC<{
                       className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-colors ${
                         filterCriticality.includes(crit)
                           ? `${CRITICALITY_COLORS[crit].bg} ${CRITICALITY_COLORS[crit].text} ${CRITICALITY_COLORS[crit].border} border`
-                          : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                       }`}
                     >
                       {crit}
@@ -562,7 +562,7 @@ const VendorListView: React.FC<{
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(STATUS_CONFIG) as VendorStatus[]).map((status) => (
                     <button
@@ -577,7 +577,7 @@ const VendorListView: React.FC<{
                       className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-colors flex items-center gap-1.5 ${
                         filterStatus.includes(status)
                           ? 'bg-violet-600/20 text-violet-300 border border-violet-500/50'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                       }`}
                     >
                       {STATUS_CONFIG[status].icon}
@@ -600,7 +600,7 @@ const VendorListView: React.FC<{
         <div className="text-center py-12">
           <Building2 className="w-12 h-12 text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">No Vendors Found</h3>
-          <p className="text-slate-400">Add your first vendor to get started with risk management</p>
+          <p className="text-slate-600 dark:text-slate-400">Add your first vendor to get started with risk management</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -624,7 +624,7 @@ const VendorCard: React.FC<{ vendor: Vendor; onClick: () => void }> = ({ vendor,
   return (
     <motion.div
       onClick={onClick}
-      className="bg-slate-900/50 rounded-xl border border-slate-800 p-5 cursor-pointer hover:bg-slate-900/80 hover:border-slate-700 transition-all group"
+      className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-5 cursor-pointer hover:bg-slate-50 dark:bg-slate-900/80 hover:border-slate-300 dark:hover:border-slate-200 dark:border-slate-700 transition-all group"
       whileHover={{ y: -2 }}
     >
       <div className="flex items-start justify-between mb-4">
@@ -637,12 +637,12 @@ const VendorCard: React.FC<{ vendor: Vendor; onClick: () => void }> = ({ vendor,
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-violet-300 transition-colors">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-violet-300 transition-colors">
         {vendor.name}
       </h3>
-      <p className="text-sm text-slate-400 mb-4">{CATEGORY_LABELS[vendor.category]}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{CATEGORY_LABELS[vendor.category]}</p>
 
-      <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <span className={`px-2 py-0.5 rounded text-xs font-medium ${critColors.bg} ${critColors.text} border ${critColors.border}`}>
             {vendor.criticality.toUpperCase()}
@@ -688,7 +688,7 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
   return (
     <div className="space-y-6">
       {/* Due Assessments */}
-      <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
+      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
         <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-red-400" />
           Overdue Assessments ({dueVendors.length})
@@ -699,7 +699,7 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
               <div key={vendor.id} className="flex items-center justify-between p-4 bg-red-500/5 rounded-lg border border-red-500/20">
                 <div>
                   <div className="font-medium text-white">{vendor.name}</div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
                     Last assessed: {vendor.lastAssessmentAt ? new Date(vendor.lastAssessmentAt).toLocaleDateString() : 'Never'}
                   </div>
                 </div>
@@ -710,7 +710,7 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">
             <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-green-400/50" />
             All assessments are up to date
           </div>
@@ -718,7 +718,7 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
       </div>
 
       {/* Upcoming Assessments */}
-      <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
+      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
         <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-yellow-400" />
           Upcoming Assessments ({upcomingVendors.length})
@@ -726,10 +726,10 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
         {upcomingVendors.length > 0 ? (
           <div className="space-y-3">
             {upcomingVendors.map((vendor) => (
-              <div key={vendor.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+              <div key={vendor.id} className="flex items-center justify-between p-4 bg-slate-100 dark:bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div>
                   <div className="font-medium text-white">{vendor.name}</div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
                     Due: {vendor.nextAssessmentAt ? new Date(vendor.nextAssessmentAt).toLocaleDateString() : 'TBD'}
                   </div>
                 </div>
@@ -740,7 +740,7 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">
             No assessments due in the next 30 days
           </div>
         )}
@@ -756,7 +756,7 @@ const AssessmentsView: React.FC<{ vendors: Vendor[] }> = ({ vendors }) => {
 const QuestionnairesView: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
+      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
         <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5 text-violet-400" />
           Assessment Questionnaire Templates
@@ -765,18 +765,18 @@ const QuestionnairesView: React.FC = () => {
           {QUESTIONNAIRE_TEMPLATES.map((template) => (
             <div
               key={template.id}
-              className="p-5 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-violet-500/50 transition-colors cursor-pointer"
+              className="p-5 bg-slate-100 dark:bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-violet-500/50 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center">
                   <FileText className="w-5 h-5 text-violet-400" />
                 </div>
-                <span className="px-2 py-0.5 rounded text-xs bg-slate-700 text-slate-300 capitalize">
+                <span className="px-2 py-0.5 rounded text-xs bg-slate-700 text-slate-700 dark:text-slate-300 capitalize">
                   {template.category}
                 </span>
               </div>
               <h4 className="font-medium text-white mb-1">{template.name}</h4>
-              <p className="text-sm text-slate-400 mb-3">{template.description}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{template.description}</p>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">{template.questions.length} questions</span>
                 <button className="text-violet-400 hover:text-violet-300 flex items-center gap-1">
@@ -803,7 +803,7 @@ const StatCard: React.FC<{
   alert?: boolean;
 }> = ({ title, value, icon, color, alert }) => {
   const colorClasses = {
-    violet: 'bg-violet-500/10 text-violet-400 border-violet-500/30',
+    violet: 'bg-violet-50 dark:bg-violet-500/10 text-violet-400 border-violet-500/30',
     green: 'bg-green-500/10 text-green-400 border-green-500/30',
     orange: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
     yellow: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
@@ -811,15 +811,15 @@ const StatCard: React.FC<{
   };
 
   return (
-    <div className={`bg-slate-900/50 rounded-xl border border-slate-800 p-5 ${alert ? 'ring-2 ring-orange-500/30' : ''}`}>
+    <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-5 ${alert ? 'ring-2 ring-orange-500/30' : ''}`}>
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
           {icon}
         </div>
         {alert && <AlertCircle className="w-5 h-5 text-orange-400 animate-pulse" />}
       </div>
-      <div className="text-2xl font-bold text-white">{value}</div>
-      <div className="text-sm text-slate-400">{title}</div>
+      <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
+      <div className="text-sm text-slate-600 dark:text-slate-400">{title}</div>
     </div>
   );
 };
@@ -845,22 +845,22 @@ const VendorDetailModal: React.FC<{
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl"
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl ${critColors.bg} flex items-center justify-center`}>
               <Building2 className={`w-6 h-6 ${critColors.text}`} />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">{vendor.name}</h2>
-              <p className="text-sm text-slate-400">{CATEGORY_LABELS[vendor.category]}</p>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{vendor.name}</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">{CATEGORY_LABELS[vendor.category]}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -886,8 +886,8 @@ const VendorDetailModal: React.FC<{
 
           {/* Risk Score */}
           {vendor.riskScore !== undefined && (
-            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-              <h3 className="text-sm font-medium text-slate-400 mb-3">Risk Score</h3>
+            <div className="bg-slate-100 dark:bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">Risk Score</h3>
               <div className="flex items-end gap-4">
                 <div className={`text-4xl font-bold ${
                   vendor.riskScore >= 75 ? 'text-red-400' :
@@ -914,24 +914,24 @@ const VendorDetailModal: React.FC<{
 
           {/* Contact Info */}
           {(vendor.primaryContactName || vendor.primaryContactEmail || vendor.website) && (
-            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-              <h3 className="text-sm font-medium text-slate-400 mb-3">Contact Information</h3>
+            <div className="bg-slate-100 dark:bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">Contact Information</h3>
               <div className="space-y-2">
                 {vendor.primaryContactName && (
                   <div className="flex items-center gap-2 text-white">
-                    <Users className="w-4 h-4 text-slate-400" />
+                    <Users className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                     {vendor.primaryContactName}
                   </div>
                 )}
                 {vendor.primaryContactEmail && (
                   <div className="flex items-center gap-2 text-white">
-                    <Mail className="w-4 h-4 text-slate-400" />
+                    <Mail className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                     {vendor.primaryContactEmail}
                   </div>
                 )}
                 {vendor.primaryContactPhone && (
                   <div className="flex items-center gap-2 text-white">
-                    <Phone className="w-4 h-4 text-slate-400" />
+                    <Phone className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                     {vendor.primaryContactPhone}
                   </div>
                 )}
@@ -949,8 +949,8 @@ const VendorDetailModal: React.FC<{
 
           {/* Certifications */}
           {vendor.certifications.length > 0 && (
-            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
-              <h3 className="text-sm font-medium text-slate-400 mb-3">Certifications</h3>
+            <div className="bg-slate-100 dark:bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">Certifications</h3>
               <div className="flex flex-wrap gap-2">
                 {vendor.certifications.map((cert, i) => (
                   <span key={i} className="px-3 py-1 rounded-lg bg-green-500/10 text-green-400 text-sm flex items-center gap-1.5">
@@ -968,7 +968,7 @@ const VendorDetailModal: React.FC<{
               <FileText className="w-4 h-4" />
               Start Assessment
             </button>
-            <button className="px-4 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors border border-slate-700">
+            <button className="px-4 py-2.5 bg-white dark:bg-slate-800 text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700">
               <Edit className="w-4 h-4" />
             </button>
           </div>
@@ -1014,34 +1014,34 @@ const AddVendorModal: React.FC<{
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl"
+        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl"
       >
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Add New Vendor</h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-800 text-slate-400">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Add New Vendor</h2>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Vendor Name *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Vendor Name *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
               placeholder="Enter vendor name"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Category</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Category</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as VendorCategory })}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
               >
                 {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -1049,11 +1049,11 @@ const AddVendorModal: React.FC<{
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Criticality</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Criticality</label>
               <select
                 value={formData.criticality}
                 onChange={(e) => setFormData({ ...formData, criticality: e.target.value as VendorCriticality })}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
               >
                 <option value="critical">Critical</option>
                 <option value="high">High</option>
@@ -1064,32 +1064,32 @@ const AddVendorModal: React.FC<{
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Website</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Website</label>
             <input
               type="url"
               value={formData.website || ''}
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
               placeholder="https://..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Primary Contact Email</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Primary Contact Email</label>
             <input
               type="email"
               value={formData.primaryContactEmail || ''}
               onChange={(e) => setFormData({ ...formData, primaryContactEmail: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white focus:outline-none focus:border-violet-500"
               placeholder="contact@vendor.com"
             />
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+            className="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             Cancel
           </button>

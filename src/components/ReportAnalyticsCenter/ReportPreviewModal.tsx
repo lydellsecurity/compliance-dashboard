@@ -112,20 +112,20 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 px-6 py-2 border-b border-slate-200 bg-white">
+          <div className="flex items-center gap-1 px-6 py-2 border-b border-slate-200 dark:border-steel-700 bg-white dark:bg-steel-800">
             <button
               onClick={() => setActiveTab('preview')}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === 'preview'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-600 dark:text-steel-400 hover:bg-slate-50 dark:hover:bg-steel-700'
               }`}
             >
               Preview
@@ -134,8 +134,8 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
               onClick={() => setActiveTab('details')}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === 'details'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-600 dark:text-steel-400 hover:bg-slate-50 dark:hover:bg-steel-700'
               }`}
             >
               Details & History
@@ -273,10 +273,10 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
                 )}
 
                 {/* Version History */}
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-white dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden">
                   <button
                     onClick={() => setShowVersionHistory(!showVersionHistory)}
-                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-steel-750 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <History className="w-5 h-5 text-slate-400" />
@@ -349,20 +349,20 @@ const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-steel-700 bg-slate-50 dark:bg-midnight-900">
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-white rounded-lg border border-slate-200 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-steel-300 hover:bg-white dark:hover:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700 transition-colors">
                 <Printer className="w-4 h-4" />
                 Print
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-white rounded-lg border border-slate-200 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-steel-300 hover:bg-white dark:hover:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700 transition-colors">
                 <Share2 className="w-4 h-4" />
                 Share
               </button>
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-white rounded-lg border border-slate-200 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-steel-200 hover:bg-white dark:hover:bg-steel-800 rounded-lg border border-slate-200 dark:border-steel-700 transition-colors">
                 <FileSpreadsheet className="w-4 h-4" />
                 Export CSV
               </button>

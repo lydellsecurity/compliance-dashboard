@@ -109,6 +109,9 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
     answerControl,
     getResponse,
     evidenceFileCounts,
+    isEvidenceVerified,
+    isOnline,
+    state,
   } = compliance;
 
   // Modal states
@@ -123,6 +126,9 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
     return {
       answer: response.answer,
       answeredAt: response.answeredAt,
+      // `lastReviewedAt` drives the stale-answer badge. Fall back to the
+      // first-answer timestamp for responses loaded before this field existed.
+      lastReviewedAt: response.lastReviewedAt ?? response.answeredAt,
     };
   }, [getResponse]);
 
@@ -184,6 +190,9 @@ const ControlWorkstationWrapper: React.FC<ControlWorkstationWrapperProps> = ({
         <ControlWorkstation
           getResponse={getResponseWrapper}
           getEvidenceCount={getEvidenceCountWrapper}
+          isEvidenceVerified={isEvidenceVerified}
+          isLoading={state.isLoading}
+          isOnline={isOnline}
           onAnswerChange={handleAnswerChange}
           onGeneratePolicy={handleGeneratePolicy}
           onGenerateAIPolicy={handleGenerateAIPolicy}

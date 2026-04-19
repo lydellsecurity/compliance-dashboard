@@ -252,9 +252,12 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
   const { frameworkProgress, stats } = compliance;
 
   const overallScore = useMemo(() => {
-    if (frameworkProgress.length === 0) return 0;
-    const totalPercentage = frameworkProgress.reduce((sum, fw) => sum + fw.percentage, 0);
-    return Math.round(totalPercentage / frameworkProgress.length);
+    // Exclude frameworks with zero mapped controls so an "N/A" framework
+    // doesn't drag the composite score toward 0%.
+    const scored = frameworkProgress.filter(fw => !fw.isEmpty);
+    if (scored.length === 0) return 0;
+    const totalPercentage = scored.reduce((sum, fw) => sum + fw.percentage, 0);
+    return Math.round(totalPercentage / scored.length);
   }, [frameworkProgress]);
 
   const lastUpdated = new Date();
@@ -342,7 +345,9 @@ const TrustCenter: React.FC<TrustCenterProps> = ({
                   strokeWidth={5}
                   color={FRAMEWORK_DETAILS[fw.id as FrameworkId]?.color || fw.color}
                   label={fw.name}
-                  sublabel={`${fw.completed}/${fw.total}`}
+                  // Frameworks with zero mapped controls render "N/A" so
+                  // auditors don't read a misleading 0% compliance.
+                  sublabel={fw.isEmpty ? 'N/A — no controls mapped' : `${fw.completed}/${fw.total}`}
                 />
               </motion.div>
             ))}

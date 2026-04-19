@@ -6945,39 +6945,87 @@ export function getFrameworkControls(frameworkId: FrameworkId): MasterControl[] 
   );
 }
 
-export function calculateFrameworkProgress(
-  frameworkId: FrameworkId, 
-  responses: Map<string, UserResponse>
-): { total: number; completed: number; percentage: number } {
-  const frameworkControls = getFrameworkControls(frameworkId);
-  const total = frameworkControls.length;
-  const completed = frameworkControls.filter(c => {
-    const response = responses.get(c.id);
-    return response?.answer === 'yes' || response?.answer === 'na';
-  }).length;
-  
+/**
+ * Scoring model (unified for framework and domain views):
+ *
+ * - `assessed`   = controls with ANY non-null answer (yes|no|partial|na)
+ * - `compliant`  = yes + na          (ready-for-audit)
+ * - `progressed` = yes + na + partial (compliant + active remediation)
+ * - `gaps`       = no
+ *
+ * `percentage` is the COMPLIANT ratio so framework cards, trust centers, and
+ * reports all agree on "how compliant am I?" at a glance. Consumers that
+ * want assessment-completion or in-progress credit should read `assessedPct`
+ * or `progressedPct` instead.
+ *
+ * A framework/domain with zero controls returns `percentage: null` so the UI
+ * can render "N/A" instead of a misleading 0%.
+ */
+export interface ProgressBreakdown {
+  total: number;
+  assessed: number;
+  compliant: number;
+  progressed: number;
+  gaps: number;
+  partial: number;
+  /** Compliant / total — primary score. null when total === 0. */
+  percentage: number | null;
+  /** Assessed / total — how much of the framework has been answered. */
+  assessedPct: number | null;
+  /** Progressed / total — compliant + in-progress. */
+  progressedPct: number | null;
+  /** Kept for back-compat with code expecting the old "completed" shape. */
+  completed: number;
+}
+
+function computeProgress(
+  controls: MasterControl[],
+  responses: Map<string, UserResponse>,
+): ProgressBreakdown {
+  const total = controls.length;
+  let assessed = 0;
+  let compliant = 0;
+  let partial = 0;
+  let gaps = 0;
+  for (const c of controls) {
+    const r = responses.get(c.id);
+    const a = r?.answer;
+    if (!a) continue;
+    assessed++;
+    if (a === 'yes' || a === 'na') compliant++;
+    else if (a === 'partial') partial++;
+    else if (a === 'no') gaps++;
+  }
+  const progressed = compliant + partial;
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : null);
   return {
     total,
-    completed,
-    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+    assessed,
+    compliant,
+    progressed,
+    gaps,
+    partial,
+    percentage: pct(compliant),
+    assessedPct: pct(assessed),
+    progressedPct: pct(progressed),
+    completed: compliant,
   };
 }
 
+export function calculateFrameworkProgress(
+  frameworkId: FrameworkId,
+  responses: Map<string, UserResponse>,
+): ProgressBreakdown {
+  return computeProgress(getFrameworkControls(frameworkId), responses);
+}
+
+/**
+ * Uses the same unified scoring as calculateFrameworkProgress so domain and
+ * framework rollups are directly comparable.
+ */
 export function getDomainProgress(
   domain: ComplianceDomain,
-  responses: Map<string, UserResponse>
-): { total: number; completed: number; percentage: number } {
-  const domainControls = getControlsByDomain(domain);
-  const total = domainControls.length;
-  const completed = domainControls.filter(c => {
-    const response = responses.get(c.id);
-    // Control is completed if it has a response with any answer (yes, no, partial, or na)
-    return response !== undefined && response.answer !== null && response.answer !== undefined;
-  }).length;
-  
-  return {
-    total,
-    completed,
-    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
-  };
+  responses: Map<string, UserResponse>,
+): ProgressBreakdown {
+  return computeProgress(getControlsByDomain(domain), responses);
 }

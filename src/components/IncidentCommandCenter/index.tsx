@@ -522,7 +522,7 @@ const IncidentCommandCenter: React.FC<IncidentCommandCenterProps> = ({
                 <button
                   key={incident.id}
                   onClick={() => setSelectedIncident(incident)}
-                  className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                  className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-steel-800/50 hover:bg-slate-100 dark:hover:bg-steel-800 transition-colors"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span

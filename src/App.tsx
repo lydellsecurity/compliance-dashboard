@@ -12,6 +12,7 @@ import {
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
   Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown, ClipboardList,
+  Grid3x3, History, ListChecks,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -55,13 +56,15 @@ const EvidenceVault = lazy(() => import('./components/EvidenceVault'));
 const AuditorRequirementView = lazy(() => import('./components/AuditorRequirementView'));
 const RequirementAssessmentWizard = lazy(() => import('./components/RequirementAssessmentWizard'));
 const ControlWorkstationWrapper = lazy(() => import('./components/ControlWorkstation/ControlWorkstationWrapper'));
+const HeatmapView = lazy(() => import('./components/HeatmapView'));
+const ChangesView = lazy(() => import('./components/ChangesView'));
 import { monitoringService } from './services/continuous-monitoring.service';
 import { useOrganization } from './contexts/OrganizationContext';
 import { useAuth } from './hooks/useAuth';
 import { CommandPalette, useCommandPalette } from './components/ui';
 import { ThemeToggle } from './components/ThemeToggle';
 
-type TabId = 'dashboard' | 'assessment' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'questionnaires' | 'trust-center' | 'certificate' | 'verify' | 'admin' | 'settings';
+type TabId = 'dashboard' | 'assessment' | 'heatmap' | 'changes' | 'incidents' | 'reporting' | 'evidence' | 'integrations' | 'vendors' | 'questionnaires' | 'trust-center' | 'certificate' | 'verify' | 'admin' | 'settings';
 
 // Shown briefly while a lazy tab chunk is loading. Minimal so the transition
 // feels instantaneous on a warm cache and graceful on a cold one.
@@ -192,7 +195,7 @@ const SlideOverDrawer: React.FC<SlideOverDrawerProps> = ({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto scrollbar-slim p-6">
               {children}
             </div>
           </motion.div>
@@ -393,7 +396,7 @@ const SyncActivitySidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto scrollbar-slim p-4">
               {syncNotifications.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
                   <div className="w-12 h-12 bg-slate-200 dark:bg-steel-800 rounded-lg flex items-center justify-center mb-4">
@@ -1207,6 +1210,97 @@ const DashboardTab: React.FC<{ onNavigate: (tab: TabId, domain?: ComplianceDomai
 };
 
 // ============================================================================
+// ASSESSMENT "MORE VIEWS" OVERFLOW MENU
+// Houses Legacy + Auditor so the primary toolbar doesn't present 4 equal
+// buttons. Secondary views are still one click away for auditors.
+// ============================================================================
+
+type AssessmentViewMode = 'controls' | 'requirements' | 'auditor' | 'workstation';
+
+const MoreViewsMenu: React.FC<{
+  currentView: AssessmentViewMode;
+  onSelect: (v: AssessmentViewMode) => void;
+}> = ({ currentView, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const isOpen = currentView === 'controls' || currentView === 'auditor';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="More views"
+        title="More views"
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+          isOpen
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-700 dark:text-steel-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-steel-700 bg-white dark:bg-steel-800 shadow-sm'
+        }`}
+      >
+        <ChevronDown className="w-4 h-4" />
+        <span className="whitespace-nowrap">More</span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-1 w-56 rounded-lg shadow-lg bg-white dark:bg-steel-800 border border-slate-200 dark:border-steel-700 py-1 z-20"
+        >
+          <button
+            role="menuitem"
+            onClick={() => { onSelect('controls'); setOpen(false); }}
+            className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
+              currentView === 'controls'
+                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                : 'text-slate-700 dark:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700'
+            }`}
+          >
+            <Shield className="w-4 h-4" aria-hidden="true" />
+            <div className="text-left">
+              <div className="font-medium">Legacy list</div>
+              <div className="text-xs text-slate-500 dark:text-steel-500">Original controls view</div>
+            </div>
+          </button>
+          <button
+            role="menuitem"
+            onClick={() => { onSelect('auditor'); setOpen(false); }}
+            className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
+              currentView === 'auditor'
+                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                : 'text-slate-700 dark:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700'
+            }`}
+          >
+            <Eye className="w-4 h-4" aria-hidden="true" />
+            <div className="text-left">
+              <div className="font-medium">Auditor view</div>
+              <div className="text-xs text-slate-500 dark:text-steel-500">Coverage and gaps report</div>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // ASSESSMENT TAB
 // ============================================================================
 
@@ -1365,7 +1459,10 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
   if (viewMode === 'workstation') {
     return (
       <div className="space-y-4">
-        {/* View Mode Toggle - Primary Toggle */}
+        {/* View Mode Toggle — primary segmented control stays peer-level;
+            Legacy/Auditor moved into a "More" menu so auditors who need
+            them can find them but day-to-day users aren't confronted with
+            four equal-weight buttons. */}
         <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-steel-800/50 rounded-lg border border-slate-200 dark:border-steel-700">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -1373,10 +1470,11 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-600 dark:text-steel-400">View:</span>
+            <span className="text-sm font-medium text-slate-600 dark:text-steel-300">View:</span>
             <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
               <button
                 onClick={() => setViewMode('workstation')}
+                aria-pressed={true}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all bg-indigo-600 text-white shadow-sm"
                 title="Control-centric assessment workstation"
               >
@@ -1385,32 +1483,18 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               </button>
               <button
                 onClick={() => setViewMode('requirements')}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700"
+                aria-pressed={false}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-700 dark:text-steel-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-steel-700"
                 title="View by framework requirements"
               >
                 <FileText className="w-4 h-4" />
                 <span className="whitespace-nowrap">Framework View</span>
               </button>
             </div>
-            <div className="h-6 w-px bg-slate-300 dark:bg-steel-600" />
-            <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
-              <button
-                onClick={() => setViewMode('controls')}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700"
-                title="Legacy controls list view"
-              >
-                <Shield className="w-4 h-4" />
-                <span className="whitespace-nowrap">Legacy</span>
-              </button>
-              <button
-                onClick={() => setViewMode('auditor')}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700"
-                title="Auditor view with coverage and gaps"
-              >
-                <Eye className="w-4 h-4" />
-                <span className="whitespace-nowrap">Auditor</span>
-              </button>
-            </div>
+            <MoreViewsMenu
+              currentView={viewMode}
+              onSelect={(v) => setViewMode(v)}
+            />
           </div>
         </div>
 
@@ -1629,13 +1713,14 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
           </div>
         </div>
 
-        {/* View Mode Toggle - Primary Toggle */}
+        {/* View Mode Toggle - Primary Toggle with overflow menu */}
         <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-steel-800/50 rounded-lg border border-slate-200 dark:border-steel-700">
-          <span className="text-sm font-medium text-slate-600 dark:text-steel-400">View:</span>
+          <span className="text-sm font-medium text-slate-600 dark:text-steel-300">View:</span>
           <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
             <button
               onClick={() => setViewMode('workstation')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700"
+              aria-pressed={false}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-700 dark:text-steel-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-steel-700"
               title="Control-centric assessment workstation"
             >
               <ClipboardList className="w-4 h-4" />
@@ -1643,10 +1728,11 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             </button>
             <button
               onClick={() => setViewMode('requirements')}
+              aria-pressed={viewMode === 'requirements'}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                 viewMode === 'requirements'
                   ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-steel-400 hover:text-slate-800 dark:hover:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-700'
+                  : 'text-slate-700 dark:text-steel-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-steel-700'
               }`}
               title="View by framework requirements"
             >
@@ -1654,33 +1740,10 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
               <span className="whitespace-nowrap">Framework View</span>
             </button>
           </div>
-          <div className="h-6 w-px bg-slate-300 dark:bg-steel-600" />
-          <div className="flex gap-1 p-1 bg-white dark:bg-steel-800 rounded-lg shadow-sm">
-            <button
-              onClick={() => setViewMode('controls')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'controls'
-                  ? 'bg-slate-600 dark:bg-steel-600 text-white shadow-sm'
-                  : 'text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700'
-              }`}
-              title="Legacy controls list view"
-            >
-              <Shield className="w-4 h-4" />
-              <span className="whitespace-nowrap">Legacy</span>
-            </button>
-            <button
-              onClick={() => setViewMode('auditor')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'auditor'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-500 dark:text-steel-500 hover:text-slate-700 dark:hover:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-700'
-              }`}
-              title="Auditor view with coverage and gaps"
-            >
-              <Eye className="w-4 h-4" />
-              <span className="whitespace-nowrap">Auditor</span>
-            </button>
-          </div>
+          <MoreViewsMenu
+            currentView={viewMode}
+            onSelect={(v) => setViewMode(v)}
+          />
         </div>
 
         {/* Framework Filter Active Banner */}
@@ -2026,20 +2089,56 @@ const CommandSidebar: React.FC<{
   organizationLogo?: string | null;
   primaryColor?: string;
 }> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle, mobileOpen, onMobileClose, organizationName, organizationLogo, primaryColor }) => {
-  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number }> = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-5 h-5" /> },
-    { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-5 h-5" />, badge: incidentCount },
-    { id: 'reporting', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
-    { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-5 h-5" /> },
-    { id: 'integrations', label: 'Integrations', icon: <Plug className="w-5 h-5" /> },
-    { id: 'vendors', label: 'Vendors', icon: <ShoppingBag className="w-5 h-5" /> },
-    { id: 'questionnaires', label: 'Questionnaires', icon: <ClipboardCheck className="w-5 h-5" /> },
-    { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-5 h-5" /> },
-    { id: 'certificate', label: 'Certificate', icon: <Award className="w-5 h-5" /> },
-    { id: 'verify', label: 'Verify', icon: <ShieldCheck className="w-5 h-5" /> },
-    { id: 'admin', label: 'Admin', icon: <Crown className="w-5 h-5" /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-5 h-5" />, badge: alertCount > 0 ? alertCount : undefined },
+  // Grouped navigation. Sections group semantic siblings so 15 destinations
+  // feel like 5 chunks. Expanded sidebar shows uppercase section headers;
+  // collapsed sidebar shows only a thin divider between groups. URL ids
+  // (tab.id) are unchanged so existing `?tab=<id>` links keep working.
+  type NavItem = { id: TabId; label: string; icon: React.ReactNode; badge?: number };
+  const navGroups: Array<{ label: string; items: NavItem[] }> = [
+    {
+      label: 'Work',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+        { id: 'assessment', label: 'Assessment', icon: <ClipboardCheck className="w-5 h-5" /> },
+        { id: 'evidence', label: 'Evidence', icon: <FolderOpen className="w-5 h-5" /> },
+        { id: 'incidents', label: 'Incidents', icon: <AlertTriangle className="w-5 h-5" />, badge: incidentCount },
+      ],
+    },
+    {
+      label: 'Insights',
+      items: [
+        { id: 'heatmap', label: 'Heatmap', icon: <Grid3x3 className="w-5 h-5" /> },
+        { id: 'changes', label: 'Changes', icon: <History className="w-5 h-5" /> },
+        { id: 'reporting', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: 'Programs',
+      items: [
+        // ListChecks differentiates Questionnaires from Assessment — both
+        // used ClipboardCheck before, which was ambiguous at a glance.
+        { id: 'questionnaires', label: 'Questionnaires', icon: <ListChecks className="w-5 h-5" /> },
+        { id: 'vendors', label: 'Vendors', icon: <ShoppingBag className="w-5 h-5" /> },
+        { id: 'integrations', label: 'Integrations', icon: <Plug className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: 'External',
+      items: [
+        { id: 'trust-center', label: 'Trust Center', icon: <Globe className="w-5 h-5" /> },
+        { id: 'certificate', label: 'Certificate', icon: <Award className="w-5 h-5" /> },
+        // Renamed from "Verify" — users couldn't tell it was auditor-facing.
+        // URL id stays 'verify' for back-compat with shared links.
+        { id: 'verify', label: 'Auditor Access', icon: <ShieldCheck className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: 'Configuration',
+      items: [
+        { id: 'admin', label: 'Admin', icon: <Crown className="w-5 h-5" /> },
+        { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-5 h-5" />, badge: alertCount > 0 ? alertCount : undefined },
+      ],
+    },
   ];
 
   // On tab change inside the mobile drawer, auto-close so the user sees the
@@ -2098,62 +2197,107 @@ const CommandSidebar: React.FC<{
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-3 overflow-y-auto">
-        <div className="space-y-0.5 px-2">
-          {tabs.map(tab => {
-            const isActive = activeTab === tab.id;
-            return (
-              <div key={tab.id} className="relative group">
-                <button
-                  onClick={() => handleTabSelect(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg transition-all duration-200 ${isActive
-                    ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 font-medium'
-                    : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
-                  }`}
-                >
-                  <span className="flex-shrink-0">{tab.icon}</span>
-                  {expanded && (
-                    <span className="text-sm truncate">{tab.label}</span>
-                  )}
-                  {tab.badge !== undefined && tab.badge > 0 && (
-                    <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full`}>
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-                {/* Tooltip */}
-                {!expanded && (
-                  <div className="nav-tooltip">
-                    {tab.label}
-                  </div>
-                )}
+      <nav className="flex-1 py-3 overflow-y-auto scrollbar-slim" aria-label="Primary">
+        {navGroups.map((group, gIdx) => (
+          <div
+            key={group.label}
+            // Group-level wrapper. role="group" + aria-label so screen readers
+            // announce the section name before its items.
+            role="group"
+            aria-label={group.label}
+            className={gIdx > 0 ? 'mt-3 pt-3 border-t border-slate-200/70 dark:border-steel-800' : ''}
+          >
+            {/* Section header. Shown only when the sidebar is expanded —
+                collapsed mode relies on the top border above for separation. */}
+            {expanded && (
+              <div className="px-4 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-steel-500">
+                {group.label}
               </div>
-            );
-          })}
-        </div>
+            )}
+            <div className="space-y-0.5 px-2">
+              {group.items.map(tab => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <div key={tab.id} className="relative group">
+                    {/* 2px left bar makes the active state readable for
+                        keyboard/screen-reader users and obvious in collapsed
+                        mode where the label isn't visible. */}
+                    {isActive && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r bg-indigo-500 dark:bg-accent-400"
+                      />
+                    )}
+                    <button
+                      onClick={() => handleTabSelect(tab.id)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg transition-all duration-200 ${isActive
+                        ? 'bg-indigo-50 dark:bg-accent-500/10 text-indigo-600 dark:text-accent-400 font-medium'
+                        : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
+                      }`}
+                    >
+                      <span className="flex-shrink-0">{tab.icon}</span>
+                      {expanded && (
+                        <span className="text-sm truncate">{tab.label}</span>
+                      )}
+                      {tab.badge !== undefined && tab.badge > 0 && (
+                        <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full`}>
+                          {tab.badge}
+                        </span>
+                      )}
+                    </button>
+                    {/* Tooltip in collapsed mode */}
+                    {!expanded && (
+                      <div className="nav-tooltip">
+                        {tab.label}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Bottom Actions */}
       <div className="p-2 border-t border-slate-200 dark:border-steel-800 space-y-0.5">
-        {/* Sync Activity */}
+        {/* Sync Activity — shows how many framework clauses were satisfied
+            in this session. Tooltip is available in both collapsed and
+            expanded modes so the badge number is discoverable. */}
         <div className="relative group">
           <button
             onClick={onSyncClick}
+            aria-label={
+              syncCount > 0
+                ? `Sync activity: ${syncCount} framework clause update${syncCount === 1 ? '' : 's'} in this session. Click to open.`
+                : 'Sync activity (no recent updates)'
+            }
+            title={
+              syncCount > 0
+                ? `${syncCount} framework clause update${syncCount === 1 ? '' : 's'} in this session`
+                : 'Sync activity'
+            }
             className={`w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg transition-all duration-200 ${syncCount > 0
               ? 'text-emerald-600 dark:text-status-success bg-emerald-50 dark:bg-status-success/10'
               : 'text-slate-600 dark:text-steel-400 hover:text-slate-900 dark:hover:text-steel-200 hover:bg-slate-100 dark:hover:bg-steel-800/50'
             }`}
           >
-            <Activity className="w-5 h-5 flex-shrink-0" />
+            <Activity className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
             {expanded && <span className="text-sm font-medium">Sync Activity</span>}
             {syncCount > 0 && (
-              <span className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full`}>
+              <span
+                className={`${expanded ? 'ml-auto' : 'absolute -top-1 -right-1'} w-5 h-5 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full`}
+                aria-hidden="true"
+              >
                 {Math.min(syncCount, 99)}
               </span>
             )}
           </button>
           {!expanded && (
-            <div className="nav-tooltip">Sync Activity</div>
+            <div className="nav-tooltip">
+              Sync Activity{syncCount > 0 ? ` (${syncCount})` : ''}
+            </div>
           )}
         </div>
 
@@ -2200,10 +2344,19 @@ const AppContent: React.FC = () => {
   // activeTab is mirrored to the URL (?tab=X) so users can share links and
   // browser back/forward works. We hydrate once from the URL, then keep it in
   // sync on every change.
+  // Matches the grouped sidebar order so the palette/URL-share flow scans
+  // in the same sequence the user sees in the nav.
   const VALID_TABS: TabId[] = [
-    'dashboard', 'assessment', 'incidents', 'reporting', 'evidence',
-    'integrations', 'vendors', 'questionnaires', 'trust-center',
-    'certificate', 'verify', 'admin', 'settings',
+    // Work
+    'dashboard', 'assessment', 'evidence', 'incidents',
+    // Insights
+    'heatmap', 'changes', 'reporting',
+    // Programs
+    'questionnaires', 'vendors', 'integrations',
+    // External
+    'trust-center', 'certificate', 'verify',
+    // Configuration
+    'admin', 'settings',
   ];
   const [activeTab, setActiveTab] = useState<TabId>(() => {
     if (typeof window === 'undefined') return 'dashboard';
@@ -2438,6 +2591,33 @@ const AppContent: React.FC = () => {
             {activeTab === 'assessment' && (
               <motion.div key="assessment" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <AssessmentTab initialDomain={selectedDomain} />
+              </motion.div>
+            )}
+            {activeTab === 'heatmap' && (
+              <motion.div key="heatmap" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <HeatmapView
+                  allControls={compliance.allControls}
+                  responses={new Map(
+                    Array.from(compliance.state.responses.values()).map(r => [r.controlId, {
+                      controlId: r.controlId,
+                      answer: r.answer,
+                      notes: r.remediationPlan,
+                      evidenceUrls: [],
+                      evidenceNotes: '',
+                      answeredAt: r.answeredAt,
+                    }])
+                  )}
+                  onCellClick={() => setActiveTab('assessment')}
+                />
+              </motion.div>
+            )}
+            {activeTab === 'changes' && (
+              <motion.div key="changes" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <ChangesView
+                  history={compliance.state.answerHistory}
+                  onClear={compliance.clearAnswerHistory}
+                  onOpenControl={() => setActiveTab('assessment')}
+                />
               </motion.div>
             )}
             {activeTab === 'incidents' && (

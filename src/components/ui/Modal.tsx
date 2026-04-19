@@ -294,7 +294,7 @@ export const Modal: React.FC<ModalProps> = ({
                 </div>
               )}
 
-              <div className="flex-1 overflow-y-auto">{children}</div>
+              <div className="flex-1 overflow-y-auto scrollbar-slim">{children}</div>
 
               {footer && (
                 <div className="border-t border-slate-200 dark:border-steel-700 p-4 sm:p-5 bg-slate-50 dark:bg-midnight-900">

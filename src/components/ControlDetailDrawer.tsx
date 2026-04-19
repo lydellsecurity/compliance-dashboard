@@ -128,7 +128,7 @@ const ControlDetailDrawer: React.FC<ControlDetailDrawerProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto scrollbar-slim">
               {/* Action Buttons - Always at top */}
               <div className="p-6 border-b border-slate-200 dark:border-steel-800 bg-slate-50 dark:bg-midnight-800">
                 <div className="flex gap-3">

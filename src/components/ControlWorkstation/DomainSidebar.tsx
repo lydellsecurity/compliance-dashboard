@@ -106,7 +106,7 @@ const DomainSidebar: React.FC<DomainSidebarProps> = ({
       </button>
 
       {/* Domain List */}
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className="flex-1 overflow-y-auto scrollbar-slim py-2">
         {domains.map((domain, index) => {
           const Icon = DOMAIN_ICONS[domain.id] || Shield;
           const progress = getProgress(domain.id);
@@ -167,12 +167,6 @@ const DomainSidebar: React.FC<DomainSidebarProps> = ({
         })}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-200 dark:border-steel-700">
-        <div className="text-xs text-slate-500 dark:text-steel-400 text-center">
-          Control-Centric Assessment Engine
-        </div>
-      </div>
     </aside>
   );
 };

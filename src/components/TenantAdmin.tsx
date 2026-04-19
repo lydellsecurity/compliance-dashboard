@@ -1021,11 +1021,20 @@ const CustomControlsTab: React.FC<{ canManage: boolean }> = ({ canManage }) => {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.title && form.description) {
-      const mappings = selectedFrameworks.filter(fwId => clauseInputs[fwId].trim()).map(fwId => ({ id: '', frameworkId: fwId, clauseId: clauseInputs[fwId].trim(), clauseTitle: 'Custom mapping', controlId: null, customControlId: null }));
-      addCustomControl({ title: form.title, description: form.description, question: form.question || `Is ${form.title} implemented?`, category: 'company_specific', frameworkMappings: mappings, riskLevel: form.riskLevel, createdBy: currentUserId });
-      resetForm(); setShowModal(false);
+    if (!form.title || !form.description) return;
+    const mappings = selectedFrameworks
+      .filter(fwId => clauseInputs[fwId].trim())
+      .map(fwId => ({ id: '', frameworkId: fwId, clauseId: clauseInputs[fwId].trim(), clauseTitle: 'Custom mapping', controlId: null, customControlId: null }));
+    // A control without framework mappings is invisible to every rollup —
+    // confirm the user really means to create an unmapped control.
+    if (mappings.length === 0) {
+      const ok = window.confirm(
+        'This control has no framework mappings and will NOT count toward SOC 2, ISO, HIPAA, NIST, PCI-DSS, or GDPR progress.\n\nCreate it anyway?',
+      );
+      if (!ok) return;
     }
+    addCustomControl({ title: form.title, description: form.description, question: form.question || `Is ${form.title} implemented?`, category: 'company_specific', frameworkMappings: mappings, riskLevel: form.riskLevel, createdBy: currentUserId });
+    resetForm(); setShowModal(false);
   };
 
   return (

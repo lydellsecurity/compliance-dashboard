@@ -292,7 +292,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 ref={listRef}
                 role="listbox"
                 aria-live="polite"
-                className="max-h-80 overflow-y-auto py-2"
+                className="max-h-80 overflow-y-auto scrollbar-slim py-2"
               >
                 {groupedCommands.length === 0 ? (
                   <div className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">

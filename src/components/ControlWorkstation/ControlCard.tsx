@@ -22,9 +22,11 @@ import {
   Paperclip,
   PanelRightClose,
   PanelRightOpen,
+  AlertTriangle,
 } from 'lucide-react';
 import type { MasterControl, FrameworkId } from '../../constants/controls';
 import type { SatisfiedRequirement } from '../../services/control-mapping-engine';
+import { ASSESSMENT_LABELS, statusFor, computeStaleness } from '../../constants/assessmentLabels';
 import FrameworkPills, { FrameworkCoverageSummary } from './FrameworkPills';
 import RequirementTransparency from './RequirementTransparency';
 import AssessmentWorkflow from './AssessmentWorkflow';
@@ -37,6 +39,10 @@ interface ControlCardProps {
   currentAnswer: AssessmentAnswer;
   hasEvidence: boolean;
   evidenceCount: number;
+  /** When the answer was last reviewed — drives the stale-answer badge. */
+  lastReviewedAt?: string | null;
+  /** True when "yes" is backed by at least one uploaded evidence file. */
+  isVerified?: boolean;
   onAnswerChange: (controlId: string, answer: AssessmentAnswer) => void;
   onGeneratePolicy: (controlId: string) => void;
   onGenerateAIPolicy: (controlId: string) => void;
@@ -55,13 +61,15 @@ const RISK_BADGES = {
   low: { label: 'Low', color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 border-slate-200 dark:border-steel-600' },
 };
 
-const STATUS_BADGES = {
-  yes: { label: 'Implemented', icon: CheckCircle, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
-  partial: { label: 'In Progress', icon: Clock, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
-  no: { label: 'Not Started', icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400' },
-  na: { label: 'N/A', icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-500' },
-  null: { label: 'Not Assessed', icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-400 dark:text-steel-500' },
-};
+// Visuals stay locally scoped; copy comes from ASSESSMENT_LABELS so badges,
+// reports, and the auditor view speak the same language.
+const STATUS_VISUAL = {
+  yes: { icon: CheckCircle, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
+  partial: { icon: Clock, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
+  no: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400' },
+  na: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-500 dark:text-steel-500' },
+  unassessed: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-400 dark:text-steel-500' },
+} as const;
 
 const ControlCard: React.FC<ControlCardProps> = ({
   control,
@@ -69,6 +77,8 @@ const ControlCard: React.FC<ControlCardProps> = ({
   currentAnswer,
   hasEvidence,
   evidenceCount,
+  lastReviewedAt,
+  isVerified = false,
   onAnswerChange,
   onGeneratePolicy,
   onGenerateAIPolicy,
@@ -84,10 +94,20 @@ const ControlCard: React.FC<ControlCardProps> = ({
   const [isStatusPaneCollapsed, setIsStatusPaneCollapsed] = useState(false);
 
   const isImplemented = currentAnswer === 'yes';
-  const statusKey = currentAnswer || 'null';
-  const status = STATUS_BADGES[statusKey];
-  const StatusIcon = status.icon;
-  const riskBadge = RISK_BADGES[control.riskLevel];
+  const statusKey = statusFor(currentAnswer);
+  const statusVisual = STATUS_VISUAL[statusKey];
+  const statusLabel = ASSESSMENT_LABELS[statusKey];
+  const StatusIcon = statusVisual.icon;
+  // `|| RISK_BADGES.low` guards against malformed/missing riskLevel from
+  // custom controls or legacy data rather than rendering `undefined`.
+  const riskBadge = RISK_BADGES[control.riskLevel] ?? RISK_BADGES.low;
+
+  // Stale when the control was last reviewed more than 90 days ago.
+  // Auditors need to know answers are current; see constants/assessmentLabels.ts.
+  const staleness = useMemo(() => computeStaleness(lastReviewedAt), [lastReviewedAt]);
+  const isStale = staleness?.isStale ?? false;
+  // "Unverified" — user marked Yes but hasn't attached evidence yet.
+  const showUnverified = currentAnswer === 'yes' && !isVerified;
 
   // Group requirements into framework pills
   const frameworkPills = useMemo(() => {
@@ -137,6 +157,9 @@ const ControlCard: React.FC<ControlCardProps> = ({
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      role="article"
+      aria-labelledby={`control-${control.id}-title`}
+      aria-describedby={`control-${control.id}-status`}
       className={`
         bg-white dark:bg-steel-800 rounded-xl border overflow-hidden transition-all duration-200
         ${isImplemented
@@ -148,15 +171,28 @@ const ControlCard: React.FC<ControlCardProps> = ({
     >
       {/* Card Header - Always visible */}
       <div
-        className={`p-5 cursor-pointer ${onToggleExpand ? 'hover:bg-slate-50 dark:hover:bg-steel-750' : ''}`}
+        role={onToggleExpand ? 'button' : undefined}
+        tabIndex={onToggleExpand ? 0 : undefined}
+        aria-expanded={onToggleExpand ? isExpanded : undefined}
+        aria-label={onToggleExpand ? `${control.id} ${control.title} — ${statusLabel.aria}. Press Enter to ${isExpanded ? 'collapse' : 'expand'}.` : undefined}
+        className={`p-5 cursor-pointer ${onToggleExpand ? 'hover:bg-slate-50 dark:hover:bg-steel-750 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset' : ''}`}
         onClick={onToggleExpand}
+        onKeyDown={(e) => {
+          if (onToggleExpand && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onToggleExpand();
+          }
+        }}
       >
         <div className="flex items-start gap-4">
           {/* Status indicator */}
-          <div className={`
-            w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-            ${isImplemented ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-steel-700'}
-          `}>
+          <div
+            aria-hidden="true"
+            className={`
+              w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+              ${isImplemented ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-steel-700'}
+            `}
+          >
             <StatusIcon className={`w-5 h-5 ${isImplemented ? 'text-emerald-500' : 'text-slate-400 dark:text-steel-500'}`} />
           </div>
 
@@ -165,29 +201,63 @@ const ControlCard: React.FC<ControlCardProps> = ({
             {/* Title row */}
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
                     {control.id}
                   </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${riskBadge.color}`}>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full border ${riskBadge.color}`}
+                    aria-label={`Risk level: ${riskBadge.label}`}
+                  >
                     {riskBadge.label}
                   </span>
                   {hasEvidence && (
-                    <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                      <Paperclip className="w-3 h-3" />
+                    <span
+                      className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400"
+                      aria-label={`${evidenceCount} evidence file${evidenceCount === 1 ? '' : 's'} attached`}
+                    >
+                      <Paperclip className="w-3 h-3" aria-hidden="true" />
                       {evidenceCount}
                     </span>
                   )}
+                  {showUnverified && (
+                    <span
+                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                      aria-label="Marked as implemented but no evidence attached — auditors will flag this"
+                      title="Marked Implemented but no evidence attached yet — upload a file to verify."
+                    >
+                      <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                      Unverified
+                    </span>
+                  )}
+                  {isStale && staleness && (
+                    <span
+                      className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                      aria-label={`Stale: last reviewed ${staleness.days} days ago. Needs re-assessment.`}
+                      title={`Last reviewed ${staleness.days} days ago — review recommended.`}
+                    >
+                      <Clock className="w-3 h-3" aria-hidden="true" />
+                      Needs re-review
+                    </span>
+                  )}
                 </div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                <h3
+                  id={`control-${control.id}-title`}
+                  className="text-base font-semibold text-slate-900 dark:text-white"
+                >
                   {control.title}
                 </h3>
               </div>
 
               {/* Status badge */}
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${status.color}`}>
-                <StatusIcon className="w-3.5 h-3.5" />
-                {status.label}
+              <div
+                id={`control-${control.id}-status`}
+                role="status"
+                aria-label={statusLabel.aria}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${statusVisual.color}`}
+              >
+                <StatusIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                {statusLabel.short}
               </div>
             </div>
 

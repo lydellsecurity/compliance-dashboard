@@ -137,36 +137,126 @@ body {
 
 /* ============================================================================
    SCROLLBAR - Theme Aware
+   Opt-in via `.scrollbar-slim` rather than a blanket `*` selector, because
+   the blanket selector overrode per-element styles (including `.no-scrollbar`
+   in Firefox) and painted the track in a color that rarely matched the
+   panel the scrollbar lived inside. Scroll containers now declare intent
+   explicitly.
    ============================================================================ */
 
-::-webkit-scrollbar {
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-primary) transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-card);
+.scrollbar-slim::-webkit-scrollbar-track {
+  /* Transparent so the track picks up whatever panel the scroll container
+     sits inside. No more mismatched light strip on dark panels. */
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border-secondary);
-  border-radius: 0;
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.scrollbar-slim::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
 
-/* Firefox - Dark Mode */
-html.dark * {
+/* Sensible default for any container that forgets the util. Avoids the
+   giant OS scrollbar but doesn't fight inline styles like the old `*` rule. */
+body {
   scrollbar-width: thin;
-  scrollbar-color: var(--steel-700) var(--midnight-800);
+  scrollbar-color: var(--border-primary) transparent;
 }
 
-/* Firefox - Light Mode */
-html.light * {
-  scrollbar-width: thin;
-  scrollbar-color: #CBD5E1 #F1F5F9;
+body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+body::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+/* ============================================================================
+   UNIFIED INTERACTION TOKENS
+   Single source of truth for hover / active / focus treatments. Prior code
+   used three different tailwind combos for hover ("slate-50", "slate-100",
+   "white/50") with three different dark counterparts, so adjacent buttons
+   felt slightly different on hover. These classes normalize intent.
+   ============================================================================ */
+
+:root {
+  /* Hover surface — light mode. Step 1 is barely-there, step 2 is clearly
+     visible; pick based on element weight. */
+  --hover-subtle: rgba(15, 23, 42, 0.04);
+  --hover-strong: rgba(15, 23, 42, 0.08);
+
+  /* Selected / active */
+  --active-bg: rgba(99, 102, 241, 0.08);
+  --active-bar: var(--accent-500);
+  --active-fg: var(--accent-600);
+}
+
+html.dark {
+  /* In dark mode a hover should go LIGHTER, not darker — slight white wash
+     on the glass. These keep contrast across all panel depths (sidebar,
+     card, secondary). */
+  --hover-subtle: rgba(241, 245, 249, 0.04);
+  --hover-strong: rgba(241, 245, 249, 0.08);
+
+  --active-bg: rgba(99, 102, 241, 0.15);
+  --active-bar: var(--accent-400);
+  --active-fg: var(--accent-400);
+}
+
+@layer components {
+  .hover-surface {
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+  .hover-surface:hover {
+    background-color: var(--hover-subtle);
+  }
+  .hover-surface-strong {
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+  .hover-surface-strong:hover {
+    background-color: var(--hover-strong);
+  }
+
+  /* Unified active/selected state. Applies an indigo tint + left indicator
+     bar. Use on nav items, segmented toggles, filter chips, domain rows. */
+  .is-active {
+    background-color: var(--active-bg);
+    color: var(--active-fg);
+    font-weight: 500;
+    position: relative;
+  }
+  .is-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    background: var(--active-bar);
+  }
+  /* Suppress the left bar variant for pill/segmented buttons that already
+     convey selection via background alone. */
+  .is-active.is-active-pill::before {
+    display: none;
+  }
 }
 
 /* ============================================================================

@@ -82,7 +82,8 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
           </svg>
 
           {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center"
+               title="Share of all controls marked Implemented (yes) or Not Applicable">
             <motion.span
               key={percentage}
               initial={{ scale: 0.8, opacity: 0 }}
@@ -91,7 +92,7 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
             >
               {percentage}%
             </motion.span>
-            <span className="text-sm text-slate-500 dark:text-steel-400">Compliant</span>
+            <span className="text-sm text-slate-600 dark:text-steel-300">Controls compliant</span>
           </div>
         </div>
 
@@ -127,16 +128,28 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
             </div>
           </div>
 
-          {/* Framework Progress */}
+          {/* Framework Progress.
+              Distinct from overall compliance: this is the share of each
+              framework's CLAUSES that have at least one implemented control
+              mapped to them (breadth). The center gauge is the share of
+              ALL CONTROLS that are implemented (depth). They disagree
+              intentionally — 100% clause coverage can coexist with 75%
+              overall compliance if extra controls cover shared clauses. */}
           <div>
-            <h3 className="text-sm font-medium text-slate-700 dark:text-steel-300 mb-2 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Framework Coverage
+            <h3
+              className="text-sm font-medium text-slate-700 dark:text-steel-300 mb-1 flex items-center gap-2"
+              title="Share of each framework's clauses that have at least one implemented control. Not the same as overall compliance — see the center gauge for that."
+            >
+              <TrendingUp className="w-4 h-4" aria-hidden="true" />
+              Framework clause coverage
             </h3>
+            <p className="text-xs text-slate-500 dark:text-steel-500 mb-2">
+              % of clauses with at least one implemented control
+            </p>
             <div className="space-y-2">
               {frameworkStats.slice(0, 4).map((fw) => (
                 <div key={fw.frameworkId} className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-steel-400 w-20 truncate">
+                  <span className="text-xs font-medium text-slate-600 dark:text-steel-300 w-20 truncate">
                     {fw.name}
                   </span>
                   <div className="flex-1 h-2 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
@@ -148,7 +161,7 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
                       style={{ backgroundColor: fw.color }}
                     />
                   </div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-steel-400 w-10 text-right">
+                  <span className="text-xs font-medium text-slate-600 dark:text-steel-300 w-10 text-right tabular-nums">
                     {fw.percentage}%
                   </span>
                 </div>

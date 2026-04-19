@@ -72,8 +72,14 @@ export interface ControlResponse {
   answer: 'yes' | 'no' | 'partial' | 'na' | null;
   evidenceId: string | null;                     // FK -> evidence_records.id (only for 'yes')
   remediationPlan: string;                       // Text for 'no' answers
-  answeredAt: string;                            // ISO timestamp
-  answeredBy: string;                            // User ID (placeholder for auth)
+  answeredAt: string;                            // ISO timestamp — first-ever answer (stable)
+  /**
+   * Last time the user re-reviewed or changed this answer. Distinct from
+   * `answeredAt` so auditors can see both "first assessed" and "last reviewed"
+   * and so stale-answer detection can target real dormancy (>90 days).
+   */
+  lastReviewedAt: string;                        // ISO timestamp
+  answeredBy: string | null;                     // User ID — null when unauthenticated
   updatedAt: string;                             // ISO timestamp
 }
 
@@ -143,6 +149,29 @@ export interface SyncNotification {
 }
 
 /**
+ * Answer-change event. Records every transition of a control's answer so the
+ * Changes/Delta view can show "what moved since the last audit cycle" —
+ * including regressions (yes → no), new gaps, and new attestations.
+ *
+ * Stored locally (and best-effort synced); capped at ANSWER_HISTORY_MAX to
+ * keep localStorage size bounded on long-running installations.
+ */
+export interface AnswerHistoryEvent {
+  id: string;
+  controlId: string;
+  controlTitle: string;
+  from: 'yes' | 'no' | 'partial' | 'na' | null;
+  to: 'yes' | 'no' | 'partial' | 'na';
+  at: string; // ISO timestamp
+  userId: string | null;
+  riskLevel: 'critical' | 'high' | 'medium' | 'low';
+  /** True when an existing answer changed to a different value (re-assessment). */
+  isChange: boolean;
+  /** True when this transition represents a compliance regression (yes → no/partial). */
+  isRegression: boolean;
+}
+
+/**
  * Compliance State - Complete application state
  */
 export interface ComplianceState {
@@ -150,37 +179,63 @@ export interface ComplianceState {
   evidence: Map<string, EvidenceRecord>;
   customControls: CustomControl[];
   syncNotifications: SyncNotification[];
+  answerHistory: AnswerHistoryEvent[];
   darkMode: boolean;
   isLoading: boolean;
   lastSyncedAt: string | null;
 }
 
+const ANSWER_HISTORY_MAX = 500;
+
 /**
- * Framework Progress - Computed statistics
+ * Framework Progress - Computed statistics.
+ *
+ * Scoring model (unified with DomainProgress):
+ *   - compliant   = yes + na
+ *   - assessed    = yes + no + partial + na
+ *   - progressed  = yes + na + partial
+ *   - percentage  = compliant / total (0 when total === 0; check `isEmpty`)
  */
 export interface FrameworkProgress {
   id: FrameworkId;
   name: string;
   color: string;
   total: number;
+  /** @deprecated use `compliant`; kept for back-compat. */
   completed: number;
+  /** Compliant / total, rounded. 0 when total is 0 — check `isEmpty` first. */
   percentage: number;
+  assessedPct: number;
+  progressedPct: number;
+  assessed: number;
+  compliant: number;
+  progressed: number;
   gaps: number;
   partial: number;
+  /** True when this framework has zero mapped controls — render "N/A". */
+  isEmpty: boolean;
 }
 
 /**
- * Domain Progress - Computed statistics
+ * Domain Progress - Computed statistics. Same scoring model as FrameworkProgress.
  */
 export interface DomainProgress {
   id: string;
   title: string;
   color: string;
   total: number;
+  /** @deprecated use `assessed`; kept for back-compat. */
   answered: number;
+  assessed: number;
   compliant: number;
+  progressed: number;
+  partial: number;
   gaps: number;
+  /** Compliant / total, rounded. 0 when total is 0 — check `isEmpty` first. */
   percentage: number;
+  assessedPct: number;
+  progressedPct: number;
+  isEmpty: boolean;
 }
 
 // ============================================================================
@@ -275,6 +330,12 @@ export interface UseComplianceReturn {
   getEvidenceFileCounts: (controlId: string) => { evidenceCount: number; fileCount: number; hasFiles: boolean } | undefined;
   evidenceFileCounts: Record<string, { evidenceCount: number; fileCount: number; hasFiles: boolean }>;
   refreshEvidenceCounts: () => Promise<void>;
+  /**
+   * True only when the "yes" attestation is backed by at least one uploaded
+   * file (either on the local EvidenceRecord or the server-side Evidence
+   * Repository count). UI: show an "Unverified" badge otherwise.
+   */
+  isEvidenceVerified: (controlId: string) => boolean;
   
   // Custom Controls
   customControls: CustomControl[];
@@ -290,6 +351,10 @@ export interface UseComplianceReturn {
   // Sync Notifications
   syncNotifications: SyncNotification[];
   clearNotifications: () => void;
+
+  // Answer change history — powers the Changes / Delta view.
+  answerHistory: AnswerHistoryEvent[];
+  clearAnswerHistory: () => void;
   
   // UI State
   toggleDarkMode: () => void;
@@ -300,8 +365,12 @@ export interface UseComplianceReturn {
     answeredControls: number;
     compliantControls: number;
     gapControls: number;
+    partialControls: number;
     remainingControls: number;
+    /** Answered / total — how much of the assessment is filled in. */
     assessmentPercentage: number;
+    /** Compliant (yes + na) / total — audit-ready ratio. */
+    compliancePercentage: number;
   };
   
   // Critical Gaps (for Action Required)
@@ -315,6 +384,9 @@ export interface UseComplianceReturn {
   // assuming empty state means empty data.
   loadError: string | null;
   clearLoadError: () => void;
+
+  /** True when the browser has a network connection. Drives offline banner. */
+  isOnline: boolean;
 }
 
 export interface UseComplianceOptions {
@@ -348,6 +420,12 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   );
 
   const [syncNotifications, setSyncNotifications] = useState<SyncNotification[]>([]);
+  const [answerHistory, setAnswerHistory] = useState<AnswerHistoryEvent[]>(() => {
+    // Keyed by organization so multi-tenant installs don't leak history
+    // across orgs. Stored under ATTESTATIONS (legacy key bucket) namespace.
+    const key = organizationId ? `attestai-answer-history-${organizationId}` : 'attestai-answer-history';
+    return loadFromStorage<AnswerHistoryEvent[]>(key, []);
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() =>
@@ -538,20 +616,46 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
           evidenceId: r.file_url || null,
           remediationPlan: r.remediation_plan || '',
           answeredAt: r.answered_at,
-          answeredBy: r.user_id || 'current-user',
+          lastReviewedAt: r.updated_at || r.answered_at,
+          answeredBy: r.user_id || null,
           updatedAt: r.updated_at || r.answered_at,
         };
       });
 
-      // Merge with local data (local takes precedence for unsynced changes)
+      // Merge with local data. Local wins if its updatedAt is newer than the
+      // remote copy (handles offline edits). When a true conflict exists —
+      // both sides have a response with DIFFERENT answers — we emit a
+      // conflict notification so the user isn't silently overwritten.
       setResponsesObj(prev => {
         const merged = { ...responsesFromDb };
-        // Keep local changes that might not be synced yet
+        const conflicts: SyncNotification[] = [];
         Object.keys(prev).forEach(key => {
-          if (!merged[key] || new Date(prev[key].updatedAt) > new Date(merged[key]?.updatedAt || 0)) {
-            merged[key] = prev[key];
+          const remote = merged[key];
+          const local = prev[key];
+          const localNewer =
+            !remote || new Date(local.updatedAt) > new Date(remote.updatedAt || 0);
+          if (localNewer) {
+            if (remote && remote.answer !== local.answer) {
+              // Surface collision to the user via the sync log.
+              conflicts.push({
+                id: generateUUID(),
+                controlId: key,
+                controlTitle: `Conflict: local "${local.answer ?? 'none'}" kept over remote "${remote.answer ?? 'none'}"`,
+                frameworkId: 'SOC2',
+                clauseId: '__conflict__',
+                clauseTitle: 'Sync conflict resolved — local wins',
+                timestamp: Date.now(),
+                userId: local.answeredBy || 'system',
+              });
+            }
+            merged[key] = local;
           }
         });
+        if (conflicts.length > 0) {
+          // Keep 50 most recent notifications regardless of source.
+          setSyncNotifications(current => [...conflicts, ...current].slice(0, 50));
+          console.warn(`[Sync] ${conflicts.length} conflict(s) resolved by keeping local answers. See sync log.`);
+        }
         return merged;
       });
 
@@ -779,6 +883,13 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
+  // Answer-history persistence. Scoped per-org so multi-tenant installs
+  // don't cross-pollinate delta views.
+  useEffect(() => {
+    const key = organizationId ? `attestai-answer-history-${organizationId}` : 'attestai-answer-history';
+    saveToStorage(key, answerHistory);
+  }, [answerHistory, organizationId]);
+
   // ============================================================================
   // DERIVED STATE (Memoized)
   // ============================================================================
@@ -834,57 +945,73 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   // FRAMEWORK PROGRESS CALCULATION
   // ============================================================================
   
-  const frameworkProgress: FrameworkProgress[] = useMemo(() => 
+  const frameworkProgress: FrameworkProgress[] = useMemo(() =>
     FRAMEWORKS.map(fw => {
       const progress = calculateFrameworkProgress(fw.id, responsesAsUserResponse);
-      const gapCount = allControls.filter(c => {
-        const r = responses.get(c.id);
-        return r?.answer === 'no' && c.frameworkMappings.some(m => m.frameworkId === fw.id);
-      }).length;
-      const partialCount = allControls.filter(c => {
-        const r = responses.get(c.id);
-        return r?.answer === 'partial' && c.frameworkMappings.some(m => m.frameworkId === fw.id);
-      }).length;
-      
+      const isEmpty = progress.total === 0;
       return {
         id: fw.id,
         name: fw.name,
         color: fw.color,
         total: progress.total,
-        completed: progress.completed,
-        percentage: progress.percentage,
-        gaps: gapCount,
-        partial: partialCount,
+        completed: progress.compliant,
+        compliant: progress.compliant,
+        assessed: progress.assessed,
+        progressed: progress.progressed,
+        gaps: progress.gaps,
+        partial: progress.partial,
+        // When a framework has zero mapped controls, surface 0% but set
+        // `isEmpty` so UIs can render "N/A" instead of a misleading "0%".
+        percentage: progress.percentage ?? 0,
+        assessedPct: progress.assessedPct ?? 0,
+        progressedPct: progress.progressedPct ?? 0,
+        isEmpty,
       };
     }),
-  [responses, responsesAsUserResponse, allControls]);
+  [responsesAsUserResponse]);
 
   // ============================================================================
   // DOMAIN PROGRESS CALCULATION
   // ============================================================================
   
-  const domainProgress: DomainProgress[] = useMemo(() => 
+  const domainProgress: DomainProgress[] = useMemo(() =>
     allDomains.map(domain => {
       const domainControls = (domain.id as string) === 'company_specific'
         ? customAsMaster
         : getControlsByDomain(domain.id);
-      
-      const answered = domainControls.filter(c => responses.get(c.id)?.answer).length;
-      const compliant = domainControls.filter(c => {
-        const r = responses.get(c.id);
-        return r?.answer === 'yes' || r?.answer === 'na';
-      }).length;
-      const gaps = domainControls.filter(c => responses.get(c.id)?.answer === 'no').length;
-      
+
+      let assessed = 0, compliant = 0, partial = 0, gaps = 0;
+      for (const c of domainControls) {
+        const a = responses.get(c.id)?.answer;
+        if (!a) continue;
+        assessed++;
+        if (a === 'yes' || a === 'na') compliant++;
+        else if (a === 'partial') partial++;
+        else if (a === 'no') gaps++;
+      }
+      const total = domainControls.length;
+      const progressed = compliant + partial;
+      const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
       return {
         id: domain.id as string,
         title: domain.title,
         color: domain.color,
-        total: domainControls.length,
-        answered,
+        total,
+        // `answered` kept for back-compat; `assessed` is the canonical name.
+        answered: assessed,
+        assessed,
         compliant,
+        progressed,
+        partial,
         gaps,
-        percentage: domainControls.length > 0 ? Math.round((answered / domainControls.length) * 100) : 0,
+        // Primary score is compliance (not assessment) so domains and
+        // frameworks agree on "how compliant is this slice?". UIs that
+        // want assessment completion should read `assessedPct`.
+        percentage: pct(compliant),
+        assessedPct: pct(assessed),
+        progressedPct: pct(progressed),
+        isEmpty: total === 0,
       };
     }),
   [allDomains, customAsMaster, responses]);
@@ -892,22 +1019,38 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   // ============================================================================
   // STATISTICS
   // ============================================================================
-  
+
   const stats = useMemo(() => {
     const totalControls = allControls.length;
-    const answeredControls = Array.from(responses.values()).filter(r => r.answer).length;
-    const compliantControls = Array.from(responses.values()).filter(r => r.answer === 'yes' || r.answer === 'na').length;
-    const gapControls = Array.from(responses.values()).filter(r => r.answer === 'no').length;
-    const remainingControls = totalControls - answeredControls;
-    const assessmentPercentage = totalControls > 0 ? Math.round((answeredControls / totalControls) * 100) : 0;
-    
+    // Only count responses for controls that still exist. After a custom
+    // control is deleted, its stale response must not leak into counts.
+    const activeIds = new Set(allControls.map(c => c.id));
+    let answeredControls = 0, compliantControls = 0, gapControls = 0, partialControls = 0;
+    responses.forEach((r, key) => {
+      if (!activeIds.has(key)) return;
+      if (!r.answer) return;
+      answeredControls++;
+      if (r.answer === 'yes' || r.answer === 'na') compliantControls++;
+      else if (r.answer === 'no') gapControls++;
+      else if (r.answer === 'partial') partialControls++;
+    });
+    const remainingControls = Math.max(0, totalControls - answeredControls);
+    const assessmentPercentage = totalControls > 0
+      ? Math.round((answeredControls / totalControls) * 100)
+      : 0;
+    const compliancePercentage = totalControls > 0
+      ? Math.round((compliantControls / totalControls) * 100)
+      : 0;
+
     return {
       totalControls,
       answeredControls,
       compliantControls,
       gapControls,
+      partialControls,
       remainingControls,
       assessmentPercentage,
+      compliancePercentage,
     };
   }, [allControls, responses]);
 
@@ -915,18 +1058,18 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   // CRITICAL GAPS (Action Required)
   // ============================================================================
   
-  const criticalGaps = useMemo(() => 
-    allControls
+  const criticalGaps = useMemo(() => {
+    // `|| 99` handles malformed/undefined riskLevel (orphan or legacy data)
+    // by sorting it to the end rather than letting the subtraction return NaN.
+    const order: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+    return allControls
       .filter(c => {
         const r = responses.get(c.id);
         return r?.answer === 'no' && (c.riskLevel === 'critical' || c.riskLevel === 'high');
       })
-      .sort((a, b) => {
-        const order = { critical: 0, high: 1, medium: 2, low: 3 };
-        return order[a.riskLevel] - order[b.riskLevel];
-      })
-      .slice(0, 5),
-  [allControls, responses]);
+      .sort((a, b) => (order[a.riskLevel] ?? 99) - (order[b.riskLevel] ?? 99))
+      .slice(0, 5);
+  }, [allControls, responses]);
 
   // ============================================================================
   // CONTROL RESPONSE ACTIONS
@@ -935,12 +1078,21 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   const answerControl = useCallback((controlId: string, answer: 'yes' | 'no' | 'partial' | 'na') => {
     const now = new Date().toISOString();
     const existingResponse = responsesObj[controlId];
+    // Reuse the existing evidence id on re-answer so we don't orphan records.
+    // A new id is only minted when a control transitions INTO "yes" from
+    // another answer.
+    const reusedEvidenceId = existingResponse?.evidenceId || null;
 
     // Generate unique IDs
     const responseId = existingResponse?.id || generateUUID();
-    const evidenceId = answer === 'yes' ? generateEvidenceId() : null;
+    const evidenceId =
+      answer === 'yes'
+        ? reusedEvidenceId ?? generateEvidenceId()
+        : null;
 
-    // Create/update response
+    // Create/update response. `answeredAt` is sticky (first-ever assessment),
+    // `lastReviewedAt` refreshes every time the user touches the control —
+    // this is what stale-answer detection reads.
     const newResponse: ControlResponse = {
       id: responseId,
       controlId,
@@ -948,14 +1100,48 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
       evidenceId,
       remediationPlan: existingResponse?.remediationPlan || '',
       answeredAt: existingResponse?.answeredAt || now,
-      answeredBy: supabaseUser?.id || 'current-user',
+      lastReviewedAt: now,
+      answeredBy: supabaseUser?.id || null,
       updatedAt: now,
     };
 
     setResponsesObj(prev => ({ ...prev, [controlId]: newResponse }));
 
-    // Create evidence record for "yes" answers
-    if (answer === 'yes' && evidenceId) {
+    // Answer-history recording. Every transition (including first-ever
+    // answer) lands in the history log so the Changes view can show
+    // regressions, new attestations, and re-assessments. Capped at
+    // ANSWER_HISTORY_MAX to keep localStorage bounded.
+    const priorAnswer = existingResponse?.answer ?? null;
+    if (priorAnswer !== answer) {
+      const control = allControls.find(c => c.id === controlId);
+      const event: AnswerHistoryEvent = {
+        id: generateUUID(),
+        controlId,
+        controlTitle: control?.title ?? controlId,
+        from: priorAnswer,
+        to: answer,
+        at: now,
+        userId: supabaseUser?.id || null,
+        riskLevel: control?.riskLevel ?? 'low',
+        isChange: priorAnswer !== null,
+        // Regression = losing compliance (yes → no|partial). na → anything
+        // is NOT a regression since na meant "out of scope" anyway.
+        isRegression: priorAnswer === 'yes' && (answer === 'no' || answer === 'partial'),
+      };
+      setAnswerHistory(prev => [event, ...prev].slice(0, ANSWER_HISTORY_MAX));
+    }
+
+    const wasYes = existingResponse?.answer === 'yes';
+    const becomesYes = answer === 'yes';
+
+    // Fresh "yes" — either first answer or transitioning from another state.
+    // Create a placeholder evidence record and fire sync notifications so
+    // the audit log captures the attestation.
+    //
+    // The placeholder is intentionally UNVERIFIED (`fileUrls: []`). Consumers
+    // should use `isEvidenceVerified` to distinguish "user claimed yes" from
+    // "auditor-ready evidence attached" before counting it toward reports.
+    if (becomesYes && !wasYes && evidenceId) {
       const newEvidence: EvidenceRecord = {
         id: evidenceId,
         controlResponseId: responseId,
@@ -971,7 +1157,6 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
 
       setEvidenceObj(prev => ({ ...prev, [evidenceId]: newEvidence }));
 
-      // Generate sync notifications
       const control = allControls.find(c => c.id === controlId);
       if (control) {
         const notifications: SyncNotification[] = control.frameworkMappings.map(m => ({
@@ -982,11 +1167,10 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
           clauseId: m.clauseId,
           clauseTitle: m.clauseTitle,
           timestamp: Date.now(),
-          userId: supabaseUser?.id || 'current-user',
+          userId: supabaseUser?.id || 'system',
         }));
         setSyncNotifications(prev => [...notifications, ...prev].slice(0, 50));
 
-        // Sync notifications to Supabase
         if (complianceDb.isAvailable() && isOnline) {
           notifications.forEach(n => {
             complianceDb.createSyncNotification(
@@ -994,58 +1178,64 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
               n.controlTitle,
               n.frameworkId,
               n.clauseId,
-              n.clauseTitle
+              n.clauseTitle,
             ).catch(console.error);
           });
         }
 
-        // Create evidence item in Evidence Repository (if not already exists)
-        // Get organization context from complianceDb which should already be set
         const evidenceOrgId = complianceDb.getOrganizationId();
         const evidenceUserId = complianceDb.getUserId();
-
         if (evidenceRepository.isAvailable() && isOnline && evidenceOrgId && evidenceUserId) {
-          // Ensure evidence repository has the correct context
           evidenceRepository.setContext(evidenceOrgId, evidenceUserId);
-
           evidenceRepository.getEvidenceForControl(controlId).then(async existingEvidence => {
-            // Only create if no evidence exists for this control
             if (existingEvidence.length === 0) {
               const result = await evidenceRepository.createEvidence({
                 controlId,
                 title: `${control.title} - Compliance Evidence`,
-                description: `Evidence supporting compliance with control ${controlId}: ${control.title}`,
+                description: `Evidence supporting compliance with control ${controlId}: ${control.title}. Placeholder — upload supporting files to verify.`,
                 type: 'assessment',
                 source: 'manual',
-                tags: ['auto-generated', 'assessment'],
+                tags: ['auto-generated', 'unverified', 'assessment'],
                 frameworkMappings: control.frameworkMappings.map(m => m.frameworkId),
               });
               if (!result.success) {
                 console.error(`[Evidence] Failed to create evidence for ${controlId}:`, result.error);
-              } else {
-                console.log(`[Evidence] Created evidence for ${controlId}`);
               }
-            } else {
-              console.log(`[Evidence] Evidence already exists for ${controlId}:`, existingEvidence.length, 'items');
             }
           }).catch(err => console.error('[Evidence] Error checking existing evidence:', err));
-        } else {
-          console.log('[Evidence] Repository not available, offline, or missing context:', {
-            isAvailable: evidenceRepository.isAvailable(),
-            isOnline,
-            hasOrgId: !!evidenceOrgId,
-            hasUserId: !!evidenceUserId,
-          });
         }
       }
     }
 
-    // Remove evidence if changing from "yes" to another answer
-    if (answer !== 'yes' && existingResponse?.evidenceId) {
+    // Downgrade from "yes" — clean up local AND repository evidence so we
+    // don't leave orphan "compliance evidence" records referencing a control
+    // the user has since flagged as not-implemented. Without this the
+    // Evidence Repository would accumulate stale placeholders that auditors
+    // could mistake for real attestation.
+    if (!becomesYes && wasYes && existingResponse?.evidenceId) {
+      const orphanId = existingResponse.evidenceId;
       setEvidenceObj(prev => {
-        const { [existingResponse.evidenceId!]: _, ...rest } = prev;
+        const { [orphanId]: _, ...rest } = prev;
         return rest;
       });
+
+      if (evidenceRepository.isAvailable() && isOnline) {
+        evidenceRepository.getEvidenceForControl(controlId).then(items => {
+          // Only delete auto-generated placeholders that have no uploaded
+          // files in any version. User-uploaded evidence is preserved —
+          // the user may toggle the control while keeping historical
+          // artefacts.
+          items
+            .filter(it => {
+              const isPlaceholder = it.tags?.includes('auto-generated');
+              const hasFiles = it.versions?.some(v => v.files && v.files.length > 0);
+              return isPlaceholder && !hasFiles;
+            })
+            .forEach(it => {
+              evidenceRepository.deleteEvidence(it.id).catch(console.error);
+            });
+        }).catch(console.error);
+      }
     }
 
     // Sync to Supabase in background
@@ -1153,6 +1343,18 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     return evidenceFileCountsObj[controlId];
   }, [evidenceFileCountsObj]);
 
+  const isEvidenceVerified = useCallback((controlId: string): boolean => {
+    // A control counts as "verified" only when real files back it up —
+    // either a local evidence record with fileUrls, or the server-side
+    // repository reports at least one file for this control.
+    const response = responses.get(controlId);
+    if (response?.answer !== 'yes') return false;
+    const local = response.evidenceId ? evidence.get(response.evidenceId) : undefined;
+    if (local && local.fileUrls && local.fileUrls.length > 0) return true;
+    const repoCount = evidenceFileCountsObj[controlId];
+    return !!(repoCount && repoCount.hasFiles);
+  }, [responses, evidence, evidenceFileCountsObj]);
+
   const refreshEvidenceCounts = useCallback(async (): Promise<void> => {
     if (!evidenceRepository.isAvailable()) return;
 
@@ -1176,6 +1378,16 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   const addCustomControl = useCallback((
     control: Omit<CustomControl, 'id' | 'createdAt' | 'updatedAt' | 'isActive'>
   ): CustomControl => {
+    // A custom control with no framework mappings is invisible to every
+    // framework rollup — it will never affect the score it was presumably
+    // created to improve. Warn loudly; the UI should also gate creation.
+    if (!control.frameworkMappings || control.frameworkMappings.length === 0) {
+      console.warn(
+        `[useCompliance] Custom control "${control.title}" created without framework mappings. ` +
+        'It will not count toward SOC2/ISO/HIPAA/NIST/PCI/GDPR progress. ' +
+        'Add at least one framework mapping from the Company Specific tab.',
+      );
+    }
     const now = new Date().toISOString();
     const newControl: CustomControl = {
       ...control,
@@ -1272,6 +1484,10 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     setSyncNotifications([]);
   }, []);
 
+  const clearAnswerHistory = useCallback(() => {
+    setAnswerHistory([]);
+  }, []);
+
   // ============================================================================
   // DATABASE SYNC (Supabase Integration)
   // ============================================================================
@@ -1349,6 +1565,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     evidence,
     customControls,
     syncNotifications,
+    answerHistory,
     darkMode,
     isLoading,
     lastSyncedAt,
@@ -1377,6 +1594,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     getEvidenceFileCounts,
     evidenceFileCounts: evidenceFileCountsObj,
     refreshEvidenceCounts,
+    isEvidenceVerified,
 
     // Custom Controls
     customControls: customControls.filter(c => c.isActive),
@@ -1392,7 +1610,11 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     // Sync Notifications
     syncNotifications,
     clearNotifications,
-    
+
+    // Answer history
+    answerHistory,
+    clearAnswerHistory,
+
     // UI State
     toggleDarkMode,
     
@@ -1409,6 +1631,7 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
     // Load/sync error surfacing
     loadError,
     clearLoadError: () => setLoadError(null),
+    isOnline,
   };
 }
 
