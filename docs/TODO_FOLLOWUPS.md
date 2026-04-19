@@ -1,6 +1,6 @@
 # Follow-ups — Monetization + UI/UX pass
 
-**Last updated:** 2026-04-18
+**Last updated:** 2026-04-19
 **Scope:** Open items from the Stripe/monetization rollout and the UI/UX review pass. The previous version of this doc had 21 items; most have shipped. What remains is below.
 
 ---

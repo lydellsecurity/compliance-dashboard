@@ -16,6 +16,7 @@ import {
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
 import { usePaletteIndex } from './hooks/usePaletteIndex';
+import { usePendingCheckout } from './hooks/usePendingCheckout';
 import { useToast } from './components/ui';
 import EmptyState from './components/ui/EmptyState';
 import { FRAMEWORKS, type MasterControl, type ComplianceDomainMeta, type FrameworkId } from './constants/controls';
@@ -2187,6 +2188,10 @@ const AppContent: React.FC = () => {
   const ir = useIncidentResponse();
   const { currentOrg } = useOrganization();
   const { user } = useAuth();
+  // Close the loop from the landing-page pricing CTA. If the user arrived
+  // with `?plan=<tier>` and is now fully authed with an org, redirect them
+  // into Stripe Checkout automatically. No-ops in all other cases.
+  usePendingCheckout();
   const { syncNotifications, frameworkProgress, stats, criticalGaps, domainProgress, allControls, allDomains, getResponse: _getResponse, evidenceFileCounts: _evidenceFileCounts } = compliance;
 
   // Use actual user ID from auth, fallback for offline/development mode

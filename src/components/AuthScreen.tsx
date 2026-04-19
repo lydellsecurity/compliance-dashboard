@@ -9,8 +9,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, User, Building2, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Shield, Mail, Lock, User, Building2, Eye, EyeOff, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { capturePendingCheckoutFromUrl, type PendingCheckout } from '../lib/pendingCheckout';
+import { PLAN_DISPLAY } from '../constants/billing';
 
 type AuthMode = 'signin' | 'signup' | 'forgot';
 
@@ -24,12 +26,26 @@ const AuthScreen: React.FC = () => {
   const [orgName, setOrgName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
+  // Plan selection from the landing page pricing section. Captured on mount
+  // and persisted; usePendingCheckout picks it up after auth+org are ready.
+  const [pendingPlan, setPendingPlan] = useState<PendingCheckout | null>(null);
 
   // Force light mode for auth screen
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add('light');
     root.classList.remove('dark');
+  }, []);
+
+  // Capture `?plan=<tier>&interval=<cycle>` from the URL (landed from a pricing
+  // CTA). If present, persist and default the form to signup — the user came
+  // here intending to subscribe, not look up an existing account.
+  useEffect(() => {
+    const captured = capturePendingCheckoutFromUrl();
+    if (captured) {
+      setPendingPlan(captured);
+      setMode('signup');
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +106,26 @@ const AuthScreen: React.FC = () => {
 
         {/* Auth Card */}
         <div className="bg-white backdrop-blur-xl rounded-2xl border border-slate-200 p-8 shadow-xl">
+          {/* Plan-selection acknowledgement — reinforces that the user's
+              choice was captured and tells them exactly what happens next. */}
+          {pendingPlan && mode !== 'forgot' && (
+            <div className="mb-5 p-3 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-white" aria-hidden />
+              </div>
+              <div className="text-sm">
+                <p className="font-semibold text-slate-900">
+                  {PLAN_DISPLAY[pendingPlan.plan].name} plan selected
+                </p>
+                <p className="text-slate-600 text-xs mt-0.5">
+                  {mode === 'signup'
+                    ? "We'll take you to checkout right after you verify your email."
+                    : "Sign in and we'll take you straight to checkout."}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Messages */}
           {error && (
             <motion.div
