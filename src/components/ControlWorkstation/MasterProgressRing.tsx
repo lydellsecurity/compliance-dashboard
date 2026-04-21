@@ -104,23 +104,23 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
               Control Status
             </h3>
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
+              <div className="bg-emerald-50 dark:bg-emerald-500/15 ring-1 ring-emerald-200/60 dark:ring-emerald-500/30 rounded-lg p-3 text-center">
                 <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-                <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
                   {implementedControls}
                 </div>
-                <div className="text-xs text-emerald-600 dark:text-emerald-500">Implemented</div>
+                <div className="text-xs text-emerald-600 dark:text-emerald-400">Implemented</div>
               </div>
-              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-center">
+              <div className="bg-amber-50 dark:bg-amber-500/15 ring-1 ring-amber-200/60 dark:ring-amber-500/30 rounded-lg p-3 text-center">
                 <Clock className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                <div className="text-xl font-bold text-amber-700 dark:text-amber-400">
+                <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
                   {inProgressControls}
                 </div>
-                <div className="text-xs text-amber-600 dark:text-amber-500">In Progress</div>
+                <div className="text-xs text-amber-600 dark:text-amber-400">In Progress</div>
               </div>
-              <div className="bg-slate-50 dark:bg-steel-700 rounded-lg p-3 text-center">
+              <div className="bg-slate-50 dark:bg-steel-700/60 ring-1 ring-slate-200/60 dark:ring-steel-600/40 rounded-lg p-3 text-center">
                 <AlertTriangle className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                <div className="text-xl font-bold text-slate-600 dark:text-steel-300">
+                <div className="text-xl font-bold text-slate-600 dark:text-steel-200">
                   {notStartedControls}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-steel-400">Not Started</div>

@@ -1463,7 +1463,10 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
             Legacy/Auditor moved into a "More" menu so auditors who need
             them can find them but day-to-day users aren't confronted with
             four equal-weight buttons. */}
-        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-steel-800/50 rounded-lg border border-slate-200 dark:border-steel-700">
+        {/* Match the workstation's full-bleed gutter below (see
+            ControlWorkstationWrapper's -mx-6) so the top bar and content
+            share the same horizontal edges. */}
+        <div className="-mx-6 flex items-center justify-between px-6 py-3 bg-white dark:bg-steel-800 border-b border-slate-200 dark:border-steel-700">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
               Assessment
