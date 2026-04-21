@@ -94,16 +94,23 @@ const AuthScreen: React.FC = () => {
               routing="path"
               path="/signup"
               signInUrl="/login"
-              afterSignUpUrl={afterAuthUrl}
-              afterSignInUrl={afterAuthUrl}
+              // `forceRedirectUrl` is Clerk v5's canonical post-auth redirect
+              // prop — takes precedence over any other flags. The deprecated
+              // `afterSignInUrl` / `afterSignUpUrl` can be ignored silently
+              // by magic-link and social OAuth flows, which was the root
+              // cause of pricing CTAs landing on /app instead of Stripe.
+              // `signInForceRedirectUrl` is for the "already have an account?
+              // Sign in" link rendered inside <SignUp>.
+              forceRedirectUrl={afterAuthUrl}
+              signInForceRedirectUrl={afterAuthUrl}
             />
           ) : (
             <SignIn
               routing="path"
               path="/login"
               signUpUrl="/signup"
-              afterSignInUrl={afterAuthUrl}
-              afterSignUpUrl={afterAuthUrl}
+              forceRedirectUrl={afterAuthUrl}
+              signUpForceRedirectUrl={afterAuthUrl}
             />
           )}
         </div>
