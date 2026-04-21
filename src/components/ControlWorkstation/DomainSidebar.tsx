@@ -69,7 +69,7 @@ const DomainSidebar: React.FC<DomainSidebarProps> = ({
   const overallPercentage = totalControls > 0 ? Math.round((totalImplemented / totalControls) * 100) : 0;
 
   return (
-    <aside className="w-72 bg-white dark:bg-steel-800 border-r border-slate-200 dark:border-steel-700 flex flex-col h-full">
+    <aside className="w-72 bg-white dark:bg-midnight-800 border-r border-slate-200 dark:border-steel-700 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-steel-700">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">

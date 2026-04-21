@@ -50,7 +50,7 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
   const notStartedControls = totalControls - implementedControls - inProgressControls;
 
   return (
-    <div className={`bg-white dark:bg-steel-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-steel-700 ${className}`}>
+    <div className={`bg-white dark:bg-midnight-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-steel-700 ${className}`}>
       <div className="flex items-center gap-8">
         {/* Main Progress Ring */}
         <div className="relative flex-shrink-0">

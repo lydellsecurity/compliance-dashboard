@@ -1466,7 +1466,7 @@ const AssessmentTab: React.FC<{ initialDomain?: ComplianceDomainMeta }> = ({ ini
         {/* Match the workstation's full-bleed gutter below (see
             ControlWorkstationWrapper's -mx-6) so the top bar and content
             share the same horizontal edges. */}
-        <div className="-mx-6 flex items-center justify-between px-6 py-3 bg-white dark:bg-steel-800 border-b border-slate-200 dark:border-steel-700">
+        <div className="-mx-6 flex items-center justify-between px-6 py-3 bg-white dark:bg-midnight-800 border-b border-slate-200 dark:border-steel-700">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
               Assessment

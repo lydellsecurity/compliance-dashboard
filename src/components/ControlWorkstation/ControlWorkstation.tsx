@@ -412,7 +412,7 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
   }, [focusedControlId]);
 
   return (
-    <div className="flex h-full bg-slate-50 dark:bg-steel-900">
+    <div className="flex h-full bg-slate-50 dark:bg-midnight-900">
       {/* Domain Sidebar */}
       <DomainSidebar
         domains={allDomains}
@@ -441,7 +441,7 @@ const ControlWorkstation: React.FC<ControlWorkstationProps> = ({
         )}
 
         {/* Header with Progress Ring */}
-        <div className="bg-white dark:bg-steel-800 border-b border-slate-200 dark:border-steel-700">
+        <div className="bg-white dark:bg-midnight-800 border-b border-slate-200 dark:border-steel-700">
           {/* Collapsible Status Pane */}
           <AnimatePresence mode="wait">
             {!isStatusPaneCollapsed && (
