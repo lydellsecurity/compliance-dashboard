@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { auth } from '../services/auth.service';
 import type { Organization, UserRole } from '../lib/database.types';
 import type {
   OrganizationWithRole,
@@ -15,6 +16,43 @@ import type {
   CreateOrganizationData,
 } from '../types/branding.types';
 import { generateSlug, ensureUniqueSlug } from '../utils/slug';
+
+/**
+ * Helper: call a server-side Netlify function with the caller's Clerk JWT.
+ * Returns { ok, data, error } so callers can branch without wrapping a
+ * try/catch per site. Kept inline because it's only used for the two
+ * org-management endpoints.
+ */
+async function callServer<T>(
+  path: string,
+  body?: unknown
+): Promise<{ ok: boolean; data?: T; error?: string; status?: number }> {
+  try {
+    const token = (await auth.getAccessToken()) ?? '';
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: json.error || `HTTP ${res.status}`,
+        status: res.status,
+      };
+    }
+    return { ok: true, data: json as T };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Network error',
+    };
+  }
+}
 
 // Storage keys
 const CURRENT_ORG_KEY = 'attestai_current_org_id';
@@ -107,7 +145,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
    * Fetch user's organizations from database
    */
   const fetchOrganizations = useCallback(async () => {
-    if (!user || !isSupabaseConfigured() || !supabase) {
+    if (!user) {
       setUserOrganizations([]);
       setCurrentOrg(null);
       setNeedsOnboarding(false);
@@ -116,23 +154,47 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
-      // Fetch memberships with organization data
-      const { data: memberships, error: memberError } = await supabase
-        .from('organization_members')
-        .select(`
-          role,
-          is_default,
-          joined_at,
-          organization_id,
-          organizations (*)
-        `)
-        .eq('user_id', user.id);
+      // Try the server-side endpoint first — it uses the service role so it
+      // works even when Supabase's Third-Party Auth with Clerk isn't fully
+      // wired (in which case direct RLS reads return empty/403 and the user
+      // would be mis-classified as "needsOnboarding").
+      const server = await callServer<{ organizations: OrganizationWithRole[] }>(
+        '/.netlify/functions/list-my-organizations'
+      );
 
-      if (memberError) {
-        throw memberError;
+      let orgs: OrganizationWithRole[] = [];
+      if (server.ok && server.data) {
+        orgs = server.data.organizations;
+      } else if (isSupabaseConfigured() && supabase) {
+        // Fallback: direct Supabase query. Only runs if the Netlify function
+        // is unavailable (local dev without netlify-dev, misrouted redirects).
+        const { data: memberships, error: memberError } = await supabase
+          .from('organization_members')
+          .select(`
+            role,
+            is_default,
+            joined_at,
+            organization_id,
+            organizations (*)
+          `)
+          .eq('user_id', user.id);
+
+        if (memberError) throw memberError;
+
+        orgs = (memberships || [])
+          .filter((m) => m.organizations)
+          .map((m) =>
+            toOrganizationWithRole(m.organizations as unknown as Organization, {
+              role: m.role as UserRole,
+              is_default: m.is_default,
+              joined_at: m.joined_at,
+            })
+          );
+      } else {
+        throw new Error(server.error || 'Supabase not configured');
       }
 
-      if (!memberships || memberships.length === 0) {
+      if (orgs.length === 0) {
         // User has no organizations - needs onboarding
         setUserOrganizations([]);
         setCurrentOrg(null);
@@ -140,17 +202,6 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setLoading(false);
         return;
       }
-
-      // Convert to OrganizationWithRole[]
-      const orgs: OrganizationWithRole[] = memberships
-        .filter((m) => m.organizations)
-        .map((m) =>
-          toOrganizationWithRole(m.organizations as unknown as Organization, {
-            role: m.role as UserRole,
-            is_default: m.is_default,
-            joined_at: m.joined_at,
-          })
-        );
 
       setUserOrganizations(orgs);
       setNeedsOnboarding(false);
@@ -240,96 +291,127 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
    */
   const createOrganization = useCallback(
     async (data: CreateOrganizationData): Promise<OrganizationWithRole> => {
-      if (!user || !isSupabaseConfigured() || !supabase) {
-        throw new Error('Not authenticated');
+      if (!user) throw new Error('Not authenticated');
+
+      // Server-side create: bypasses the Supabase RLS dependency on
+      // third-party-auth JWT resolution. Returns the created org already
+      // shaped as OrganizationWithRole (minus the logo — we upload that
+      // from the client below using storage RLS, which uses Clerk tokens
+      // directly and isn't affected by the Postgres JWT issue).
+      const server = await callServer<{
+        organization: Omit<OrganizationWithRole, 'role' | 'isDefault' | 'joinedAt'>;
+        role: UserRole;
+        isDefault: boolean;
+      }>('/.netlify/functions/create-organization', {
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        contactEmail: data.contactEmail,
+        primaryColor: data.primaryColor,
+      });
+
+      if (!server.ok || !server.data) {
+        // Last-resort fallback: try the direct Supabase path. This only
+        // works if Third-Party Auth is properly wired; otherwise it fails
+        // with the same 42501 the server-side path was introduced to fix.
+        if (!isSupabaseConfigured() || !supabase) {
+          throw new Error(server.error || 'Failed to create organization');
+        }
+
+        try {
+          let slug = data.slug || generateSlug(data.name);
+          slug = await ensureUniqueSlug(slug, supabase);
+          const { data: newOrg, error: orgError } = await supabase
+            .from('organizations')
+            .insert({
+              name: data.name,
+              slug,
+              primary_color: data.primaryColor || '#6366f1',
+              description: data.description || null,
+              contact_email: data.contactEmail || null,
+              settings: {},
+            })
+            .select()
+            .single();
+          if (orgError || !newOrg) throw orgError || new Error('INSERT failed');
+          const { error: memberError } = await supabase
+            .from('organization_members')
+            .insert({
+              organization_id: newOrg.id,
+              user_id: user.id,
+              role: 'owner',
+              is_default: userOrganizations.length === 0,
+            });
+          if (memberError) {
+            await supabase.from('organizations').delete().eq('id', newOrg.id);
+            throw memberError;
+          }
+          const orgWithRole: OrganizationWithRole = {
+            id: newOrg.id,
+            name: newOrg.name,
+            slug: newOrg.slug,
+            logoUrl: newOrg.logo_url,
+            primaryColor: newOrg.primary_color || '#6366f1',
+            contactEmail: newOrg.contact_email,
+            description: newOrg.description,
+            role: 'owner',
+            isDefault: userOrganizations.length === 0,
+            joinedAt: new Date().toISOString(),
+          };
+          setUserOrganizations((prev) => [...prev, orgWithRole]);
+          setCurrentOrg(orgWithRole);
+          setStoredOrgId(orgWithRole.id);
+          setNeedsOnboarding(false);
+          return orgWithRole;
+        } catch (fallbackErr) {
+          console.error('Failed to create organization:', fallbackErr);
+          throw fallbackErr;
+        }
       }
 
-      try {
-        // Generate slug if not provided
-        let slug = data.slug || generateSlug(data.name);
-        slug = await ensureUniqueSlug(slug, supabase);
+      const { organization, role, isDefault } = server.data;
 
-        // Create organization
-        const { data: newOrg, error: orgError } = await supabase
-          .from('organizations')
-          .insert({
-            name: data.name,
-            slug,
-            primary_color: data.primaryColor || '#6366f1',
-            description: data.description || null,
-            contact_email: data.contactEmail || null,
-            settings: {},
-          })
-          .select()
-          .single();
-
-        if (orgError || !newOrg) {
-          throw orgError || new Error('Failed to create organization');
-        }
-
-        // Add user as owner
-        const { error: memberError } = await supabase.from('organization_members').insert({
-          organization_id: newOrg.id,
-          user_id: user.id,
-          role: 'owner',
-          is_default: userOrganizations.length === 0, // Default if first org
-        });
-
-        if (memberError) {
-          // Rollback: delete the organization
-          await supabase.from('organizations').delete().eq('id', newOrg.id);
-          throw memberError;
-        }
-
-        // Upload logo if provided
-        if (data.logoFile) {
+      // Upload logo if provided. Storage RLS uses a different path and
+      // usually just needs the bearer token, so we try it but don't fail
+      // the whole creation if the upload doesn't land.
+      let logoUrl = organization.logoUrl;
+      if (data.logoFile && isSupabaseConfigured() && supabase) {
+        try {
           const ext = data.logoFile.name.split('.').pop() || 'png';
-          const filename = `${newOrg.id}/logo.${ext}`;
-
+          const filename = `${organization.id}/logo.${ext}`;
           const { error: uploadError } = await supabase.storage
             .from('branding')
-            .upload(filename, data.logoFile, {
-              cacheControl: '3600',
-              upsert: true,
-            });
-
+            .upload(filename, data.logoFile, { cacheControl: '3600', upsert: true });
           if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('branding').getPublicUrl(filename);
-
-            await supabase
-              .from('organizations')
-              .update({ logo_url: urlData.publicUrl })
-              .eq('id', newOrg.id);
-
-            newOrg.logo_url = urlData.publicUrl;
+            const { data: urlData } = supabase.storage
+              .from('branding')
+              .getPublicUrl(filename);
+            logoUrl = urlData.publicUrl;
           }
+        } catch (err) {
+          console.warn('Logo upload failed (non-blocking):', err);
         }
-
-        // Convert to OrganizationWithRole
-        const orgWithRole: OrganizationWithRole = {
-          id: newOrg.id,
-          name: newOrg.name,
-          slug: newOrg.slug,
-          logoUrl: newOrg.logo_url,
-          primaryColor: newOrg.primary_color || '#6366f1',
-          contactEmail: newOrg.contact_email,
-          description: newOrg.description,
-          role: 'owner',
-          isDefault: userOrganizations.length === 0,
-          joinedAt: new Date().toISOString(),
-        };
-
-        // Update state
-        setUserOrganizations((prev) => [...prev, orgWithRole]);
-        setCurrentOrg(orgWithRole);
-        setStoredOrgId(orgWithRole.id);
-        setNeedsOnboarding(false);
-
-        return orgWithRole;
-      } catch (err) {
-        console.error('Failed to create organization:', err);
-        throw err;
       }
+
+      const orgWithRole: OrganizationWithRole = {
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        logoUrl,
+        primaryColor: organization.primaryColor || '#6366f1',
+        contactEmail: organization.contactEmail,
+        description: organization.description,
+        role,
+        isDefault,
+        joinedAt: new Date().toISOString(),
+      };
+
+      setUserOrganizations((prev) => [...prev, orgWithRole]);
+      setCurrentOrg(orgWithRole);
+      setStoredOrgId(orgWithRole.id);
+      setNeedsOnboarding(false);
+
+      return orgWithRole;
     },
     [user, userOrganizations.length]
   );

@@ -52,6 +52,28 @@ Plus `FROM_EMAIL` (e.g. `billing@lydellsecurity.com`) and `FROM_NAME`. Without a
 ### 6. Set cron secret
 `USAGE_REPORT_CRON_SECRET` — shared secret used by both [stripe-report-usage.cjs](../netlify/functions/stripe-report-usage.cjs) and [stripe-subscription-audit.cjs](../netlify/functions/stripe-subscription-audit.cjs). Netlify's scheduled-function runner doesn't send this header; set it anyway so manual triggers (curl/postman) can be restricted.
 
+### 7. Configure Supabase Third-Party Auth with Clerk
+Supabase dashboard → Authentication → Sign In / Providers → **Third-Party Auth** → Add Clerk, paste your Clerk **Frontend API URL** (visible in Clerk dashboard → API Keys → "Frontend API URL").
+
+Without this, Supabase rejects Clerk-signed JWTs as unverifiable, `auth.jwt()` returns NULL server-side, `public.clerk_user_id()` returns NULL, and every RLS policy that depends on it fails:
+
+- `organizations.SELECT` and `organizations.INSERT` return 403 / 42501.
+- Brand-new users can't create their first organization.
+- Existing users hit `organizations?select=*` 403 on app load.
+
+The app has a server-side fallback ([create-organization.cjs](../netlify/functions/create-organization.cjs), [list-my-organizations.cjs](../netlify/functions/list-my-organizations.cjs)) that bypasses RLS via the service-role key, so org CRUD works even without this configured — but dozens of other RLS policies (evidence, controls, vendors, integrations, etc.) still depend on `public.clerk_user_id()` working. Setting up Third-Party Auth is **not optional for production**; the fallback just keeps onboarding unstuck while you do.
+
+To validate it's working, open the browser console while signed in and run:
+```js
+window.supabase_test = await fetch('https://<project>.supabase.co/rest/v1/organizations?select=id', {
+  headers: {
+    apikey: '<anon-key>',
+    Authorization: `Bearer ${await window.Clerk.session.getToken()}`,
+  },
+}).then(r => r.json());
+```
+If you see a list of orgs you belong to (even empty `[]` for a new user), Third-Party Auth is working. If you see `{ code: "42501" }` or `{ message: "permission denied" }`, it isn't.
+
 ---
 
 ## Known limitations (intentional)
