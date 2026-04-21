@@ -49,22 +49,20 @@ const FrameworkPills: React.FC<FrameworkPillsProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: index * 0.05 }}
           onClick={() => onPillClick?.(pill.frameworkId)}
+          // Not-implemented pills use Tailwind classes so they can react to
+          // the .dark class; implemented pills use inline style with the
+          // framework color + alpha (works in both themes).
           className={`
             relative group rounded-full font-medium transition-all duration-300
             ${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'}
             ${onPillClick ? 'cursor-pointer' : 'cursor-default'}
+            ${isImplemented ? '' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200/60 dark:bg-steel-700/40 dark:text-steel-300 dark:ring-steel-600/40'}
           `}
-          style={{
-            backgroundColor: isImplemented
-              ? `${pill.frameworkColor}20`
-              : 'rgb(241 245 249)', // slate-100
-            color: isImplemented
-              ? pill.frameworkColor
-              : 'rgb(148 163 184)', // slate-400
-            boxShadow: isImplemented
-              ? `0 0 12px ${pill.frameworkColor}40`
-              : 'none',
-          }}
+          style={isImplemented ? {
+            backgroundColor: `${pill.frameworkColor}20`,
+            color: pill.frameworkColor,
+            boxShadow: `0 0 12px ${pill.frameworkColor}40`,
+          } : undefined}
         >
           {/* Glow effect when implemented */}
           {isImplemented && (
@@ -85,12 +83,10 @@ const FrameworkPills: React.FC<FrameworkPillsProps> = ({
             {pill.frameworkName}
             {!compact && pill.clauseCount > 1 && (
               <span
-                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
-                style={{
-                  backgroundColor: isImplemented
-                    ? `${pill.frameworkColor}30`
-                    : 'rgb(226 232 240)', // slate-200
-                }}
+                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${
+                  isImplemented ? '' : 'bg-slate-200 dark:bg-steel-600/60'
+                }`}
+                style={isImplemented ? { backgroundColor: `${pill.frameworkColor}30` } : undefined}
               >
                 {pill.clauseCount}
               </span>
