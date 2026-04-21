@@ -12,7 +12,7 @@ import {
   Server, Database, Eye, Settings as SettingsIcon, RefreshCw, CheckCircle2, Target, Activity,
   Download, AlertCircle, ChevronDown, Save, Briefcase, Wrench, Globe,
   Award, ShieldCheck, ChevronRight, Menu, Sparkles, Plug, ShoppingBag, Crown, ClipboardList,
-  Grid3x3, History, ListChecks,
+  Grid3x3, History, ListChecks, LogOut,
 } from 'lucide-react';
 
 import { useCompliance, type UseComplianceReturn, useIncidentResponse } from './hooks';
@@ -2089,6 +2089,7 @@ const CommandSidebar: React.FC<{
   organizationLogo?: string | null;
   primaryColor?: string;
 }> = ({ activeTab, onTabChange, incidentCount, alertCount, syncCount, onSyncClick, expanded, onToggle, mobileOpen, onMobileClose, organizationName, organizationLogo, primaryColor }) => {
+  const { user, signOut } = useAuth();
   // Grouped navigation. Sections group semantic siblings so 15 destinations
   // feel like 5 chunks. Expanded sidebar shows uppercase section headers;
   // collapsed sidebar shows only a thin divider between groups. URL ids
@@ -2298,6 +2299,31 @@ const CommandSidebar: React.FC<{
             <div className="nav-tooltip">
               Sync Activity{syncCount > 0 ? ` (${syncCount})` : ''}
             </div>
+          )}
+        </div>
+
+        {/* User email (expanded only) */}
+        {expanded && user?.email && (
+          <div className="px-3 pt-2 pb-1 text-[11px] text-slate-500 dark:text-steel-500 truncate" title={user.email}>
+            {user.email}
+          </div>
+        )}
+
+        {/* Sign out */}
+        <div className="relative group">
+          <button
+            onClick={async () => {
+              await signOut();
+              window.location.href = '/';
+            }}
+            aria-label="Sign out"
+            className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-slate-600 dark:text-steel-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-steel-800/50 transition-all duration-200"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {expanded && <span className="text-sm font-medium">Sign out</span>}
+          </button>
+          {!expanded && (
+            <div className="nav-tooltip">Sign out</div>
           )}
         </div>
 

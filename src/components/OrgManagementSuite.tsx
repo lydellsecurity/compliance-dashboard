@@ -65,6 +65,8 @@ import {
 import type { UserRole } from '../lib/database.types';
 import { FRAMEWORKS, type FrameworkId, type ComplianceDomain, COMPLIANCE_DOMAINS } from '../constants/controls';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { UpgradeModal } from './UpgradeGate';
+import { nextPlan } from '../constants/billing';
 
 // ============================================================================
 // TYPES
@@ -1579,6 +1581,15 @@ interface BillingTabProps {
 
 const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
   const planConfig = PLAN_CONFIGS[tenant.plan];
+  const [upgradeTarget, setUpgradeTarget] = useState<TenantPlan | null>(null);
+
+  const openUpgrade = (target: TenantPlan) => {
+    if (target === 'enterprise') {
+      window.location.href = 'mailto:sales@lydellsecurity.com?subject=Enterprise%20plan%20enquiry';
+      return;
+    }
+    setUpgradeTarget(target);
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -1602,7 +1613,11 @@ const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
             </div>
           </div>
           {canManage && tenant.plan !== 'enterprise' && (
-            <button className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+            <button
+              type="button"
+              onClick={() => openUpgrade(nextPlan(tenant.plan) ?? 'growth')}
+              className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+            >
               Upgrade Plan
             </button>
           )}
@@ -1693,7 +1708,13 @@ const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
                 </ul>
                 {!isCurrent && canManage && (
                   <button
-                    className={`w-full mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    type="button"
+                    onClick={() => openUpgrade(plan)}
+                    disabled={
+                      plan !== 'enterprise' &&
+                      PLAN_CONFIGS[plan].price <= PLAN_CONFIGS[tenant.plan].price
+                    }
+                    className={`w-full mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       plan === 'enterprise'
                         ? 'bg-slate-900 dark:bg-steel-100 text-white dark:text-slate-900 hover:bg-slate-800'
                         : 'bg-slate-100 dark:bg-steel-800 text-slate-700 dark:text-steel-300 hover:bg-slate-200'
@@ -1707,6 +1728,17 @@ const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
           })}
         </div>
       </div>
+
+      <UpgradeModal
+        open={upgradeTarget !== null}
+        onClose={() => setUpgradeTarget(null)}
+        result={{
+          allowed: false,
+          currentPlan: tenant.plan,
+          requiredPlan: upgradeTarget ?? 'growth',
+        }}
+        targetPlan={upgradeTarget ?? undefined}
+      />
     </div>
   );
 };
