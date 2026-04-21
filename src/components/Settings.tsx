@@ -24,7 +24,7 @@ import {
   type AlertSeverity,
 } from '../services/continuous-monitoring.service';
 import { awsConnector } from '../services/cloud-integrations/aws-connector.service';
-import { useAuth } from '../hooks/useAuth';
+import { auth } from '../services/auth.service';
 import { useEntitlement } from '../hooks/useEntitlement';
 import { useUrlState } from '../hooks/useUrlState';
 import { UpgradeModal } from './UpgradeGate';
@@ -792,7 +792,6 @@ const RegulatorySection: React.FC = () => {
 // ============================================================================
 
 const BillingCard: React.FC = () => {
-  const { session } = useAuth();
   const { tenant, plan, suggestedUpgrade, loading } = useEntitlement();
   const [portalLoading, setPortalLoading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -810,11 +809,12 @@ const BillingCard: React.FC = () => {
     setError(null);
     setPortalLoading(true);
     try {
+      const token = (await auth.getAccessToken()) ?? '';
       const res = await fetch('/.netlify/functions/stripe-create-portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({}),
       });

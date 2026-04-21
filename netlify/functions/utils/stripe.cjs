@@ -10,6 +10,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const { verifyClerkToken } = require('./clerk-auth.cjs');
 
 // ============================================================================
 // STRIPE CLIENT
@@ -58,28 +59,16 @@ function getSupabase() {
  * Returns { user, organizationId, role } or throws on failure.
  */
 async function requireAuthedOrg(authHeader) {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    const err = new Error('Missing or invalid authorization token');
-    err.statusCode = 401;
-    throw err;
-  }
-  const token = authHeader.replace('Bearer ', '');
+  // Clerk signs the JWT; we verify it networklessly via JWKS and get the
+  // caller's Clerk user id from the `sub` claim.
+  const { userId, claims } = await verifyClerkToken(authHeader);
   const supabase = getSupabase();
-
-  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-  if (userErr || !userData?.user) {
-    const err = new Error('Invalid or expired token');
-    err.statusCode = 401;
-    throw err;
-  }
-
-  const user = userData.user;
 
   // Resolve default org for this user. Owners override non-owners.
   const { data: memberships, error: memErr } = await supabase
     .from('organization_members')
     .select('organization_id, role, is_default')
-    .eq('user_id', user.id);
+    .eq('user_id', userId);
 
   if (memErr || !memberships || memberships.length === 0) {
     const err = new Error('No organization membership found');
@@ -93,7 +82,7 @@ async function requireAuthedOrg(authHeader) {
     memberships[0];
 
   return {
-    user,
+    user: { id: userId, email: claims.email || null },
     organizationId: primary.organization_id,
     role: primary.role,
   };

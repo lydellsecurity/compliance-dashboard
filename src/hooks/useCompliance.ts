@@ -22,6 +22,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { complianceDb } from '../services/compliance-database.service';
 import { evidenceRepository } from '../services/evidence-repository.service';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useAuth } from './useAuth';
 import {
   getOrgStorageKeys,
   migrateLocalStorage,
@@ -459,55 +460,22 @@ export function useCompliance(options: UseComplianceOptions = {}): UseCompliance
   // SUPABASE AUTHENTICATION LISTENER
   // ============================================================================
 
+  const { user } = useAuth();
+
   useEffect(() => {
     if (!isSupabaseConfigured() || !supabase) return;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        // Use the organizationId from options (OrganizationContext) if available,
-        // otherwise fall back to user_metadata
-        const orgId = organizationId || session.user.user_metadata?.organization_id;
-        setSupabaseUser({ id: session.user.id, organization_id: orgId });
-        if (orgId) {
-          complianceDb.setContext(orgId, session.user.id);
-          evidenceRepository.setContext(orgId, session.user.id);
-        }
+    if (user) {
+      const orgId = organizationId || undefined;
+      setSupabaseUser({ id: user.id, organization_id: orgId });
+      if (orgId) {
+        complianceDb.setContext(orgId, user.id);
+        evidenceRepository.setContext(orgId, user.id);
       }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        // Use the organizationId from options (OrganizationContext) if available,
-        // otherwise fall back to user_metadata
-        const orgId = organizationId || session.user.user_metadata?.organization_id;
-        setSupabaseUser({ id: session.user.id, organization_id: orgId });
-        if (orgId) {
-          complianceDb.setContext(orgId, session.user.id);
-          evidenceRepository.setContext(orgId, session.user.id);
-        }
-      } else {
-        setSupabaseUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [organizationId]);
-
-  // Update database context when organizationId changes (from OrganizationContext)
-  useEffect(() => {
-    if (!isSupabaseConfigured() || !supabase || !organizationId) return;
-
-    // Get the current user to update the context
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && organizationId) {
-        complianceDb.setContext(organizationId, session.user.id);
-        evidenceRepository.setContext(organizationId, session.user.id);
-        setSupabaseUser(prev => prev ? { ...prev, organization_id: organizationId } : null);
-      }
-    });
-  }, [organizationId]);
+    } else {
+      setSupabaseUser(null);
+    }
+  }, [user, organizationId]);
 
   // Monitor online status
   useEffect(() => {

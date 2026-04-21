@@ -6,6 +6,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { auth } from './auth.service';
 import type { RegulatoryChangeLog, FrameworkType } from '../types/compliance.types';
 
 // ============================================================================
@@ -59,13 +60,8 @@ export interface SavedScan {
  * Get auth token from Supabase session
  */
 async function getAuthToken(): Promise<string | null> {
-  if (!isSupabaseConfigured() || !supabase) {
-    return null;
-  }
-
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || null;
+    return await auth.getAccessToken();
   } catch {
     return null;
   }

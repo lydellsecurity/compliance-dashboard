@@ -6,13 +6,25 @@
  * - Protected routes (app)
  * - Public Trust Center with token validation
  * - Team invite acceptance
+ *
+ * Auth: Clerk + Supabase. Clerk owns session; Supabase validates Clerk JWTs
+ * via Third-Party Auth and enforces org-scoped RLS. The provider tree is:
+ *
+ *   ClerkProvider
+ *     └── ClerkSupabaseBridge   (installs token getter into supabase-js)
+ *           └── AuthServiceBridge (imperative token fetch for non-React modules)
+ *                 └── AuthProvider   (compat-shim over useClerkAuth/useUser)
+ *                       └── [OrganizationProvider for app routes]
  */
 
 import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { ClerkProvider, SignedIn, SignedOut, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { OrganizationProvider } from '../contexts/OrganizationContext';
 import { ToastProvider, ErrorBoundary } from '../components/ui';
+import { ClerkSupabaseBridge } from '../lib/ClerkSupabaseBridge';
+import { AuthServiceBridge } from '../lib/AuthServiceBridge';
 import { Shield, Loader2 } from 'lucide-react';
 
 // Lazy load components for better performance
@@ -39,71 +51,94 @@ const LoadingScreen: React.FC = () => (
   </div>
 );
 
-// Protected route wrapper
+// Guard: only allow signed-in callers. Clerk drives the check.
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
+  const { loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  return (
+    <>
+      <SignedIn>{children}</SignedIn>
+      <SignedOut>
+        <Navigate to="/login" replace />
+      </SignedOut>
+    </>
+  );
 };
 
-// Public route wrapper (redirects to app if already logged in)
+// Guard: only show public screens to signed-out callers.
 const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (user) {
-    return <Navigate to="/app" replace />;
-  }
-
-  return <>{children}</>;
+  const { loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  return (
+    <>
+      <SignedOut>{children}</SignedOut>
+      <SignedIn>
+        <Navigate to="/app" replace />
+      </SignedIn>
+    </>
+  );
 };
 
-// Root layout with providers
+// Clerk publishable key — required, fail fast if missing.
+const CLERK_PUBLISHABLE_KEY = (import.meta as any).env.VITE_CLERK_PUBLISHABLE_KEY;
+if (!CLERK_PUBLISHABLE_KEY) {
+  console.error('VITE_CLERK_PUBLISHABLE_KEY is not set. Auth will not work.');
+}
+
+// Root layout with all providers wired in dependency order.
 const RootLayout: React.FC = () => {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <OrganizationProvider>
-          <ToastProvider>
-            <Suspense fallback={<LoadingScreen />}>
-              <ErrorBoundary>
-                <Outlet />
-              </ErrorBoundary>
-            </Suspense>
-          </ToastProvider>
-        </OrganizationProvider>
-      </AuthProvider>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
+        <ClerkSupabaseBridge>
+          <AuthServiceBridge>
+            <AuthProvider>
+              <OrganizationProvider>
+                <ToastProvider>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <ErrorBoundary>
+                      <Outlet />
+                    </ErrorBoundary>
+                  </Suspense>
+                </ToastProvider>
+              </OrganizationProvider>
+            </AuthProvider>
+          </AuthServiceBridge>
+        </ClerkSupabaseBridge>
+      </ClerkProvider>
     </ErrorBoundary>
   );
 };
 
-// Public layout without organization provider (for Trust Center, invites)
+// Public layout (no OrganizationProvider — Trust Center, invites).
 const PublicLayout: React.FC = () => {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <ToastProvider>
-          <Suspense fallback={<LoadingScreen />}>
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
-          </Suspense>
-        </ToastProvider>
-      </AuthProvider>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
+        <ClerkSupabaseBridge>
+          <AuthServiceBridge>
+            <AuthProvider>
+              <ToastProvider>
+                <Suspense fallback={<LoadingScreen />}>
+                  <ErrorBoundary>
+                    <Outlet />
+                  </ErrorBoundary>
+                </Suspense>
+              </ToastProvider>
+            </AuthProvider>
+          </AuthServiceBridge>
+        </ClerkSupabaseBridge>
+      </ClerkProvider>
     </ErrorBoundary>
   );
 };
+
+// OAuth callback target — Clerk completes the redirect flow here.
+const SSOCallback: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <AuthenticateWithRedirectCallback />
+  </div>
+);
 
 // Router configuration
 export const router = createBrowserRouter([
@@ -120,9 +155,9 @@ export const router = createBrowserRouter([
           </PublicOnlyRoute>
         ),
       },
-      // Auth routes
+      // Auth routes — Clerk's <SignIn>/<SignUp> handle subpaths like /login/factor-one.
       {
-        path: 'login',
+        path: 'login/*',
         element: (
           <PublicOnlyRoute>
             <AuthScreen />
@@ -130,12 +165,16 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'signup',
+        path: 'signup/*',
         element: (
           <PublicOnlyRoute>
             <AuthScreen />
           </PublicOnlyRoute>
         ),
+      },
+      {
+        path: 'sso-callback',
+        element: <SSOCallback />,
       },
       // Protected app
       {

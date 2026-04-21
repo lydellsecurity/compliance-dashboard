@@ -6,6 +6,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { auth } from './auth.service';
 import { generateSlug, ensureUniqueSlug } from '../utils/slug';
 import { MASTER_CONTROLS } from '../constants/controls';
 import type { Database } from '../lib/database.types';
@@ -442,13 +443,13 @@ class OrganizationService {
 
       // Send email via Netlify function
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
+        const token = await auth.getAccessToken();
+        if (token) {
           const response = await fetch('/.netlify/functions/send-invite', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({
               organizationId: orgId,

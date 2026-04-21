@@ -24,7 +24,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, CreditCard, X, Zap } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { auth } from '../services/auth.service';
 import {
   useEntitlement,
   type LimitKey,
@@ -84,7 +84,6 @@ interface BannerSpec {
 // ============================================================================
 
 export const BillingStatusBar: React.FC = () => {
-  const { session } = useAuth();
   const { tenant, plan, loading, refresh } = useEntitlement();
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<TenantPlan | null>(null);
@@ -221,11 +220,12 @@ export const BillingStatusBar: React.FC = () => {
   const openPortal = useCallback(async () => {
     setPortalLoading(true);
     try {
+      const token = (await auth.getAccessToken()) ?? '';
       const res = await fetch('/.netlify/functions/stripe-create-portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({}),
       });
@@ -235,7 +235,7 @@ export const BillingStatusBar: React.FC = () => {
     } catch {
       setPortalLoading(false);
     }
-  }, [session?.access_token]);
+  }, []);
 
   const handlePrimary = useCallback(
     (spec: BannerSpec) => {

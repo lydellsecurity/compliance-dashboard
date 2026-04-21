@@ -62,6 +62,22 @@ function setStoredOrgId(orgId: string): void {
   }
 }
 
+function safeGetSession(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeRemoveSession(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 // Create context with default values
 const OrganizationContext = createContext<OrganizationContextValue>({
   currentOrg: null,
@@ -176,6 +192,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       fetchOrganizations();
     }
   }, [authLoading, fetchOrganizations]);
+
+  // If signup stashed a pending org name, auto-create once the user is signed
+  // in and we've confirmed they have no existing memberships. The form field
+  // is the only hint we get — Clerk doesn't carry arbitrary metadata across
+  // the verification step.
+  useEffect(() => {
+    if (authLoading || loading || !user || !needsOnboarding) return;
+    const pendingName = safeGetSession('pending_org_name');
+    if (!pendingName) return;
+
+    createOrganization({ name: pendingName })
+      .catch((err) => console.warn('pending org auto-create failed:', err))
+      .finally(() => safeRemoveSession('pending_org_name'));
+    // createOrganization is stable enough; omit to avoid re-runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, loading, user, needsOnboarding]);
 
   /**
    * Switch to a different organization

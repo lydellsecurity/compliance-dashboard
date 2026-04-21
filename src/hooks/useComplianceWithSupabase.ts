@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { complianceDb } from '../services/compliance-database.service';
 import type { CustomControl, SyncNotification as DbSyncNotification } from '../services/compliance-database.service';
 import { useAuth } from './useAuth';
+import { useOrganization } from '../contexts/OrganizationContext';
 
 // ============================================================================
 // TYPES
@@ -99,6 +100,7 @@ const FRAMEWORKS = [
 
 export function useComplianceWithSupabase(): UseComplianceWithSupabaseReturn {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,19 +128,14 @@ export function useComplianceWithSupabase(): UseComplianceWithSupabaseReturn {
   // Initialize when user is available. loadData is a useCallback below;
   // including it would retrigger on every load.
   useEffect(() => {
-    if (user) {
-      const orgId = user.user_metadata?.organization_id;
-      if (orgId) {
-        complianceDb.setContext(orgId, user.id);
-        loadData();
-      } else {
-        setLoading(false);
-      }
+    if (user && currentOrg) {
+      complianceDb.setContext(currentOrg.id, user.id);
+      loadData();
     } else {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, currentOrg]);
 
   const loadData = useCallback(async () => {
     if (!complianceDb.isAvailable()) {

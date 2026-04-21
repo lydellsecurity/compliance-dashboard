@@ -2,6 +2,7 @@
 // Team Invitation Email Sender - Creates invite record and sends email
 
 const { createClient } = require('@supabase/supabase-js');
+const { verifyClerkToken } = require('./utils/clerk-auth.cjs');
 
 // Initialize Supabase client
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -342,29 +343,23 @@ exports.handler = async (event, context) => {
   };
 
   try {
-    // Verify authentication
+    // Verify Clerk session JWT
     const authHeader = event.headers.authorization || event.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let clerkUserId, clerkEmail;
+    try {
+      const { userId, claims } = await verifyClerkToken(authHeader);
+      clerkUserId = userId;
+      clerkEmail = claims.email || null;
+    } catch (authErr) {
       return {
-        statusCode: 401,
+        statusCode: authErr.statusCode || 401,
         headers,
-        body: JSON.stringify({ error: 'Missing or invalid authorization token' }),
+        body: JSON.stringify({ error: authErr.message || 'Unauthorized' }),
       };
     }
 
-    const token = authHeader.replace('Bearer ', '');
-
-    // Verify the JWT with Supabase
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Invalid or expired token' }),
-      };
-    }
+    const user = { id: clerkUserId, email: clerkEmail };
 
     // Parse request body
     let payload;

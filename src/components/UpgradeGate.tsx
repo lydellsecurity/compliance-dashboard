@@ -17,7 +17,7 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { Sparkles, Check, ArrowRight, ArrowUp } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { auth } from '../services/auth.service';
 import { Modal } from './ui/Modal';
 import { GLOSSARY, GlossaryTerm } from './ui/Tooltip';
 
@@ -144,7 +144,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   result,
   targetPlan,
 }) => {
-  const { session } = useAuth();
   const [interval, setInterval] = useState<'annual' | 'monthly'>('annual');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -190,11 +189,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     setError(null);
     setLoading(true);
     try {
+      const token = (await auth.getAccessToken()) ?? '';
       const res = await fetch('/.netlify/functions/stripe-create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ priceId, interval }),
       });
@@ -205,7 +205,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       setError(err instanceof Error ? err.message : 'Checkout failed');
       setLoading(false);
     }
-  }, [plan, interval, session?.access_token, onClose]);
+  }, [plan, interval, onClose]);
 
   const headline = useMemo(() => {
     if (!result) return `Upgrade to ${display.name}`;

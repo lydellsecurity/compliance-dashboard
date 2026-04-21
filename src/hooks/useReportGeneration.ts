@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
+import { auth } from '../services/auth.service';
 
 export type ReportType = 'full' | 'gaps' | 'evidence';
 export type FrameworkFilter = 'SOC2' | 'ISO27001' | 'HIPAA' | 'NIST' | null;
@@ -39,7 +40,7 @@ export interface ReportData {
 const REQUEST_TIMEOUT_MS = 120000;
 
 export function useReportGeneration(): UseReportGenerationReturn {
-  const { session } = useAuth();
+  const { user } = useAuth();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -49,7 +50,8 @@ export function useReportGeneration(): UseReportGenerationReturn {
     options: ReportOptions,
     data: ReportData
   ): Promise<void> => {
-    if (!session?.access_token) {
+    const token = await auth.getAccessToken();
+    if (!user || !token) {
       setError('You must be logged in to generate reports');
       return;
     }
@@ -94,7 +96,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
         signal,
@@ -173,7 +175,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       abortControllerRef.current = null;
       setTimeout(() => setProgress(0), 500);
     }
-  }, [session, generating]);
+  }, [user, generating]);
 
   const clearError = useCallback(() => {
     setError(null);

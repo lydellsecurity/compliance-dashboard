@@ -15,6 +15,7 @@ import type { MasterControl } from '../constants/controls';
 import { getRemediationGuidance } from '../constants/remediations';
 import { EXTENDED_REMEDIATIONS } from '../constants/remediations-extended';
 import { useAuth } from '../hooks/useAuth';
+import { auth } from '../services/auth.service';
 
 // ============================================================================
 // TYPES
@@ -39,7 +40,7 @@ type GenerationStatus = 'idle' | 'generating' | 'success' | 'error';
 // ============================================================================
 
 function usePolicyGeneration() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +48,8 @@ function usePolicyGeneration() {
     control: MasterControl,
     organizationName: string
   ): Promise<void> => {
-    if (!session?.access_token) {
+    const token = await auth.getAccessToken();
+    if (!user || !token) {
       setError('You must be logged in to generate policies');
       setStatus('error');
       return;
@@ -75,7 +77,7 @@ function usePolicyGeneration() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -118,7 +120,7 @@ function usePolicyGeneration() {
       setError(err instanceof Error ? err.message : 'Failed to generate policy');
       setStatus('error');
     }
-  }, [session]);
+  }, [user]);
 
   const reset = useCallback(() => {
     setStatus('idle');

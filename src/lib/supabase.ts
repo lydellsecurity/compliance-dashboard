@@ -23,9 +23,28 @@ const fetchWithTimeout: typeof fetch = (input, init) => {
   return fetch(input, { ...init, signal }).finally(() => clearTimeout(timer));
 };
 
+// Clerk owns the session. Supabase just validates incoming JWTs — it doesn't
+// mint them. This getter is installed by ClerkSupabaseBridge at app boot and
+// is read by supabase-js on every request.
+let clerkTokenGetter: (() => Promise<string | null>) | null = null;
+
+export function setSupabaseTokenGetter(
+  getter: (() => Promise<string | null>) | null
+) {
+  clerkTokenGetter = getter;
+}
+
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
       global: { fetch: fetchWithTimeout },
+      accessToken: async () => (clerkTokenGetter ? clerkTokenGetter() : null),
+      auth: {
+        // Clerk handles all session state — disable supabase-js's GoTrue loop
+        // so it stops fighting over storage and refresh timers.
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
     })
   : null;
 

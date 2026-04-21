@@ -23,6 +23,8 @@
     "@azure/arm-storage": "^18.0.0",
     "@azure/arm-subscriptions": "^5.1.0",
     "@azure/identity": "^4.0.0",
+    "@clerk/backend": "^2.33.2",
+    "@clerk/clerk-react": "^5.61.5",
     "@google-cloud/asset": "^5.0.0",
     "@google-cloud/kms": "^4.0.0",
     "@google-cloud/security-center": "^8.0.0",

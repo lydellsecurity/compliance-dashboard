@@ -22,6 +22,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
+import { auth } from '../services/auth.service';
 import { useEntitlement } from './useEntitlement';
 import { useToast } from '../components/ui';
 import { PLAN_PRICE_IDS } from '../constants/billing';
@@ -31,7 +32,7 @@ import {
 } from '../lib/pendingCheckout';
 
 export function usePendingCheckout(): void {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const { tenant, loading } = useEntitlement();
   const toast = useToast();
   const firedRef = useRef(false);
@@ -69,11 +70,12 @@ export function usePendingCheckout(): void {
 
     (async () => {
       try {
+        const token = (await auth.getAccessToken()) ?? '';
         const res = await fetch('/.netlify/functions/stripe-create-checkout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token ?? ''}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             priceId,
@@ -100,5 +102,5 @@ export function usePendingCheckout(): void {
         );
       }
     })();
-  }, [user, tenant, loading, session?.access_token, toast]);
+  }, [user, tenant, loading, toast]);
 }

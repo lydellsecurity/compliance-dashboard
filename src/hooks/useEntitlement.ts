@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAuth } from './useAuth';
+import { useOrganization } from '../contexts/OrganizationContext';
 import {
   multiTenant,
   PLAN_CONFIGS,
@@ -64,12 +64,12 @@ export interface UseEntitlementReturn {
 // ============================================================================
 
 export function useEntitlement(): UseEntitlementReturn {
-  const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const orgId = user?.user_metadata?.organization_id as string | undefined;
+    const orgId = currentOrg?.id;
     if (!orgId) {
       setTenant(null);
       setLoading(false);
@@ -79,7 +79,7 @@ export function useEntitlement(): UseEntitlementReturn {
     const t = await multiTenant.getTenant(orgId);
     setTenant(t);
     setLoading(false);
-  }, [user?.user_metadata?.organization_id]);
+  }, [currentOrg?.id]);
 
   useEffect(() => {
     load();

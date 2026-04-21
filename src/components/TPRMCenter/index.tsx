@@ -51,7 +51,7 @@ import VendorProfileModal from './VendorProfileModal';
 import InherentRiskQuestionnaire from './InherentRiskQuestionnaire';
 import AIVendorReview from './AIVendorReview';
 import AddVendorModal from './AddVendorModal';
-import { supabase } from '../../lib/supabase';
+import { auth } from '../../services/auth.service';
 import { useUrlState } from '../../hooks/useUrlState';
 import { DashboardSkeleton } from '../ui';
 // Reserved for future use: SecurityArtifacts, RenewalTracker
@@ -249,10 +249,7 @@ const TPRMCenter: React.FC<TPRMCenterProps> = ({ organizationId, userId }) => {
       // Fire-and-forget meter increment. Runs through entitlements-check so
       // the server-side dedups by period and writes through the same RPC as
       // other surfaces. No await — metering must not block UI feedback.
-      const { data: sessionData } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
-      const token = sessionData.session?.access_token ?? '';
+      const token = (await auth.getAccessToken()) ?? '';
       fetch('/.netlify/functions/entitlements-check', {
         method: 'POST',
         headers: {
