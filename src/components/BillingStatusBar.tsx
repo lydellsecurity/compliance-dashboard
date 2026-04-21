@@ -99,6 +99,21 @@ export const BillingStatusBar: React.FC = () => {
     if (typeof window === 'undefined') return false;
     return new URLSearchParams(window.location.search).get('checkout') === 'success';
   });
+
+  // Checkout-error surface: usePendingCheckout redirects here with
+  // `?checkout=error` when Stripe Checkout couldn't be opened (missing env
+  // var, 4xx/5xx from the function). Render a dismissible banner so the
+  // user sees what went wrong and has a manual retry path.
+  const [checkoutError, setCheckoutError] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('checkout') === 'error';
+  });
+  const dismissCheckoutError = useCallback(() => {
+    setCheckoutError(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('checkout');
+    window.history.replaceState({}, '', url.toString());
+  }, []);
   useEffect(() => {
     if (!provisioning) return;
     if (!provisioningRef.current) {
@@ -267,7 +282,7 @@ export const BillingStatusBar: React.FC = () => {
   }, []);
 
   if (loading || !tenant) return null;
-  if (!provisioning && banners.length === 0) return null;
+  if (!provisioning && !checkoutError && banners.length === 0) return null;
 
   // Show the post-checkout banner (if provisioning) OR the top-priority
   // banner. Provisioning takes precedence — the user just paid and deserves
@@ -285,6 +300,27 @@ export const BillingStatusBar: React.FC = () => {
               Stripe confirmed your payment. Provisioning your new plan (this takes a few seconds).
             </span>
           </div>
+        </div>
+      )}
+      {checkoutError && !provisioning && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden />
+          <div className="flex-1 text-sm text-amber-900 dark:text-amber-100">
+            <p className="font-semibold">Checkout didn't open</p>
+            <p className="opacity-90 mt-0.5">
+              We couldn't redirect you to Stripe. This usually means the Stripe
+              Price IDs aren't configured for this environment yet. Click{' '}
+              <strong>Upgrade</strong> below to retry, or contact support.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={dismissCheckoutError}
+            aria-label="Dismiss"
+            className="p-1 rounded-md text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
       {!provisioning && top && (

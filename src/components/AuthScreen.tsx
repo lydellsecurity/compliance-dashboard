@@ -8,7 +8,7 @@
  * coming from the landing-page pricing CTA keep their context.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SignIn, SignUp } from '@clerk/clerk-react';
@@ -32,6 +32,20 @@ const AuthScreen: React.FC = () => {
   useEffect(() => {
     const captured = capturePendingCheckoutFromUrl();
     if (captured) setPendingPlan(captured);
+  }, []);
+
+  // Build the post-auth redirect URL. We carry the plan/interval in the query
+  // string so the intent survives Clerk's email-verification round-trips (which
+  // can land on a fresh URL without the original params) and localStorage
+  // constraints (Safari / incognito / blocked third-party). The app root
+  // (`usePendingCheckout`) prefers URL params over localStorage if both are
+  // present.
+  const afterAuthUrl = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get('plan');
+    const interval = params.get('interval');
+    if (!plan || !interval) return '/app';
+    return `/app?plan=${encodeURIComponent(plan)}&interval=${encodeURIComponent(interval)}`;
   }, []);
 
   const subtitle = mode === 'signup' ? 'Create your account' : 'Sign in to your account';
@@ -80,16 +94,16 @@ const AuthScreen: React.FC = () => {
               routing="path"
               path="/signup"
               signInUrl="/login"
-              afterSignUpUrl="/app"
-              afterSignInUrl="/app"
+              afterSignUpUrl={afterAuthUrl}
+              afterSignInUrl={afterAuthUrl}
             />
           ) : (
             <SignIn
               routing="path"
               path="/login"
               signUpUrl="/signup"
-              afterSignInUrl="/app"
-              afterSignUpUrl="/app"
+              afterSignInUrl={afterAuthUrl}
+              afterSignUpUrl={afterAuthUrl}
             />
           )}
         </div>

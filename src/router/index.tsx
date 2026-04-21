@@ -65,7 +65,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   );
 };
 
-// Guard: only show public screens to signed-out callers.
+// Guard: only show public screens to signed-out callers. Preserves the
+// `?plan=&interval=` params that pricing CTAs set, so a signed-in user who
+// clicks "Subscribe" on the landing page (or a shared link) still ends up
+// at Stripe Checkout via usePendingCheckout.
 const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading } = useAuth();
   if (loading) return <LoadingScreen />;
@@ -73,10 +76,23 @@ const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
     <>
       <SignedOut>{children}</SignedOut>
       <SignedIn>
-        <Navigate to="/app" replace />
+        <PreservingAppRedirect />
       </SignedIn>
     </>
   );
+};
+
+// Redirects to /app carrying any pricing-intent query params forward.
+const PreservingAppRedirect: React.FC = () => {
+  const search = typeof window !== 'undefined' ? window.location.search : '';
+  const params = new URLSearchParams(search);
+  const plan = params.get('plan');
+  const interval = params.get('interval');
+  const target =
+    plan && interval
+      ? `/app?plan=${encodeURIComponent(plan)}&interval=${encodeURIComponent(interval)}`
+      : '/app';
+  return <Navigate to={target} replace />;
 };
 
 // Clerk publishable key — required, fail fast if missing.
