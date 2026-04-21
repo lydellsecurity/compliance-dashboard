@@ -55,6 +55,10 @@ function saveBrandingCache(orgId: string, branding: OrganizationBranding): void 
  * Convert database organization to branding object
  */
 function dbToBranding(org: Organization): OrganizationBranding {
+  // `features` isn't in the generated database.types types because it's a
+  // JSONB column, so read it through a narrow cast.
+  const features = (org as unknown as { features?: { customBranding?: boolean } })
+    .features;
   return {
     id: org.id,
     name: org.name,
@@ -63,6 +67,7 @@ function dbToBranding(org: Organization): OrganizationBranding {
     primaryColor: org.primary_color || '#6366f1',
     contactEmail: org.contact_email,
     description: org.description,
+    customBranding: features?.customBranding === true,
   };
 }
 

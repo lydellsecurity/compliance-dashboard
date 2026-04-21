@@ -27,10 +27,12 @@ export interface TenantLimits {
   maxControls: number;
   maxEvidence: number;
   maxIntegrations: number;
+  /** Fractional GB allowed (e.g. 0.25 for 250 MB on Free). */
   maxStorageGb: number;
   retentionDays: number;
   auditLogDays: number;
   apiRateLimit: number;
+  maxVendors: number;
 }
 
 export interface TenantFeatures {
@@ -201,17 +203,18 @@ export const PLAN_CONFIGS: Record<
 > = {
   free: {
     limits: {
-      maxUsers: 3,
-      maxControls: 50,
-      maxEvidence: 100,
-      maxIntegrations: 1,
-      maxStorageGb: 1,
-      retentionDays: 30,
+      maxUsers: 1,
+      maxControls: 15,
+      maxEvidence: 25,
+      maxIntegrations: 0,
+      maxStorageGb: 0.25, // 250 MB
+      retentionDays: 14,
       auditLogDays: 7,
       apiRateLimit: 0,
+      maxVendors: 0,
     },
     features: {
-      cloudIntegrations: true,
+      cloudIntegrations: false,
       customControls: false,
       apiAccess: false,
       ssoEnabled: false,
@@ -237,9 +240,10 @@ export const PLAN_CONFIGS: Record<
       maxEvidence: 750,
       maxIntegrations: 5,
       maxStorageGb: 10,
-      retentionDays: 180,
-      auditLogDays: 30,
+      retentionDays: 365,
+      auditLogDays: 365,
       apiRateLimit: 60,
+      maxVendors: 0,
     },
     features: {
       cloudIntegrations: true,
@@ -271,12 +275,13 @@ export const PLAN_CONFIGS: Record<
       retentionDays: 365,
       auditLogDays: 90,
       apiRateLimit: 300,
+      maxVendors: 50,
     },
     features: {
       cloudIntegrations: true,
       customControls: true,
       apiAccess: true,
-      ssoEnabled: false,
+      ssoEnabled: true,
       customBranding: true,
       advancedReporting: true,
       trustCenter: true,
@@ -289,12 +294,12 @@ export const PLAN_CONFIGS: Record<
       customDomain: false,
       scimProvisioning: false,
     },
-    price: 1199,
-    priceAnnual: 11988,
+    price: 1399,
+    priceAnnual: 13988,
   },
   scale: {
     limits: {
-      maxUsers: 75,
+      maxUsers: 150,
       maxControls: 1500,
       maxEvidence: 10000,
       maxIntegrations: 40,
@@ -302,6 +307,7 @@ export const PLAN_CONFIGS: Record<
       retentionDays: 730,
       auditLogDays: 365,
       apiRateLimit: 1200,
+      maxVendors: 150,
     },
     features: {
       cloudIntegrations: true,
@@ -318,7 +324,7 @@ export const PLAN_CONFIGS: Record<
       realTimeRegulatoryScan: true,
       auditBundleExport: true,
       customDomain: true,
-      scimProvisioning: false,
+      scimProvisioning: true,
     },
     price: 2399,
     priceAnnual: 23988,
@@ -333,6 +339,7 @@ export const PLAN_CONFIGS: Record<
       retentionDays: -1,
       auditLogDays: -1,
       apiRateLimit: -1,
+      maxVendors: -1,
     },
     features: {
       cloudIntegrations: true,
@@ -651,6 +658,73 @@ class MultiTenantService {
   // ---------------------------------------------------------------------------
   // PLAN & SUBSCRIPTION
   // ---------------------------------------------------------------------------
+
+  /**
+   * Delete an organization. GDPR-safe: before removing the DB row we call the
+   * stripe-cancel-subscription function so billing actually stops — skipping
+   * that would continue charging the customer until Stripe's next webhook for
+   * some unrelated event happened to fire `customer.subscription.deleted`.
+   *
+   * The webhook-driven cleanup (downgrade to Free, clear billing) still runs
+   * afterwards; this method just guarantees the Stripe side is canceled.
+   */
+  async deleteOrganization(
+    tenantId: string,
+    accessToken: string | null
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!supabase) return { success: false, error: 'Service not available' };
+
+    try {
+      const tenant = await this.getTenant(tenantId);
+
+      if (tenant?.billing?.subscriptionId && accessToken) {
+        try {
+          const res = await fetch('/.netlify/functions/stripe-cancel-subscription', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ immediate: true, reason: 'Organization deleted' }),
+          });
+          if (!res.ok) {
+            const json = await res.json().catch(() => ({}));
+            return {
+              success: false,
+              error:
+                json.error ||
+                'Could not cancel Stripe subscription. Deletion aborted to prevent continued billing.',
+            };
+          }
+        } catch (err) {
+          return {
+            success: false,
+            error:
+              err instanceof Error
+                ? `Stripe cancel failed: ${err.message}`
+                : 'Stripe cancel failed. Deletion aborted.',
+          };
+        }
+      }
+
+      const { error } = await supabase
+        .from('organizations')
+        .delete()
+        .eq('id', tenantId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      this.tenantCache.delete(tenantId);
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to delete organization',
+      };
+    }
+  }
 
   /**
    * Upgrade/downgrade tenant plan (uses organizations table)

@@ -21,6 +21,7 @@ const {
   resolvePlanFromPriceId,
   PLAN_CONFIGS,
 } = require('./utils/stripe.cjs');
+const email = require('./utils/email.cjs');
 
 // ============================================================================
 // ENTRYPOINT
@@ -104,8 +105,23 @@ async function dispatch(stripeEvent, supabase) {
     case 'invoice.payment_failed':
       return handleInvoiceFailed(stripeEvent.data.object, supabase);
 
+    case 'invoice.upcoming':
+      return handleInvoiceUpcoming(stripeEvent.data.object, supabase);
+
     case 'customer.subscription.trial_will_end':
       return handleTrialEnding(stripeEvent.data.object, supabase);
+
+    case 'charge.refunded':
+      return handleChargeRefunded(stripeEvent.data.object, supabase);
+
+    case 'charge.dispute.created':
+      return handleDisputeCreated(stripeEvent.data.object, supabase);
+
+    case 'customer.updated':
+      return handleCustomerUpdated(stripeEvent.data.object, supabase);
+
+    case 'customer.deleted':
+      return handleCustomerDeleted(stripeEvent.data.object, supabase);
 
     default:
       // Known but unhandled event — record it but take no action.
@@ -129,13 +145,48 @@ async function handleCheckoutCompleted(session, supabase) {
     ? session.subscription
     : session.subscription?.id;
 
-  if (!subscriptionId) return organizationId;
+  // Flag the user (not just the org) as having consumed a trial so that a
+  // second org they spin up can't claim another trial. See
+  // `user_trial_consumed` migration.
+  const userId = session.metadata?.created_by_user_id;
+  if (userId) {
+    await supabase
+      .from('user_billing_flags')
+      .upsert({ user_id: userId, trial_consumed: true }, { onConflict: 'user_id' });
+  }
+
+  // Capture billing email + address from the session into org.billing so we
+  // have a non-Stripe record for emailing/audit.
+  const billingDetails = {
+    billingEmail: session.customer_details?.email || session.customer_email || null,
+    billingAddress: session.customer_details?.address
+      ? {
+          line1: session.customer_details.address.line1 || '',
+          line2: session.customer_details.address.line2 || undefined,
+          city: session.customer_details.address.city || '',
+          state: session.customer_details.address.state || '',
+          postalCode: session.customer_details.address.postal_code || '',
+          country: session.customer_details.address.country || '',
+        }
+      : null,
+  };
+
+  if (!subscriptionId) {
+    await mergeOrgBilling(organizationId, billingDetails, supabase);
+    return organizationId;
+  }
 
   const subscription = await getStripe().subscriptions.retrieve(subscriptionId, {
     expand: ['items.data.price'],
   });
 
-  await applySubscriptionState(organizationId, subscription, customerId, supabase);
+  await applySubscriptionState(
+    organizationId,
+    subscription,
+    customerId,
+    supabase,
+    billingDetails
+  );
   return organizationId;
 }
 
@@ -163,7 +214,7 @@ async function handleSubscriptionDeleted(subscription, supabase) {
   const freeConfig = PLAN_CONFIGS.free;
   const { data: org } = await supabase
     .from('organizations')
-    .select('billing')
+    .select('billing, name')
     .eq('id', organizationId)
     .single();
 
@@ -187,6 +238,18 @@ async function handleSubscriptionDeleted(subscription, supabase) {
     })
     .eq('id', organizationId);
 
+  // Notify — downgrade is surprising even when self-initiated via Portal.
+  const freshOrg = { id: organizationId, name: org?.name || 'your organization', billing: org?.billing };
+  const recipients = await email.getBillingRecipients(supabase, freshOrg);
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : null;
+  const tpl = email.templates.subscriptionCanceled({
+    orgName: freshOrg.name,
+    periodEnd,
+  });
+  await email.send({ to: recipients, ...tpl });
+
   return organizationId;
 }
 
@@ -198,7 +261,7 @@ async function handleInvoicePaid(invoice, supabase) {
   // meters are reset implicitly by the next period_start rollover.
   const { data: org } = await supabase
     .from('organizations')
-    .select('usage, status')
+    .select('usage, status, suspended_at, name, billing')
     .eq('id', organizationId)
     .single();
 
@@ -215,6 +278,23 @@ async function handleInvoicePaid(invoice, supabase) {
     .update(update)
     .eq('id', organizationId);
 
+  // If we were in dunning, this is a "payment recovered" moment — tell the user.
+  if (org?.suspended_at) {
+    const recipients = await email.getBillingRecipients(supabase, {
+      id: organizationId,
+      billing: org.billing,
+    });
+    const tpl = email.templates.paymentRecovered({
+      orgName: org.name,
+      amount: invoice.amount_paid,
+      currency: invoice.currency,
+      periodEnd: invoice.period_end
+        ? new Date(invoice.period_end * 1000).toISOString()
+        : null,
+    });
+    await email.send({ to: recipients, ...tpl });
+  }
+
   return organizationId;
 }
 
@@ -229,7 +309,7 @@ async function handleInvoiceFailed(invoice, supabase) {
   // the last one.
   const { data: existing } = await supabase
     .from('organizations')
-    .select('suspended_at')
+    .select('suspended_at, name, billing')
     .eq('id', organizationId)
     .single();
 
@@ -242,21 +322,283 @@ async function handleInvoiceFailed(invoice, supabase) {
     })
     .eq('id', organizationId);
 
+  const recipients = await email.getBillingRecipients(supabase, {
+    id: organizationId,
+    billing: existing?.billing,
+  });
+  const tpl = email.templates.paymentFailed({
+    orgName: existing?.name || 'your organization',
+    amount: invoice.amount_due,
+    currency: invoice.currency,
+    invoiceUrl: invoice.hosted_invoice_url,
+    attemptCount: invoice.attempt_count,
+    nextRetryAt: invoice.next_payment_attempt
+      ? new Date(invoice.next_payment_attempt * 1000).toISOString()
+      : null,
+  });
+  await email.send({ to: recipients, ...tpl });
+
+  return organizationId;
+}
+
+async function handleInvoiceUpcoming(invoice, supabase) {
+  const organizationId = await resolveOrgFromCustomerId(invoice.customer, supabase);
+  if (!organizationId) return null;
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name, plan, billing')
+    .eq('id', organizationId)
+    .single();
+
+  const recipients = await email.getBillingRecipients(supabase, {
+    id: organizationId,
+    billing: org?.billing,
+  });
+  const tpl = email.templates.invoiceUpcoming({
+    orgName: org?.name || 'your organization',
+    planName: org?.plan ? org.plan[0].toUpperCase() + org.plan.slice(1) : 'subscription',
+    amount: invoice.amount_due,
+    currency: invoice.currency,
+    periodEnd: invoice.period_end
+      ? new Date(invoice.period_end * 1000).toISOString()
+      : null,
+    invoiceUrl: invoice.hosted_invoice_url,
+  });
+  await email.send({ to: recipients, ...tpl });
+
   return organizationId;
 }
 
 async function handleTrialEnding(subscription, supabase) {
-  // Hook point for emailing the owner. The email service lives elsewhere —
-  // we just log the event and let a separate notifier pick it up.
-  return subscription.metadata?.organization_id
+  const organizationId = subscription.metadata?.organization_id
     || (await resolveOrgFromCustomerId(subscription.customer, supabase));
+  if (!organizationId) return null;
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name, plan, billing, trial_ends_at')
+    .eq('id', organizationId)
+    .single();
+
+  const recipients = await email.getBillingRecipients(supabase, {
+    id: organizationId,
+    billing: org?.billing,
+  });
+  const trialEnd = subscription.trial_end
+    ? new Date(subscription.trial_end * 1000).toISOString()
+    : org?.trial_ends_at;
+  const tpl = email.templates.trialEnding({
+    orgName: org?.name || 'your organization',
+    trialEndsAt: trialEnd,
+    planName: org?.plan ? org.plan[0].toUpperCase() + org.plan.slice(1) : 'your plan',
+  });
+  await email.send({ to: recipients, ...tpl });
+
+  return organizationId;
+}
+
+async function handleChargeRefunded(charge, supabase) {
+  const organizationId = await resolveOrgFromCustomerId(charge.customer, supabase);
+  if (!organizationId) return null;
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('billing, name')
+    .eq('id', organizationId)
+    .single();
+
+  // Stripe sets `amount_refunded` on the Charge (includes all refunds so far).
+  // We record the latest refund line so the billing card can show "Refunded $X on Y".
+  const latest = (charge.refunds?.data || []).slice(-1)[0] || null;
+  const refundEntry = {
+    amount: charge.amount_refunded,
+    currency: charge.currency,
+    reason: latest?.reason || null,
+    refundedAt: new Date((latest?.created ?? charge.created) * 1000).toISOString(),
+    chargeId: charge.id,
+  };
+
+  await supabase
+    .from('organizations')
+    .update({
+      billing: {
+        ...(org?.billing || {}),
+        lastRefund: refundEntry,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', organizationId);
+
+  const recipients = await email.getBillingRecipients(supabase, {
+    id: organizationId,
+    billing: org?.billing,
+  });
+  const tpl = email.templates.refund({
+    orgName: org?.name || 'your organization',
+    amount: charge.amount_refunded,
+    currency: charge.currency,
+    reason: refundEntry.reason,
+  });
+  await email.send({ to: recipients, ...tpl });
+
+  return organizationId;
+}
+
+async function handleDisputeCreated(dispute, supabase) {
+  const organizationId = await resolveOrgFromCustomerId(
+    dispute.charge && typeof dispute.charge === 'object' ? dispute.charge.customer : null,
+    supabase
+  );
+  // Dispute objects don't always include customer at the top level — fall
+  // back to retrieving the charge if needed.
+  let orgId = organizationId;
+  if (!orgId && dispute.charge) {
+    try {
+      const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge.id;
+      const charge = await getStripe().charges.retrieve(chargeId);
+      orgId = await resolveOrgFromCustomerId(charge.customer, supabase);
+    } catch (err) {
+      console.error('dispute: charge lookup failed:', err);
+    }
+  }
+  if (!orgId) return null;
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('billing, name')
+    .eq('id', orgId)
+    .single();
+
+  await supabase
+    .from('organizations')
+    .update({
+      billing: {
+        ...(org?.billing || {}),
+        activeDispute: {
+          id: dispute.id,
+          amount: dispute.amount,
+          currency: dispute.currency,
+          reason: dispute.reason,
+          status: dispute.status,
+          createdAt: new Date(dispute.created * 1000).toISOString(),
+        },
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orgId);
+
+  const recipients = await email.getBillingRecipients(supabase, {
+    id: orgId,
+    billing: org?.billing,
+  });
+  const tpl = email.templates.disputeCreated({
+    orgName: org?.name || 'your organization',
+    amount: dispute.amount,
+    currency: dispute.currency,
+    reason: dispute.reason,
+  });
+  await email.send({ to: recipients, ...tpl });
+
+  return orgId;
+}
+
+async function handleCustomerUpdated(customer, supabase) {
+  const organizationId = await resolveOrgFromCustomerId(customer.id, supabase);
+  if (!organizationId) return null;
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('billing')
+    .eq('id', organizationId)
+    .single();
+
+  const billingAddress = customer.address
+    ? {
+        line1: customer.address.line1 || '',
+        line2: customer.address.line2 || undefined,
+        city: customer.address.city || '',
+        state: customer.address.state || '',
+        postalCode: customer.address.postal_code || '',
+        country: customer.address.country || '',
+      }
+    : org?.billing?.billingAddress || null;
+
+  await supabase
+    .from('organizations')
+    .update({
+      billing: {
+        ...(org?.billing || {}),
+        billingEmail: customer.email || org?.billing?.billingEmail || null,
+        billingAddress,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', organizationId);
+
+  return organizationId;
+}
+
+async function handleCustomerDeleted(customer, supabase) {
+  const organizationId = await resolveOrgFromCustomerId(customer.id, supabase);
+  if (!organizationId) return null;
+
+  // The Stripe customer was removed (typically by Stripe admin action). Null
+  // out the refs on the org so future portal/checkout calls re-create cleanly.
+  const freeConfig = PLAN_CONFIGS.free;
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('billing, name')
+    .eq('id', organizationId)
+    .single();
+
+  await supabase
+    .from('organizations')
+    .update({
+      plan: 'free',
+      status: 'active',
+      stripe_price_id: null,
+      billing_interval: null,
+      trial_ends_at: null,
+      cancel_at_period_end: false,
+      suspended_at: null,
+      limits: freeConfig.limits,
+      features: freeConfig.features,
+      billing: {
+        ...(org?.billing || {}),
+        customerId: null,
+        subscriptionId: null,
+        currentPeriodEnd: null,
+        mrr: 0,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', organizationId);
+
+  const recipients = await email.getBillingRecipients(supabase, {
+    id: organizationId,
+    billing: org?.billing,
+  });
+  const tpl = email.templates.subscriptionCanceled({
+    orgName: org?.name || 'your organization',
+    periodEnd: null,
+  });
+  await email.send({ to: recipients, ...tpl });
+
+  return organizationId;
 }
 
 // ============================================================================
 // SHARED STATE APPLICATION
 // ============================================================================
 
-async function applySubscriptionState(organizationId, subscription, customerId, supabase) {
+async function applySubscriptionState(
+  organizationId,
+  subscription,
+  customerId,
+  supabase,
+  extraBilling
+) {
   // Find the base-plan line item. Metered add-on items have `price.recurring.usage_type = 'metered'`.
   const baseItem = subscription.items.data.find(
     (i) => i.price?.recurring?.usage_type !== 'metered'
@@ -313,11 +655,28 @@ async function applySubscriptionState(organizationId, subscription, customerId, 
       features: config.features,
       billing: {
         ...(org?.billing || {}),
+        ...(extraBilling || {}),
         customerId: customerId || org?.billing?.customerId || null,
         subscriptionId: subscription.id,
         currentPeriodEnd: periodEnd,
         mrr: monthlyEquivalent,
       },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', organizationId);
+}
+
+async function mergeOrgBilling(organizationId, extraBilling, supabase) {
+  if (!extraBilling) return;
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('billing')
+    .eq('id', organizationId)
+    .single();
+  await supabase
+    .from('organizations')
+    .update({
+      billing: { ...(org?.billing || {}), ...extraBilling },
       updated_at: new Date().toISOString(),
     })
     .eq('id', organizationId);
@@ -359,5 +718,10 @@ exports._test = {
   handleSubscriptionDeleted,
   handleInvoicePaid,
   handleInvoiceFailed,
+  handleInvoiceUpcoming,
   handleTrialEnding,
+  handleChargeRefunded,
+  handleDisputeCreated,
+  handleCustomerUpdated,
+  handleCustomerDeleted,
 };

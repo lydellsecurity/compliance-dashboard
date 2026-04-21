@@ -27,8 +27,8 @@
 | Feature | Vanta | Drata | Secureframe | AttestAI | Gap Priority |
 |---------|-------|-------|-------------|----------|--------------|
 | **Framework Coverage** | 20+ | 14+ | 15+ | 4 | 🔴 Critical |
-| **Cloud Integrations** | AWS/Azure/GCP/70+ | AWS/Azure/GCP/75+ | AWS/Azure/GCP/100+ | AWS only | 🔴 Critical |
-| **Identity Providers** | Okta/Azure AD/Google | Okta/JumpCloud/OneLogin | Okta/Azure AD/Google | None | 🔴 Critical |
+| **Cloud Integrations** | AWS/Azure/GCP/70+ | AWS/Azure/GCP/75+ | AWS/Azure/GCP/100+ | AWS/Azure/GCP | 🟡 High (no SaaS connectors) |
+| **Identity Providers** | Okta/Azure AD/Google | Okta/JumpCloud/OneLogin | Okta/Azure AD/Google | Generic SAML/OIDC (Growth+) | 🟡 High |
 | **HR Integrations** | BambooHR/Gusto/Rippling | BambooHR/Gusto/Workday | Gusto/Rippling/ADP | None | 🟡 High |
 | **Endpoint MDM** | Jamf/Kandji/Intune | Jamf/Mosyle/Kandji | Jamf/Kandji/Intune | None | 🟡 High |
 | **Automated Evidence** | 90%+ automated | 85%+ automated | 80%+ automated | Manual + AWS | 🔴 Critical |

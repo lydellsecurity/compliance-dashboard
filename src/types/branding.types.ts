@@ -17,6 +17,12 @@ export interface OrganizationBranding {
   primaryColor: string;
   contactEmail: string | null;
   description: string | null;
+  /**
+   * True when the org's plan includes the `customBranding` feature (Starter+).
+   * Drives removal of the "Powered by AttestAI" watermark in the public
+   * Trust Center. Read from organizations.features.customBranding.
+   */
+  customBranding?: boolean;
 }
 
 /**
@@ -150,6 +156,8 @@ export interface PublicComplianceData {
  * Convert database Organization to OrganizationBranding
  */
 export function toOrganizationBranding(org: Organization): OrganizationBranding {
+  const features = (org as unknown as { features?: { customBranding?: boolean } })
+    .features;
   return {
     id: org.id,
     name: org.name,
@@ -158,6 +166,7 @@ export function toOrganizationBranding(org: Organization): OrganizationBranding 
     primaryColor: org.primary_color,
     contactEmail: org.contact_email,
     description: org.description,
+    customBranding: features?.customBranding === true,
   };
 }
 

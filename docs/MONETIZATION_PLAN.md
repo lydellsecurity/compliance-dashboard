@@ -37,21 +37,21 @@ Target steady-state mix: 15% Free → Starter conversion, 30% Starter → Growth
 
 ---
 
-## 3. Recommended Pricing Tiers
+## 3. Pricing Tiers
 
-All prices below **supersede** the values currently hardcoded in `PLAN_CONFIGS` (`src/services/multi-tenant.service.ts:180`). The code currently ships `startup: $299`, `business: $799`. Update to the table below once Stripe products are provisioned.
+Pricing reflects the April 2026 recut (migration [20260421000002_plan_recut_april2026.sql](../supabase/migrations/20260421000002_plan_recut_april2026.sql)). Values are mirrored in `PLAN_CONFIGS` on the client ([src/services/multi-tenant.service.ts](../src/services/multi-tenant.service.ts:198)) and server ([netlify/functions/utils/stripe.cjs](../netlify/functions/utils/stripe.cjs:133)).
 
 | Plan | Monthly | Annual (billed yearly) | Effective /mo annual | Target buyer |
 |---|---|---|---|---|
-| **Free** | $0 | $0 | $0 | Founders exploring, pre-revenue |
-| **Starter** | $599 | $5,988 | $499 | <50 employees, 1 framework (usually SOC 2) |
-| **Growth** ⭐ | $1,199 | $11,988 | $999 | 50–200 employees, multi-framework, first real audit |
-| **Scale** | $2,399 | $23,988 | $1,999 | 200–500 employees, multiple audits/yr, procurement heat |
+| **Free** | $0 | $0 | $0 | Founders evaluating compliance tooling |
+| **Starter** | $599 | $5,988 | $499 | <50 employees, first SOC 2 (Type I or Type II) |
+| **Growth** ⭐ | $1,399 | $13,988 | $1,166 | 50–200 employees, multi-framework, SSO required |
+| **Scale** | $2,399 | $23,988 | $1,999 | 200–500 employees, SCIM + procurement heat |
 | **Enterprise** | Custom | Custom ($36K–$72K typical) | — | 500+ employees, FedRAMP/PCI/on-prem/SLAs |
 
 **Annual discount:** ~17% (two months free). Monthly pricing set ~20% above the effective annual rate to make annual the obvious default in Stripe Checkout.
 
-**Free tier rationale:** keeps the acquisition funnel open and seeds the Trust Center (public-facing) — every Free tenant that publishes a Trust Center creates inbound brand surface for AttestAI.
+**Free tier rationale:** narrow tour of the product — 1 user, 15 controls, 250 MB storage, manual evidence only (no cloud integrations), Trust Center with "Compliance powered by AttestAI" watermark. Generates brand surface through Trust Center while forcing real usage to upgrade.
 
 ---
 
@@ -63,14 +63,15 @@ Gates map 1:1 to the existing `TenantFeatures` and `TenantLimits` interfaces in 
 
 | Limit | Free | Starter | Growth | Scale | Enterprise |
 |---|---|---|---|---|---|
-| `maxUsers` | 3 | 10 | 25 | 75 | Unlimited (-1) |
-| `maxControls` | 50 | 236 (all master) | 500 | 1,500 | Unlimited |
-| `maxEvidence` | 100 | 750 | 3,000 | 10,000 | Unlimited |
-| `maxIntegrations` | 1 (AWS only) | 5 | 15 | 40 | Unlimited |
-| `maxStorageGb` | 1 | 10 | 50 | 200 | Unlimited |
-| `retentionDays` | 30 | 180 | 365 | 730 | Unlimited |
-| `auditLogDays` | 7 | 30 | 90 | 365 | Unlimited |
+| `maxUsers` | 1 | 10 | 25 | 150 | Unlimited (-1) |
+| `maxControls` | 15 | 236 (all master) | 500 | 1,500 | Unlimited |
+| `maxEvidence` | 25 | 750 | 3,000 | 10,000 | Unlimited |
+| `maxIntegrations` | 0 | 5 | 15 | 40 | Unlimited |
+| `maxStorageGb` | 0.25 (250 MB) | 10 | 50 | 200 | Unlimited |
+| `retentionDays` | 14 | 365 | 365 | 730 | Unlimited |
+| `auditLogDays` | 7 | 365 | 90 | 365 | Unlimited |
 | `apiRateLimit` (req/min) | 0 | 60 | 300 | 1,200 | Custom |
+| `maxVendors` | 0 | 0 | 50 | 150 | Unlimited |
 
 ### 4.2 Feature flags (`TenantFeatures` + new flags)
 
@@ -78,22 +79,23 @@ Flags marked **(new)** require adding to the `TenantFeatures` interface in `src/
 
 | Feature | Free | Starter | Growth | Scale | Ent | Code hook |
 |---|---|---|---|---|---|---|
-| Multi-framework assessment | 1 fw | 1 fw | 3 fw | 6 fw | Unlimited | `frameworks` allowlist (new) |
-| `trustCenter` | ✅ read-only branded "Powered by AttestAI" | ✅ | ✅ | ✅ | ✅ custom domain | `TrustCenter.tsx` |
+| Multi-framework assessment | 1 fw (15 controls) | 1 fw (full) | 3 fw | 6 fw | Unlimited | `frameworks` allowlist |
+| `trustCenter` | ✅ watermarked ("Compliance powered by AttestAI") | ✅ | ✅ | ✅ custom domain | ✅ custom domain | `PublicTrustCenter.tsx` |
 | `customControls` | ❌ | ✅ (10 max) | ✅ (50 max) | ✅ | ✅ | `CompanyTab` |
-| `cloudIntegrations` | AWS only | AWS + 1 | AWS+Azure+GCP | All | All + custom | Connector services |
+| `cloudIntegrations` | ❌ (manual evidence only) | AWS+Azure+GCP | AWS+Azure+GCP | All | All + custom | Connector services |
 | `incidentResponse` | ❌ | ✅ | ✅ | ✅ | ✅ | `useIncidentResponse` |
-| AI Policy Generator | 3/mo trial | 25/mo | 100/mo | Unlimited* | Unlimited | `AIPolicyGenerator.tsx` |
+| AI Policy Generator | ❌ | 25/mo | 100/mo | Unlimited* | Unlimited | `AIPolicyGenerator.tsx` |
 | AI Remediation Chat | ❌ | ❌ | ✅ (100 msgs/mo) | ✅ (unlimited) | ✅ | `RemediationEngine.tsx` |
-| Real-time Regulatory Scan | Digest only | Weekly | Daily | Real-time | Real-time + API | `regulatory-update.types` |
-| `vendorRisk` | ❌ | ❌ | 25 vendors | 150 vendors | Unlimited | VRM module (roadmap) |
-| `questionnaireAutomation` | ❌ | ❌ | 5/mo | 25/mo | Unlimited | New module |
-| `advancedReporting` (PDF reports) | 1/mo | 10/mo | 50/mo | Unlimited | Unlimited + WL | `generate-report.js` |
+| Real-time Regulatory Scan | ❌ | ❌ | Daily | Real-time | Real-time + API | `regulatory-update.types` |
+| `vendorRisk` | ❌ | ❌ | 50 vendors | 150 vendors | Unlimited | VRM module |
+| `questionnaireAutomation` | ❌ | ❌ | 5/mo | 25/mo | Unlimited | Questionnaire tab |
+| `advancedReporting` (PDF reports) | ❌ | 10/mo | 50/mo | Unlimited | Unlimited + WL | `generate-report.js` |
 | Certificate + Auditor Verify | ❌ | ✅ | ✅ | ✅ | ✅ | `CertificateGenerator.tsx` |
 | Audit Bundle export | ❌ | ❌ | ✅ | ✅ | ✅ | `AuditBundle.tsx` |
-| `apiAccess` | ❌ | ❌ | Read-only | Read+Write | Full + webhooks | New REST surface |
-| `ssoEnabled` (SAML/OIDC) | ❌ | ❌ | ❌ | ✅ | ✅ + SCIM | Auth service |
-| `customBranding` | ❌ | Logo only | Logo + colors | Full theme | White-label | `TenantBranding` |
+| `apiAccess` | ❌ | ❌ | Read-only | Read+Write | Full + webhooks | REST surface |
+| `ssoEnabled` (SAML/OIDC) | ❌ | ❌ | ✅ | ✅ | ✅ | Auth service |
+| `scimProvisioning` | ❌ | ❌ | ❌ | ✅ | ✅ | Identity sync |
+| `customBranding` | ❌ (watermark on Trust Center) | Logo + colors | Logo + colors | Full theme | White-label | `TenantBranding` |
 | Custom domain (Trust Center) | ❌ | ❌ | ❌ | ✅ | ✅ | DNS |
 | Support SLA | Community | Email 48h | Email 24h | Priority 4h | Dedicated CSM + 1h |
 | Audit-ready export for external auditors | ❌ | ❌ | ✅ | ✅ | ✅ + read-only auditor seats |
@@ -115,43 +117,46 @@ Recommended precedence when a user hits a gate:
 
 Each tier is designed so predictable compliance milestones push buyers to the next step. These are the telemetry events that should fire in-product upgrade prompts.
 
-### 5.1 Free → Starter ($499/mo)
+### 5.1 Free → Starter ($599/mo)
 
 | Trigger | Message | CTA |
 |---|---|---|
-| 3rd user invited | "Starter unlocks 10 seats." | Inline upgrade |
-| First AWS connector beyond the single free slot | "Connect unlimited AWS accounts on Starter." | Upgrade + keep progress |
-| Hits 50 control / 100 evidence cap | "You're filling up — Starter raises limits 3–7×." | Upgrade |
-| Tries to generate a 4th AI policy in a month | "Trial usage reached." | Upgrade or wait for reset |
+| 2nd user invited | "Starter unlocks 10 seats." | Inline upgrade |
+| First cloud connector attempt | "Cloud integrations unlock on Starter." | Upgrade + keep progress |
+| Hits 15 control / 25 evidence cap | "You're filling up — Starter raises limits 15–30×." | Upgrade |
+| First AI policy requested | "AI policy generation starts on Starter." | Upgrade |
+| Trust Center watermark removal requested | "Custom branding unlocks on Starter." | Upgrade |
 
-### 5.2 Starter → Growth ($999/mo)
+### 5.2 Starter → Growth ($1,399/mo)
 
 | Trigger | Message | CTA |
 |---|---|---|
 | Enables 2nd framework | "Cross-framework crosswalk is a Growth feature." | Upgrade |
-| First vendor added in VRM | "Unlock full vendor risk for 25 vendors." | Upgrade |
+| First vendor added in VRM | "Unlock full vendor risk for 50 vendors." | Upgrade |
 | First questionnaire received via Trust Center | "Auto-fill SIG/CAIQ with AI on Growth." | Upgrade |
-| Adds Azure or GCP connector | "Multi-cloud ships with Growth." | Upgrade |
+| SSO/SAML configuration attempt | "SSO starts on Growth." | Upgrade |
 | API key requested | "Read-only API unlocks on Growth." | Upgrade |
+| 30-day retention insufficient (audit observation period) | "365-day retention ships with Growth." | Upgrade |
 
-### 5.3 Growth → Scale ($1,999/mo)
+### 5.3 Growth → Scale ($2,399/mo)
 
 | Trigger | Message | CTA |
 |---|---|---|
-| SSO/SAML configuration attempt | "SSO is part of Scale." | Upgrade or book call |
+| SCIM configuration attempt | "SCIM provisioning is part of Scale." | Upgrade or book call |
 | 6th framework activated | "Full framework library lives on Scale." | Upgrade |
 | Custom domain on Trust Center | "White-label Trust Center on Scale." | Upgrade |
 | Real-time regulatory scan toggled | "Real-time scan is a Scale feature." | Upgrade |
-| Crosses 25 users | "Scale fits teams up to 75." | Upgrade |
+| Crosses 25 users | "Scale fits teams up to 150." | Upgrade |
+| 50-vendor cap reached | "Scale raises vendor cap to 150." | Upgrade |
 
 ### 5.4 Scale → Enterprise (custom)
 
 No self-serve upgrade. Trigger **"Talk to sales"** when:
-- 60+ users provisioned (approaching the 75 cap).
+- 120+ users provisioned (approaching the 150 cap).
 - FedRAMP, CMMC, or PCI-DSS Level 1 requested.
-- SCIM or on-prem deployment requested.
+- Custom frameworks or on-prem deployment requested.
 - Procurement asks for MSA, DPA addenda, or custom SLAs.
-- Annual contract value would exceed $25K based on add-ons.
+- Annual contract value would exceed $30K based on add-ons.
 
 ### 5.5 Downgrade rules
 
@@ -408,10 +413,11 @@ Report weekly to a `#revenue` Slack channel via a scheduled task.
 | Feature unlocked at | AttestAI tier | Cheapest competitor tier unlocking it |
 |---|---|---|
 | First framework | Free ($0) | Comp AI Starter (~$5K/yr) |
-| Multi-cloud (AWS+Azure+GCP) | Growth ($999/mo) | Vanta Growth ($25K+/yr) |
-| SSO/SAML | Scale ($1,999/mo) | Secureframe Complete ($15K+/yr), Vanta Growth ($25K+) |
-| Vendor Risk Management | Growth ($999/mo) | Drata VRM add-on ($10K+/yr on top of $25K base) |
-| AI Questionnaire autofill | Growth ($999/mo) | Vanta add-on ($5K+/yr on top of Growth) |
-| White-label Trust Center | Scale ($1,999/mo) | Vanta Enterprise ($50K+/yr) |
+| Multi-cloud (AWS+Azure+GCP) | Starter ($599/mo) | Vanta Growth ($25K+/yr) |
+| SSO/SAML | Growth ($1,399/mo) | Secureframe Complete ($15K+/yr), Vanta Growth ($25K+) |
+| SCIM provisioning | Scale ($2,399/mo) | Drata/Vanta Enterprise tier only ($50K+/yr) |
+| Vendor Risk Management | Growth ($1,399/mo) | Drata VRM add-on ($10K+/yr on top of $25K base) |
+| AI Questionnaire autofill | Growth ($1,399/mo) | Vanta add-on ($5K+/yr on top of Growth) |
+| White-label Trust Center | Scale ($2,399/mo) | Vanta Enterprise ($50K+/yr) |
 
 The positioning statement holds: **enterprise features at mid-market prices, no per-feature surprise invoicing.**

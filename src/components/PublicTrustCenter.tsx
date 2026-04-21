@@ -519,10 +519,25 @@ const PublicTrustCenter: React.FC = () => {
             </div>
           </Card>
 
-          {/* Footer */}
-          <div className="text-center text-sm text-slate-400 pt-8 pb-4">
-            <p>Powered by Lydell Security GRC Platform</p>
-          </div>
+          {/* Footer — only displayed for orgs without the customBranding
+              feature (Free tier). Paid tiers (Starter+) remove the
+              attribution as part of their white-label offering. */}
+          {!branding?.customBranding && (
+            <div className="text-center text-sm text-slate-400 pt-8 pb-4">
+              <p>
+                Compliance powered by{' '}
+                <a
+                  href="https://lydellsecurity.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-500 hover:text-indigo-400 font-medium"
+                >
+                  AttestAI
+                </a>
+                {' '}— Start your free trial
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

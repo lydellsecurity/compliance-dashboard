@@ -133,11 +133,12 @@ function resolvePlanFromPriceId(priceId) {
 const PLAN_CONFIGS = {
   free: {
     limits: {
-      maxUsers: 3, maxControls: 50, maxEvidence: 100, maxIntegrations: 1,
-      maxStorageGb: 1, retentionDays: 30, auditLogDays: 7, apiRateLimit: 0,
+      maxUsers: 1, maxControls: 15, maxEvidence: 25, maxIntegrations: 0,
+      maxStorageGb: 0.25, retentionDays: 14, auditLogDays: 7, apiRateLimit: 0,
+      maxVendors: 0,
     },
     features: {
-      cloudIntegrations: true, customControls: false, apiAccess: false,
+      cloudIntegrations: false, customControls: false, apiAccess: false,
       ssoEnabled: false, customBranding: false, advancedReporting: false,
       trustCenter: true, incidentResponse: false, vendorRisk: false,
       questionnaireAutomation: false, aiRemediationChat: false,
@@ -150,7 +151,8 @@ const PLAN_CONFIGS = {
   starter: {
     limits: {
       maxUsers: 10, maxControls: 236, maxEvidence: 750, maxIntegrations: 5,
-      maxStorageGb: 10, retentionDays: 180, auditLogDays: 30, apiRateLimit: 60,
+      maxStorageGb: 10, retentionDays: 365, auditLogDays: 365, apiRateLimit: 60,
+      maxVendors: 0,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: false,
@@ -167,22 +169,24 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: 25, maxControls: 500, maxEvidence: 3000, maxIntegrations: 15,
       maxStorageGb: 50, retentionDays: 365, auditLogDays: 90, apiRateLimit: 300,
+      maxVendors: 50,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: true,
-      ssoEnabled: false, customBranding: true, advancedReporting: true,
+      ssoEnabled: true, customBranding: true, advancedReporting: true,
       trustCenter: true, incidentResponse: true, vendorRisk: true,
       questionnaireAutomation: true, aiRemediationChat: true,
       realTimeRegulatoryScan: false, auditBundleExport: true,
       customDomain: false, scimProvisioning: false,
     },
-    price: 1199,
-    priceAnnual: 11988,
+    price: 1399,
+    priceAnnual: 13988,
   },
   scale: {
     limits: {
-      maxUsers: 75, maxControls: 1500, maxEvidence: 10000, maxIntegrations: 40,
+      maxUsers: 150, maxControls: 1500, maxEvidence: 10000, maxIntegrations: 40,
       maxStorageGb: 200, retentionDays: 730, auditLogDays: 365, apiRateLimit: 1200,
+      maxVendors: 150,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: true,
@@ -190,7 +194,7 @@ const PLAN_CONFIGS = {
       trustCenter: true, incidentResponse: true, vendorRisk: true,
       questionnaireAutomation: true, aiRemediationChat: true,
       realTimeRegulatoryScan: true, auditBundleExport: true,
-      customDomain: true, scimProvisioning: false,
+      customDomain: true, scimProvisioning: true,
     },
     price: 2399,
     priceAnnual: 23988,
@@ -199,6 +203,7 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: -1, maxControls: -1, maxEvidence: -1, maxIntegrations: -1,
       maxStorageGb: -1, retentionDays: -1, auditLogDays: -1, apiRateLimit: -1,
+      maxVendors: -1,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: true,

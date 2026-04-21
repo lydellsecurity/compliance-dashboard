@@ -67,6 +67,7 @@ import { FRAMEWORKS, type FrameworkId, type ComplianceDomain, COMPLIANCE_DOMAINS
 import { useEscapeKey } from '../hooks/useEscapeKey';
 import { UpgradeModal } from './UpgradeGate';
 import { nextPlan } from '../constants/billing';
+import { auth } from '../services/auth.service';
 
 // ============================================================================
 // TYPES
@@ -1729,6 +1730,8 @@ const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
         </div>
       </div>
 
+      {canManage && <BillingEventsLogBlock tenantId={tenant.id} />}
+
       <UpgradeModal
         open={upgradeTarget !== null}
         onClose={() => setUpgradeTarget(null)}
@@ -1739,6 +1742,98 @@ const BillingTab: React.FC<BillingTabProps> = ({ tenant, canManage }) => {
         }}
         targetPlan={upgradeTarget ?? undefined}
       />
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// BILLING EVENTS LOG BLOCK (owner/admin surface)
+// ----------------------------------------------------------------------------
+
+interface BillingEventRow {
+  id: string;
+  stripeEventId: string;
+  type: string;
+  processedAt: string;
+  summary: string;
+}
+
+const BillingEventsLogBlock: React.FC<{ tenantId: string }> = ({ tenantId }) => {
+  const [events, setEvents] = useState<BillingEventRow[] | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async (before?: string) => {
+    setLoading(true);
+    try {
+      const token = (await auth.getAccessToken()) ?? '';
+      const res = await fetch('/.netlify/functions/billing-events-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ limit: 15, ...(before ? { before } : {}) }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setEvents((prev) => (before && prev ? [...prev, ...(json.events || [])] : json.events || []));
+        setHasMore(!!json.hasMore);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load, tenantId]);
+
+  if (!events) return null;
+  if (events.length === 0) {
+    return (
+      <div className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-1">Billing events</h3>
+        <p className="text-sm text-slate-500 dark:text-steel-400">
+          No Stripe webhooks have been processed yet for this organization.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 p-6">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-steel-100 mb-1">Billing events</h3>
+      <p className="text-sm text-slate-500 dark:text-steel-400 mb-4">
+        Every Stripe webhook we processed for this org. Useful for reconciling unexpected plan changes.
+      </p>
+      <ul className="divide-y divide-slate-100 dark:divide-steel-800">
+        {events.map((ev) => (
+          <li key={ev.id} className="py-2.5 flex items-start justify-between gap-3 text-sm">
+            <div className="min-w-0">
+              <p className="text-slate-900 dark:text-steel-100 font-medium truncate">{ev.summary}</p>
+              <p className="text-xs text-slate-500 dark:text-steel-400 font-mono truncate">
+                {ev.type} · {ev.stripeEventId}
+              </p>
+            </div>
+            <time className="text-xs text-slate-500 dark:text-steel-400 shrink-0 tabular-nums">
+              {new Date(ev.processedAt).toLocaleString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </time>
+          </li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => load(events[events.length - 1]?.processedAt)}
+          disabled={loading}
+          className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-3"
+        >
+          {loading ? 'Loading…' : 'Load more'}
+        </button>
+      )}
     </div>
   );
 };

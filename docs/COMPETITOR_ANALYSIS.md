@@ -182,69 +182,73 @@ Healthcare (HIPAA), Finance (PCI DSS), Government (FedRAMP) need specialized sol
 - **Mid-Market tier:** $15K-$45K (Secureframe Complete, Vanta starter)
 - **Enterprise tier:** $45K-$250K+ (Drata, Vanta Pro, AuditBoard)
 
-### Recommended AttestAI Pricing Tiers
+### AttestAI Pricing Tiers (April 2026 recut)
 
-#### 1. Startup Plan - $499/month ($5,988/year)
-**Target:** <50 employees, single framework
-- 1 compliance framework
-- Up to 50 users
-- Basic integrations (10)
-- Trust Center
-- Email support
-- 1 questionnaire/month
+> The authoritative source is [MONETIZATION_PLAN.md §3](MONETIZATION_PLAN.md) and the code in [src/services/multi-tenant.service.ts PLAN_CONFIGS](../src/services/multi-tenant.service.ts). The below summarises how the tiers relate to the competitive landscape.
 
-#### 2. Growth Plan - $999/month ($11,988/year)
-**Target:** 50-200 employees, multi-framework
-- 3 compliance frameworks
-- Up to 200 users
-- All integrations
-- Trust Center + NDA automation
-- Vendor Risk (up to 25 vendors)
-- Cloud Verification (1 provider)
-- Priority support
-- 5 questionnaires/month
-- AI Remediation Chat
+#### 1. Free — $0
+**Target:** Founders evaluating the product
+- 1 framework, 15 controls, 1 user
+- Manual evidence only (no cloud integrations)
+- Trust Center with "Compliance powered by AttestAI" watermark
+- 250 MB storage, 14-day retention
+- Community support
 
-#### 3. Scale Plan - $1,999/month ($23,988/year)
-**Target:** 200-500 employees, enterprise features
+#### 2. Starter — $599/month ($5,988/year)
+**Target:** <50 employees, first SOC 2 (Type I or Type II)
+- 1 framework (full 236 controls)
+- 10 users
+- AWS + Azure + GCP cloud integrations
+- 365-day retention (SOC 2 Type II compatible)
+- Custom branding (logo + colors)
+- Incident Response engine
+- Email support (48h)
+
+#### 3. Growth — $1,399/month ($13,988/year)
+**Target:** 50–200 employees, multi-framework, SSO required
+- 3 frameworks with crosswalk
+- 25 users
+- **SSO / SAML included**
+- Vendor Risk Management (50 vendors)
+- AI Remediation Chat + Questionnaire autofill
+- Read-only API, audit-ready export
+- Email support (24h)
+
+#### 4. Scale — $2,399/month ($23,988/year)
+**Target:** 200–500 employees, procurement heat
 - All 6 frameworks
-- Up to 500 users
-- Advanced integrations + API access
-- Vendor Risk (up to 100 vendors)
-- Cloud Verification (all providers)
-- Continuous Monitoring
-- Incident Response
-- Custom reports
-- Unlimited questionnaires
-- Dedicated success manager
+- 150 users
+- **SCIM provisioning included**
+- Vendor Risk (150 vendors)
+- Real-time regulatory scanning
+- White-label Trust Center + custom domain
+- Full read/write API
+- Priority support (4h)
 
-#### 4. Enterprise Plan - Custom ($30K-$60K+/year)
-**Target:** 500+ employees, complex needs
-- Unlimited frameworks
-- Unlimited users
-- Custom integrations
-- White-label options
-- SLA guarantees
-- On-premise deployment option
-- Dedicated support team
-- Custom training
+#### 5. Enterprise — Custom ($36K–$72K+/year)
+**Target:** 500+ employees, FedRAMP / PCI L1 / on-prem
+- Unlimited everything
+- Custom frameworks + mappings
+- On-prem deployment option
+- DPA, MSA, custom terms, 1-hour SLA
+- Dedicated CSM
 
 ### Pricing Justification
 
 | Tier | Monthly | Annual | vs Competitors |
 |------|---------|--------|----------------|
-| Startup | $499 | $5,988 | 20-40% below Secureframe |
-| Growth | $999 | $11,988 | 40-50% below Vanta |
-| Scale | $1,999 | $23,988 | 30-40% below Drata |
-| Enterprise | Custom | $30K-$60K | Competitive |
+| Starter | $599 | $5,988 | 20–40% below Secureframe Fundamentals |
+| Growth | $1,399 | $13,988 | 40–50% below Vanta (with SSO included — Vanta only ships SSO at $25K+) |
+| Scale | $2,399 | $23,988 | 30–40% below Drata (with SCIM included — competitors lock SCIM behind $50K Enterprise tier) |
+| Enterprise | Custom | $36K–$72K | Competitive |
 
-**Value Proposition:** "Enterprise compliance automation at mid-market pricing"
+**Value Proposition:** "Enterprise compliance automation at mid-market pricing — SSO included at Growth, SCIM included at Scale."
 
 ---
 
 ## Competitive Positioning Statement
 
-> **AttestAI is the AI-native compliance automation platform that delivers enterprise-grade security and compliance capabilities at a price point accessible to growing companies. Unlike legacy GRC tools that charge premium prices for basic automation, AttestAI provides comprehensive multi-framework compliance, built-in vendor risk management, and intelligent remediation guidance—all powered by AI—starting at just $499/month.**
+> **AttestAI is the AI-native compliance automation platform that delivers enterprise-grade security and compliance capabilities at a price point accessible to growing companies. Unlike legacy GRC tools that lock identity features behind Enterprise tiers, AttestAI ships SSO at Growth ($1,399/mo) and SCIM at Scale ($2,399/mo) — capabilities that cost $25K–$50K/year elsewhere.**
 
 ---
 

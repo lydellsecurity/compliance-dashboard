@@ -17,8 +17,26 @@
  *   VITE_STRIPE_PRICE_CSM_MONTHLY
  *   VITE_STRIPE_PRICE_AUDIT_BUNDLE
  *
- * The webhook function on the server side uses STRIPE_SECRET_KEY and
- * STRIPE_WEBHOOK_SECRET (no VITE_ prefix).
+ * Server-side (Netlify functions) env vars (no VITE_ prefix):
+ *
+ *   STRIPE_SECRET_KEY
+ *   STRIPE_WEBHOOK_SECRET
+ *   STRIPE_PRICE_STARTER_MONTHLY / _ANNUAL
+ *   STRIPE_PRICE_GROWTH_MONTHLY  / _ANNUAL
+ *   STRIPE_PRICE_SCALE_MONTHLY   / _ANNUAL
+ *   STRIPE_PRICE_SEAT_STARTER / _GROWTH / _SCALE
+ *   STRIPE_PRICE_AI_POLICY_BLOCK_50
+ *   STRIPE_PRICE_QUESTIONNAIRE_BLOCK_10
+ *   STRIPE_PRICE_VENDOR_BLOCK_25
+ *   STRIPE_PRICE_CSM_MONTHLY
+ *   STRIPE_PRICE_AUDIT_BUNDLE
+ *   USAGE_REPORT_CRON_SECRET (shared secret for cron endpoints)
+ *
+ * Email delivery (at least one provider needed for billing notifications):
+ *
+ *   RESEND_API_KEY  -or-  SENDGRID_API_KEY  -or-  MAILGUN_API_KEY + MAILGUN_DOMAIN
+ *   FROM_EMAIL  (defaults to noreply@lydellsecurity.com)
+ *   FROM_NAME   (defaults to "AttestAI by Lydell Security")
  */
 
 import type { BillingInterval, TenantPlan } from '../services/multi-tenant.service';
@@ -110,13 +128,14 @@ export const PLAN_DISPLAY: Record<TenantPlan, PlanDisplay> = {
   free: {
     key: 'free',
     name: 'Free',
-    tagline: 'Start your compliance journey — no card required.',
-    targetBuyer: 'Founders exploring compliance pre-revenue',
+    tagline: 'Tour the product — no card required.',
+    targetBuyer: 'Founders evaluating compliance tooling',
     featureHighlights: [
-      '1 framework',
-      'Up to 3 users',
-      'Public Trust Center',
-      '3 AI policy generations / month',
+      '1 framework, 15 controls',
+      '1 user',
+      'Public Trust Center (watermarked)',
+      '25 evidence items, 250 MB storage',
+      'Manual evidence only — no cloud integrations',
     ],
     cta: 'start_free',
   },
@@ -141,8 +160,8 @@ export const PLAN_DISPLAY: Record<TenantPlan, PlanDisplay> = {
     targetBuyer: '50–200 employees, multiple audits',
     featureHighlights: [
       '3 frameworks with cross-walk',
-      '25 users',
-      'Vendor Risk Management (25 vendors)',
+      '25 users + @sso / @saml',
+      'Vendor Risk Management (50 vendors)',
       'AI Remediation Chat',
       'Questionnaire autofill',
       'Read-only API',
@@ -160,7 +179,7 @@ export const PLAN_DISPLAY: Record<TenantPlan, PlanDisplay> = {
     // tooltip so non-technical admins can see definitions inline.
     featureHighlights: [
       'All 6 frameworks',
-      '75 users + @sso / @saml',
+      '150 users + @scim provisioning',
       'Real-time regulatory scanning',
       'White-label Trust Center + custom domain',
       'Full read/write API',
@@ -171,15 +190,15 @@ export const PLAN_DISPLAY: Record<TenantPlan, PlanDisplay> = {
   enterprise: {
     key: 'enterprise',
     name: 'Enterprise',
-    tagline: 'Custom frameworks, @scim, and a dedicated CSM.',
+    tagline: 'Custom frameworks, on-prem deployment, and a dedicated CSM.',
     targetBuyer: '500+ employees, FedRAMP / PCI L1 / on-prem',
     featureHighlights: [
-      'Unlimited everything',
-      '@scim provisioning',
+      'Unlimited users, controls, evidence, vendors',
       'Custom frameworks + mappings',
       'Dedicated CSM, 1-hour SLA',
       'DPA, MSA, custom terms',
       'On-prem deployment option',
+      'FedRAMP / PCI L1 posture',
     ],
     cta: 'contact_sales',
   },

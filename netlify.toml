@@ -18,6 +18,12 @@
 [functions."stripe-report-usage"]
   schedule = "15 2 * * *"  # Daily at 02:15 UTC
 
+# Scheduled Functions - Stripe subscription reconciliation
+# Runs daily to catch webhook delivery failures / state drift between Stripe
+# and the app. See netlify/functions/stripe-subscription-audit.cjs.
+[functions."stripe-subscription-audit"]
+  schedule = "45 3 * * *"  # Daily at 03:45 UTC (after the usage reporter)
+
 # API routes to functions (must be BEFORE the SPA catch-all)
 [[redirects]]
   from = "/api/*"

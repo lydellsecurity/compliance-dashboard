@@ -9,14 +9,15 @@
  * - Organization settings
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings as SettingsIcon, Cloud, Bell, Activity, Shield, Building2,
   ChevronRight, Monitor, AlertTriangle, CheckCircle2, XCircle,
   RefreshCw, Zap, Database, Lock, Globe, Mail, MessageSquare,
   Webhook, ToggleLeft, ToggleRight, Clock, TrendingUp, GitCompare,
-  UserCog, Users, CreditCard, Key, ExternalLink,
+  UserCog, Users, CreditCard, Key, ExternalLink, Plus, Receipt, Gavel,
+  Download, FileText, Edit2, Save, Minus,
 } from 'lucide-react';
 import RegulatoryVersionControl from './RegulatoryVersionControl';
 import {
@@ -30,7 +31,7 @@ import { useUrlState } from '../hooks/useUrlState';
 import { UpgradeModal } from './UpgradeGate';
 import { DowngradeWarning } from './DowngradeWarning';
 import { PLAN_DISPLAY } from '../constants/billing';
-import type { TenantPlan } from '../services/multi-tenant.service';
+import type { Tenant, TenantPlan } from '../services/multi-tenant.service';
 
 // ============================================================================
 // TYPES
@@ -791,11 +792,33 @@ const RegulatorySection: React.FC = () => {
 // BILLING CARD
 // ============================================================================
 
+interface UsageSummary {
+  periodStart: string;
+  periodEnd: string;
+  meters: Record<string, { used: number; cap: number | null }>;
+  apiCallsThisMonth: number;
+  plan: string;
+  limits: Record<string, number> | null;
+  usage: Record<string, number> | null;
+}
+
+const METER_LABELS: Record<string, string> = {
+  ai_policy: 'AI policy generations',
+  ai_remediation_chat: 'AI Remediation Chat messages',
+  questionnaire: 'Questionnaire autofills',
+  vendors: 'Vendors tracked',
+  seats: 'Seats',
+  report: 'Reports exported',
+};
+
 const BillingCard: React.FC = () => {
-  const { tenant, plan, suggestedUpgrade, loading } = useEntitlement();
+  const { tenant, plan, suggestedUpgrade, loading, refresh } = useEntitlement();
   const [portalLoading, setPortalLoading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [seatLoading, setSeatLoading] = useState(false);
+  const [seatFeedback, setSeatFeedback] = useState<string | null>(null);
 
   // Pre-downgrade loss warning — shown when Stripe Portal redirects back
   // with ?downgrade=confirm&to=<plan>. Relies on Portal custom-flow config.
@@ -804,6 +827,37 @@ const BillingCard: React.FC = () => {
 
   const display = PLAN_DISPLAY[plan];
   const hasSubscription = !!tenant?.billing?.subscriptionId;
+  const refund = tenant?.billing && (tenant.billing as unknown as {
+    lastRefund?: { amount: number; currency: string; refundedAt: string; reason?: string | null };
+  }).lastRefund;
+  const dispute = tenant?.billing && (tenant.billing as unknown as {
+    activeDispute?: { amount: number; currency: string; reason: string; status: string; createdAt: string };
+  }).activeDispute;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = (await auth.getAccessToken()) ?? '';
+        const res = await fetch('/.netlify/functions/billing-usage-summary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: '{}',
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as UsageSummary;
+        if (!cancelled) setUsage(json);
+      } catch {
+        // Non-critical.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant?.id, tenant?.billing?.currentPeriodEnd]);
 
   const openPortal = async () => {
     setError(null);
@@ -827,16 +881,57 @@ const BillingCard: React.FC = () => {
     }
   };
 
+  const addSeat = async () => {
+    const priceEnv =
+      plan === 'starter'
+        ? (import.meta.env?.VITE_STRIPE_PRICE_SEAT_STARTER as string | undefined)
+        : plan === 'growth'
+          ? (import.meta.env?.VITE_STRIPE_PRICE_SEAT_GROWTH as string | undefined)
+          : plan === 'scale'
+            ? (import.meta.env?.VITE_STRIPE_PRICE_SEAT_SCALE as string | undefined)
+            : '';
+    if (!priceEnv) {
+      setSeatFeedback('Seat pricing is not configured for your plan yet.');
+      return;
+    }
+    setSeatLoading(true);
+    setSeatFeedback(null);
+    try {
+      const token = (await auth.getAccessToken()) ?? '';
+      const res = await fetch('/.netlify/functions/stripe-manage-addons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'add', priceId: priceEnv, quantity: 1 }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not add seat');
+      setSeatFeedback('Extra seat added. Prorated charge appears on your next invoice.');
+      await refresh();
+    } catch (err) {
+      setSeatFeedback(err instanceof Error ? err.message : 'Could not add seat');
+    } finally {
+      setSeatLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="card p-5 text-sm text-secondary">Loading billing…</div>
     );
   }
 
+  const seatPriceConfigured =
+    (plan === 'starter' && !!import.meta.env?.VITE_STRIPE_PRICE_SEAT_STARTER) ||
+    (plan === 'growth' && !!import.meta.env?.VITE_STRIPE_PRICE_SEAT_GROWTH) ||
+    (plan === 'scale' && !!import.meta.env?.VITE_STRIPE_PRICE_SEAT_SCALE);
+
   return (
     <>
-      <div className="p-5 bg-slate-50 dark:bg-steel-800/50 rounded-xl border border-slate-200 dark:border-steel-700">
-        <div className="flex items-center justify-between mb-3">
+      <div className="p-5 bg-slate-50 dark:bg-steel-800/50 rounded-xl border border-slate-200 dark:border-steel-700 space-y-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
@@ -848,7 +943,7 @@ const BillingCard: React.FC = () => {
               <p className="text-xs text-secondary">{display.tagline}</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             {hasSubscription && (
               <button
                 type="button"
@@ -857,6 +952,17 @@ const BillingCard: React.FC = () => {
                 className="btn-secondary"
               >
                 {portalLoading ? 'Opening…' : 'Manage billing'}
+              </button>
+            )}
+            {hasSubscription && seatPriceConfigured && (
+              <button
+                type="button"
+                onClick={addSeat}
+                disabled={seatLoading}
+                className="btn-secondary inline-flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                {seatLoading ? 'Adding…' : 'Add seat'}
               </button>
             )}
             {suggestedUpgrade && suggestedUpgrade !== 'enterprise' && (
@@ -878,8 +984,66 @@ const BillingCard: React.FC = () => {
             )}
           </div>
         </div>
+
+        {seatFeedback && (
+          <p className="text-sm text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg px-3 py-2">
+            {seatFeedback}
+          </p>
+        )}
+
+        {dispute && (
+          <div className="flex items-start gap-2 text-sm p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900">
+            <Gavel className="w-4 h-4 mt-0.5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <div className="text-rose-900 dark:text-rose-100">
+              <p className="font-semibold">Active dispute — {dispute.status}</p>
+              <p className="text-xs opacity-90">
+                {(dispute.amount / 100).toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: (dispute.currency || 'usd').toUpperCase(),
+                })}{' '}
+                disputed {dispute.reason ? `(${dispute.reason})` : ''}. Contact{' '}
+                <a className="underline" href="mailto:support@lydellsecurity.com">support</a> to resolve.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {refund && (
+          <div className="flex items-start gap-2 text-sm p-3 rounded-lg bg-slate-50 dark:bg-steel-900 border border-slate-200 dark:border-steel-700">
+            <Receipt className="w-4 h-4 mt-0.5 text-slate-500 shrink-0" />
+            <div>
+              <p className="font-medium text-primary">
+                Refund of{' '}
+                {(refund.amount / 100).toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: (refund.currency || 'usd').toUpperCase(),
+                })}{' '}
+                processed
+              </p>
+              <p className="text-xs text-secondary">
+                {new Date(refund.refundedAt).toLocaleDateString(undefined, {
+                  year: 'numeric', month: 'short', day: 'numeric',
+                })}
+                {refund.reason ? ` — ${refund.reason}` : ''}. Usually posts within 5–10 business days.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {hasSubscription && <UpcomingInvoiceBlock tenantId={tenant?.id} />}
+
+        {usage && <UsageMetersBlock usage={usage} />}
+
+        {hasSubscription && (
+          <SubscriptionItemsBlock tenantId={tenant?.id} onChange={refresh} />
+        )}
+
+        <BillingContactForm tenant={tenant} />
+
+        {hasSubscription && <InvoiceHistoryBlock tenantId={tenant?.id} />}
+
         {error && (
-          <p className="text-sm text-rose-600 dark:text-rose-400 mt-2">{error}</p>
+          <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
         )}
       </div>
       <UpgradeModal
@@ -901,6 +1065,565 @@ const BillingCard: React.FC = () => {
         }}
       />
     </>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// UPCOMING INVOICE BLOCK
+// ----------------------------------------------------------------------------
+
+interface UpcomingInvoice {
+  hasUpcoming: boolean;
+  amountDue?: number;
+  currency?: string;
+  periodEnd?: string | null;
+  total?: number;
+  tax?: number;
+  subtotal?: number;
+  lines?: Array<{ id: string; description: string; amount: number; proration: boolean }>;
+}
+
+const UpcomingInvoiceBlock: React.FC<{ tenantId: string | undefined }> = ({ tenantId }) => {
+  const [data, setData] = useState<UpcomingInvoice | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const token = (await auth.getAccessToken()) ?? '';
+        const res = await fetch('/.netlify/functions/stripe-upcoming-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: '{}',
+        });
+        if (!res.ok) throw new Error('fetch failed');
+        const json = (await res.json()) as UpcomingInvoice;
+        if (!cancelled) setData(json);
+      } catch {
+        if (!cancelled) setData({ hasUpcoming: false });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId]);
+
+  if (loading || !data?.hasUpcoming) return null;
+  const total = data.total ?? data.amountDue ?? 0;
+  const currency = (data.currency || 'usd').toUpperCase();
+  return (
+    <div className="pt-3 border-t border-slate-200 dark:border-steel-700">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-2">
+        Next invoice (estimate)
+      </p>
+      <div className="flex items-baseline justify-between">
+        <span className="text-lg font-semibold text-primary tabular-nums">
+          {(total / 100).toLocaleString('en-US', { style: 'currency', currency })}
+        </span>
+        <span className="text-xs text-secondary">
+          {data.periodEnd
+            ? `Bills on ${new Date(data.periodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
+            : ''}
+        </span>
+      </div>
+      {data.lines && data.lines.length > 0 && (
+        <details className="mt-1.5">
+          <summary className="text-xs text-secondary cursor-pointer hover:text-primary">
+            Line items ({data.lines.length})
+          </summary>
+          <ul className="mt-2 space-y-1 text-xs">
+            {data.lines.map((line) => (
+              <li key={line.id} className="flex justify-between gap-3 text-secondary">
+                <span className="truncate">
+                  {line.description || '—'}
+                  {line.proration ? ' (prorated)' : ''}
+                </span>
+                <span className="tabular-nums shrink-0">
+                  {(line.amount / 100).toLocaleString('en-US', { style: 'currency', currency })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// SUBSCRIPTION ITEMS BLOCK (seats + CSM + bundles + metered)
+// ----------------------------------------------------------------------------
+
+interface SubItem {
+  id: string;
+  priceId: string;
+  isBasePlan: boolean;
+  metered: boolean;
+  quantity: number | null;
+  unitAmount: number | null;
+  currency: string;
+  interval: string | null;
+  nickname: string | null;
+  displayName: string | null;
+  addonKind: string | null;
+  meter: string | null;
+}
+
+const SubscriptionItemsBlock: React.FC<{ tenantId: string | undefined; onChange: () => void }> = ({
+  tenantId,
+  onChange,
+}) => {
+  const [items, setItems] = useState<SubItem[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const token = (await auth.getAccessToken()) ?? '';
+      const res = await fetch('/.netlify/functions/stripe-list-subscription-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: '{}',
+      });
+      const json = await res.json();
+      if (res.ok) setItems((json.items as SubItem[]) || []);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load, tenantId]);
+
+  const addons = (items || []).filter((i) => !i.isBasePlan);
+  if (!items) return null;
+  if (addons.length === 0) return null;
+
+  const bump = async (item: SubItem, delta: number) => {
+    if (item.metered) return;
+    setBusy(item.id);
+    setError(null);
+    try {
+      const newQty = (item.quantity || 0) + delta;
+      const token = (await auth.getAccessToken()) ?? '';
+      const res = await fetch('/.netlify/functions/stripe-manage-addons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(
+          newQty <= 0
+            ? { action: 'remove', priceId: item.priceId }
+            : { action: 'update', priceId: item.priceId, quantity: newQty }
+        ),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not update');
+      await load();
+      onChange();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="pt-3 border-t border-slate-200 dark:border-steel-700">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-2">
+        Add-ons & extras
+      </p>
+      <ul className="space-y-1.5 text-sm">
+        {addons.map((item) => {
+          const label = item.displayName || item.nickname || item.priceId;
+          const unit =
+            item.unitAmount != null
+              ? (item.unitAmount / 100).toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: (item.currency || 'usd').toUpperCase(),
+                })
+              : null;
+          return (
+            <li
+              key={item.id}
+              className="flex items-center justify-between gap-3 py-1"
+            >
+              <div className="min-w-0">
+                <p className="text-primary truncate">{label}</p>
+                <p className="text-xs text-secondary">
+                  {item.metered
+                    ? 'Metered — billed on usage'
+                    : `${item.quantity ?? 0} × ${unit || '—'}`}
+                  {item.interval ? ` / ${item.interval}` : ''}
+                </p>
+              </div>
+              {!item.metered && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => bump(item, -1)}
+                    disabled={busy === item.id || (item.quantity ?? 0) <= 0}
+                    aria-label="Decrease"
+                    className="w-7 h-7 rounded-md border border-slate-200 dark:border-steel-700 text-slate-600 dark:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-800 inline-flex items-center justify-center disabled:opacity-40"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="min-w-[2ch] text-center tabular-nums text-primary">
+                    {item.quantity ?? 0}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => bump(item, +1)}
+                    disabled={busy === item.id}
+                    aria-label="Increase"
+                    className="w-7 h-7 rounded-md border border-slate-200 dark:border-steel-700 text-slate-600 dark:text-steel-300 hover:bg-slate-50 dark:hover:bg-steel-800 inline-flex items-center justify-center disabled:opacity-40"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {error && <p className="text-xs text-rose-600 dark:text-rose-400 mt-2">{error}</p>}
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// BILLING CONTACT FORM
+// ----------------------------------------------------------------------------
+
+const BillingContactForm: React.FC<{ tenant: Tenant | null }> = ({ tenant }) => {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const initial = tenant?.billing?.billingEmail || '';
+  const initialAddress = tenant?.billing?.billingAddress || null;
+
+  const [email, setEmail] = useState(initial);
+  const [line1, setLine1] = useState(initialAddress?.line1 || '');
+  const [line2, setLine2] = useState(initialAddress?.line2 || '');
+  const [city, setCity] = useState(initialAddress?.city || '');
+  const [state, setState] = useState(initialAddress?.state || '');
+  const [postalCode, setPostalCode] = useState(initialAddress?.postalCode || '');
+  const [country, setCountry] = useState(initialAddress?.country || '');
+
+  // Reset local state when tenant refreshes.
+  useEffect(() => {
+    if (!editing) {
+      setEmail(tenant?.billing?.billingEmail || '');
+      const a = tenant?.billing?.billingAddress || null;
+      setLine1(a?.line1 || '');
+      setLine2(a?.line2 || '');
+      setCity(a?.city || '');
+      setState(a?.state || '');
+      setPostalCode(a?.postalCode || '');
+      setCountry(a?.country || '');
+    }
+  }, [tenant?.id, tenant?.billing?.billingEmail, tenant?.billing?.billingAddress, editing]);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    setFeedback(null);
+    try {
+      const token = (await auth.getAccessToken()) ?? '';
+      const res = await fetch('/.netlify/functions/stripe-sync-customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          billingEmail: email,
+          billingAddress: {
+            line1,
+            line2: line2 || undefined,
+            city,
+            state,
+            postalCode,
+            country,
+          },
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not save');
+      setFeedback('Saved. Stripe has been updated.');
+      setEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="pt-3 border-t border-slate-200 dark:border-steel-700">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400">
+          Billing contact
+        </p>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+          >
+            <Edit2 className="w-3 h-3" /> Edit
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <div className="text-sm space-y-0.5">
+          <p className="text-primary">{email || <span className="text-secondary italic">No billing email set</span>}</p>
+          {initialAddress ? (
+            <p className="text-xs text-secondary">
+              {initialAddress.line1}
+              {initialAddress.line2 ? `, ${initialAddress.line2}` : ''}
+              {', '}
+              {initialAddress.city}, {initialAddress.state} {initialAddress.postalCode}, {initialAddress.country}
+            </p>
+          ) : (
+            <p className="text-xs text-secondary italic">No billing address on file</p>
+          )}
+          {feedback && <p className="text-xs text-emerald-600 dark:text-emerald-400">{feedback}</p>}
+        </div>
+      ) : (
+        <div className="space-y-2 text-sm">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="billing@company.com"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+          />
+          <input
+            type="text"
+            value={line1}
+            onChange={(e) => setLine1(e.target.value)}
+            placeholder="Street address"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+          />
+          <input
+            type="text"
+            value={line2}
+            onChange={(e) => setLine2(e.target.value)}
+            placeholder="Apt / suite (optional)"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="City"
+              className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+            />
+            <input
+              type="text"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="State / region"
+              className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              placeholder="Postal code"
+              className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+            />
+            <input
+              type="text"
+              value={country}
+              onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
+              placeholder="Country (ISO, e.g. US)"
+              maxLength={2}
+              className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-primary"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="btn-secondary text-sm px-3 py-1.5"
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="btn-primary text-sm px-3 py-1.5 inline-flex items-center gap-1"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+          {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// INVOICE HISTORY BLOCK
+// ----------------------------------------------------------------------------
+
+interface InvoiceRow {
+  id: string;
+  number: string | null;
+  status: string;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  created: string;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+}
+
+const InvoiceHistoryBlock: React.FC<{ tenantId: string | undefined }> = ({ tenantId }) => {
+  const [invoices, setInvoices] = useState<InvoiceRow[] | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = (await auth.getAccessToken()) ?? '';
+        const res = await fetch('/.netlify/functions/stripe-list-invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ limit: expanded ? 24 : 5 }),
+        });
+        const json = await res.json();
+        if (!cancelled && res.ok) setInvoices(json.invoices || []);
+      } catch {
+        if (!cancelled) setInvoices([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, expanded]);
+
+  if (!invoices || invoices.length === 0) return null;
+
+  const statusStyle = (s: string) =>
+    s === 'paid'
+      ? 'text-emerald-700 dark:text-emerald-400'
+      : s === 'open' || s === 'draft'
+        ? 'text-amber-700 dark:text-amber-400'
+        : s === 'uncollectible' || s === 'void'
+          ? 'text-rose-700 dark:text-rose-400'
+          : 'text-secondary';
+
+  return (
+    <div className="pt-3 border-t border-slate-200 dark:border-steel-700">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-2">
+        Invoices
+      </p>
+      <ul className="divide-y divide-slate-100 dark:divide-steel-800">
+        {invoices.map((inv) => {
+          const currency = (inv.currency || 'usd').toUpperCase();
+          return (
+            <li key={inv.id} className="flex items-center justify-between py-2 text-sm gap-3">
+              <div className="min-w-0">
+                <p className="text-primary font-medium truncate">
+                  {inv.number || inv.id.slice(0, 10)}
+                </p>
+                <p className="text-xs text-secondary">
+                  {new Date(inv.created).toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                  })}
+                  {' · '}
+                  <span className={statusStyle(inv.status)}>{inv.status}</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="tabular-nums text-primary text-sm">
+                  {((inv.status === 'paid' ? inv.amountPaid : inv.amountDue) / 100).toLocaleString(
+                    'en-US',
+                    { style: 'currency', currency }
+                  )}
+                </span>
+                {inv.invoicePdf && (
+                  <a
+                    href={inv.invoicePdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Download PDF"
+                    className="p-1.5 rounded-md text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-steel-800"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                )}
+                {inv.hostedInvoiceUrl && (
+                  <a
+                    href={inv.hostedInvoiceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View invoice"
+                    className="p-1.5 rounded-md text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-steel-800"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {!expanded && invoices.length >= 5 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1"
+        >
+          Show more invoices
+        </button>
+      )}
+    </div>
+  );
+};
+
+const UsageMetersBlock: React.FC<{ usage: UsageSummary }> = ({ usage }) => {
+  const entries = Object.entries(usage.meters).filter(([, v]) => v.used > 0 || v.cap);
+  if (entries.length === 0 && !usage.apiCallsThisMonth) return null;
+  return (
+    <div className="pt-3 border-t border-slate-200 dark:border-steel-700">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-2">
+        Usage this period
+      </p>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3">
+            <dt className="text-slate-600 dark:text-steel-300">{METER_LABELS[k] ?? k}</dt>
+            <dd className="tabular-nums text-slate-900 dark:text-steel-100">
+              {v.used.toLocaleString()}
+              {v.cap ? ` / ${v.cap.toLocaleString()}` : ''}
+            </dd>
+          </div>
+        ))}
+        {usage.apiCallsThisMonth > 0 && (
+          <div className="flex justify-between gap-3">
+            <dt className="text-slate-600 dark:text-steel-300">API calls</dt>
+            <dd className="tabular-nums text-slate-900 dark:text-steel-100">
+              {usage.apiCallsThisMonth.toLocaleString()}
+            </dd>
+          </div>
+        )}
+      </dl>
+    </div>
   );
 };
 

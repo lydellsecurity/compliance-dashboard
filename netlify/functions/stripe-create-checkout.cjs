@@ -2,13 +2,22 @@
  * stripe-create-checkout
  *
  * POST /.netlify/functions/stripe-create-checkout
- * Body: { priceId: string, interval: 'monthly'|'annual', successPath?: string, cancelPath?: string }
+ * Body: { priceId: string, interval: 'monthly'|'annual', successPath?: string,
+ *         cancelPath?: string, couponId?: string, promotionCode?: string }
  * Auth: Supabase JWT in Authorization header.
  *
  * Returns: { url: string } — Stripe-hosted Checkout URL.
  *
  * Idempotency: creates or reuses a Stripe Customer per organization so that
  * switching plans repeatedly doesn't spawn duplicate customers.
+ *
+ * Trial policy:
+ *   - Starter (and any org that has never had a paid subscription) gets a
+ *     14-day trial without a card being charged.
+ *   - Growth and Scale still collect a card but skip the trial so we don't
+ *     signal "free month" on premium tiers (reduces tire-kicking).
+ *   - Users flagged as `trial_consumed=true` on `user_billing_flags` cannot
+ *     claim a new trial from a second org they spin up (trial-abuse guard).
  */
 
 const {
@@ -27,6 +36,7 @@ const {
 } = require('./utils/stripe.cjs');
 
 const TRIAL_DAYS = 14;
+const PLANS_WITH_TRIAL = new Set(['starter']);
 
 exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;
@@ -54,7 +64,7 @@ exports.handler = async (event) => {
     const parsed = parseJsonBody(event.body);
     if (!parsed.valid) return errorResponse(400, parsed.error, origin);
 
-    const { priceId, interval, successPath, cancelPath } = parsed.data;
+    const { priceId, interval, successPath, cancelPath, couponId, promotionCode } = parsed.data;
     if (!priceId || typeof priceId !== 'string') {
       return errorResponse(400, 'priceId is required', origin);
     }
@@ -90,15 +100,32 @@ exports.handler = async (event) => {
       customerId = customer.id;
 
       // Persist immediately so a retry doesn't create a duplicate.
-      const nextBilling = { ...(org.billing || {}), customerId };
+      const nextBilling = {
+        ...(org.billing || {}),
+        customerId,
+        billingEmail: user.email || org.billing?.billingEmail || null,
+      };
       await supabase
         .from('organizations')
         .update({ billing: nextBilling, updated_at: new Date().toISOString() })
         .eq('id', organizationId);
     }
 
-    // Trial only for first-time paid subscribers on this org.
-    const isFirstPaidSubscription = !org.billing?.subscriptionId;
+    // Trial eligibility: first-time paid for THIS org, plan is trial-eligible,
+    // and user hasn't already consumed a trial in another org.
+    let trialEligible =
+      !org.billing?.subscriptionId && PLANS_WITH_TRIAL.has(planResolution.plan);
+
+    if (trialEligible) {
+      const { data: flag } = await supabase
+        .from('user_billing_flags')
+        .select('trial_consumed')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (flag?.trial_consumed) {
+        trialEligible = false;
+      }
+    }
 
     const appUrl =
       process.env.APP_URL ||
@@ -106,18 +133,40 @@ exports.handler = async (event) => {
       process.env.DEPLOY_URL ||
       'http://localhost:5173';
 
-    const session = await stripe.checkout.sessions.create({
+    // Build discount parameters — prefer promotionCode (human-facing code) over
+    // couponId (Stripe internal id) so both server-applied and user-entered
+    // codes work.
+    const discounts = [];
+    if (typeof promotionCode === 'string' && promotionCode.trim()) {
+      try {
+        const matches = await stripe.promotionCodes.list({
+          code: promotionCode.trim(),
+          active: true,
+          limit: 1,
+        });
+        if (matches.data[0]) {
+          discounts.push({ promotion_code: matches.data[0].id });
+        }
+      } catch (err) {
+        console.warn('promotionCode lookup failed:', err.message);
+      }
+    } else if (typeof couponId === 'string' && couponId.trim()) {
+      discounts.push({ coupon: couponId.trim() });
+    }
+
+    const checkoutConfig = {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
       automatic_tax: { enabled: true },
       customer_update: { address: 'auto', name: 'auto' },
       billing_address_collection: 'required',
+      tax_id_collection: { enabled: true },
       subscription_data: {
-        trial_period_days: isFirstPaidSubscription ? TRIAL_DAYS : undefined,
+        trial_period_days: trialEligible ? TRIAL_DAYS : undefined,
         metadata: {
           organization_id: organizationId,
+          created_by_user_id: user.id,
           plan: planResolution.plan,
           interval: planResolution.interval,
         },
@@ -126,12 +175,25 @@ exports.handler = async (event) => {
       cancel_url: `${appUrl}${cancelPath || '/settings/billing'}?checkout=cancel`,
       metadata: {
         organization_id: organizationId,
+        created_by_user_id: user.id,
         plan: planResolution.plan,
         interval: planResolution.interval,
       },
-    });
+    };
 
-    return successResponse({ url: session.url, sessionId: session.id }, origin);
+    // Stripe rejects `discounts` and `allow_promotion_codes` together — pick one.
+    if (discounts.length > 0) {
+      checkoutConfig.discounts = discounts;
+    } else {
+      checkoutConfig.allow_promotion_codes = true;
+    }
+
+    const session = await stripe.checkout.sessions.create(checkoutConfig);
+
+    return successResponse(
+      { url: session.url, sessionId: session.id, trial: trialEligible ? TRIAL_DAYS : 0 },
+      origin
+    );
   } catch (err) {
     const status = err.statusCode || 500;
     const message = status >= 500 ? 'Internal server error' : err.message;

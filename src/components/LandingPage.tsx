@@ -476,7 +476,7 @@ const PricingSection: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-8 text-sm text-slate-700">
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden />
-              14-day free trial
+              14-day free trial on Starter
             </span>
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden />
@@ -716,7 +716,9 @@ const PricingCard: React.FC<{
     ? 'Start free'
     : plan === 'enterprise'
       ? 'Talk to sales'
-      : 'Start 14-day trial';
+      : plan === 'starter'
+        ? 'Start 14-day trial'
+        : 'Subscribe';
 
   const ctaHref = plan === 'enterprise'
     ? 'mailto:sales@lydellsecurity.com?subject=Enterprise%20plan%20enquiry'
@@ -809,7 +811,9 @@ const PricingCard: React.FC<{
             ? 'No credit card required'
             : plan === 'enterprise'
               ? 'Custom SLA · DPA · MSA'
-              : 'No card for first 14 days'}
+              : plan === 'starter'
+                ? 'No card for first 14 days'
+                : 'Cancel anytime · 30-day money-back on annual'}
         </p>
       </div>
     </ScrollReveal>
@@ -829,17 +833,17 @@ const ComparisonTable: React.FC = () => {
   const rows: Row[] = [
     { label: 'Frameworks',
       values: {
-        free: '1',
-        starter: '1',
+        free: '1 (15 controls)',
+        starter: '1 (full)',
         growth: '3 with crosswalk',
         scale: 'All 6',
       } },
     { label: 'Users',
-      values: { free: '3', starter: '10', growth: '25', scale: '75' } },
+      values: { free: '1', starter: '10', growth: '25', scale: '150' } },
     { label: 'Cloud integrations',
-      values: { free: 'AWS only', starter: 'AWS + 1', growth: 'AWS / Azure / GCP', scale: 'All' } },
+      values: { free: false, starter: 'AWS / Azure / GCP', growth: 'AWS / Azure / GCP', scale: 'All' } },
     { label: 'Vendor Risk Management',
-      values: { free: false, starter: false, growth: '25 vendors', scale: '150 vendors' } },
+      values: { free: false, starter: false, growth: '50 vendors', scale: '150 vendors' } },
     { label: 'AI Remediation Chat',
       values: { free: false, starter: false, growth: true, scale: true } },
     { label: 'AI Questionnaire Autofill',
@@ -847,6 +851,8 @@ const ComparisonTable: React.FC = () => {
     { label: 'Real-time Regulatory Scanning',
       values: { free: false, starter: false, growth: 'Daily', scale: 'Real-time' } },
     { label: 'SSO / SAML',
+      values: { free: false, starter: false, growth: true, scale: true } },
+    { label: 'SCIM provisioning',
       values: { free: false, starter: false, growth: false, scale: true } },
     { label: 'Custom Trust Center domain',
       values: { free: false, starter: false, growth: false, scale: true } },
@@ -854,6 +860,8 @@ const ComparisonTable: React.FC = () => {
       values: { free: false, starter: false, growth: 'Read-only', scale: 'Read + Write' } },
     { label: 'Audit-ready export',
       values: { free: false, starter: false, growth: true, scale: true } },
+    { label: 'SOC 2 Type II ready',
+      values: { free: false, starter: 'Type I; Type II via annual upgrade', growth: true, scale: true } },
     { label: 'Support SLA',
       values: { free: 'Community', starter: '48h email', growth: '24h email', scale: '4h priority' } },
   ];
@@ -924,9 +932,11 @@ const PRICING_FAQS: Array<{ q: string; a: React.ReactNode }> = [
     q: "What's included in the 14-day trial?",
     a: (
       <>
-        Everything on the plan you pick. No feature gating, no watermarks. You won't be
-        charged until day 15, and we'll email you 3 days before the trial ends so nothing
-        surprises you.
+        The 14-day trial is offered on <strong>Starter</strong> — everything on that plan,
+        no feature gating, no charge until day 15. We email you 3 days before the trial ends.
+        Growth and Scale skip the trial in exchange for a guaranteed lower price per seat;
+        annual commitments on either tier can be invoiced with NET-30 terms. Free requires
+        no card at all.
       </>
     ),
   },

@@ -57,6 +57,7 @@ const LIMIT_LABEL: Record<LimitKey, string> = {
   retentionDays: 'retention',
   auditLogDays: 'audit log',
   apiRateLimit: 'API requests/min',
+  maxVendors: 'vendors',
 };
 
 // ============================================================================
@@ -396,7 +397,9 @@ function formatDate(iso: string): string {
 
 function formatCap(cap: number, limit: LimitKey): string {
   if (cap === -1) return 'Unlimited';
-  if (limit === 'maxStorageGb') return `${cap} GB`;
+  if (limit === 'maxStorageGb') {
+    return cap < 1 ? `${Math.round(cap * 1024)} MB` : `${cap} GB`;
+  }
   if (limit === 'retentionDays' || limit === 'auditLogDays') return `${cap} days`;
   if (limit === 'apiRateLimit') return `${cap}/min`;
   return cap.toLocaleString();

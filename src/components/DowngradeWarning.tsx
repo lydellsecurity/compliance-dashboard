@@ -15,12 +15,21 @@
  * param is never present. See docs/TODO_FOLLOWUPS.md #5.
  */
 
-import React, { useMemo } from 'react';
-import { AlertTriangle, ArrowRight, X, Users, ShoppingBag, Globe, Key, Sparkles } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, ArrowRight, X, Users, ShoppingBag, Globe, Key, Sparkles, Loader2 } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { useEntitlement } from '../hooks/useEntitlement';
+import { auth } from '../services/auth.service';
 import { PLAN_CONFIGS, type TenantFeatures, type TenantPlan } from '../services/multi-tenant.service';
 import { PLAN_DISPLAY, PLAN_ORDER } from '../constants/billing';
+
+interface DowngradeFinding {
+  key: string;
+  label: string;
+  current: number;
+  cap: number;
+  excess: number;
+}
 
 interface DowngradeWarningProps {
   open: boolean;
@@ -57,6 +66,41 @@ export const DowngradeWarning: React.FC<DowngradeWarningProps> = ({
   onCancel,
 }) => {
   const { plan: currentPlan } = useEntitlement();
+  const [preflight, setPreflight] = useState<{ blocked: boolean; findings: DowngradeFinding[] } | null>(null);
+  const [preflightLoading, setPreflightLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setPreflight(null);
+      return;
+    }
+    let cancelled = false;
+    setPreflightLoading(true);
+    (async () => {
+      try {
+        const token = (await auth.getAccessToken()) ?? '';
+        const res = await fetch('/.netlify/functions/billing-downgrade-preflight', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ targetPlan }),
+        });
+        const json = await res.json();
+        if (!cancelled && res.ok) {
+          setPreflight({ blocked: !!json.blocked, findings: json.findings || [] });
+        }
+      } catch {
+        // Non-fatal; the static copy still warns.
+      } finally {
+        if (!cancelled) setPreflightLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, targetPlan]);
 
   const losses = useMemo(() => {
     const fromConfig = PLAN_CONFIGS[currentPlan];
@@ -111,6 +155,35 @@ export const DowngradeWarning: React.FC<DowngradeWarningProps> = ({
             giving you time to export or re-upgrade before anything is enforced.
           </p>
         </div>
+
+        {preflightLoading && (
+          <div className="flex items-center gap-2 p-3 text-sm text-slate-500 dark:text-steel-400 bg-slate-50 dark:bg-steel-900 rounded-lg">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Checking for resources over the new limits…
+          </div>
+        )}
+
+        {preflight?.blocked && preflight.findings.length > 0 && (
+          <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900">
+            <h3 className="text-sm font-semibold text-rose-900 dark:text-rose-100 mb-2">
+              You're over the new plan's caps
+            </h3>
+            <ul className="space-y-1.5 text-sm">
+              {preflight.findings.map((f) => (
+                <li key={f.key} className="flex justify-between gap-3 text-rose-900 dark:text-rose-100">
+                  <span>{f.label}</span>
+                  <span className="tabular-nums font-medium">
+                    {f.current.toLocaleString()} / {f.cap === 0 ? '0' : f.cap.toLocaleString()} &nbsp;
+                    <span className="text-xs opacity-80">(remove {f.excess.toLocaleString()})</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-rose-800 dark:text-rose-200 mt-2">
+              Remove the excess before your billing period ends to avoid enforcement.
+            </p>
+          </div>
+        )}
 
         {losses.featureLosses.length > 0 && (
           <div>

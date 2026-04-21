@@ -15,8 +15,8 @@
  * `stripe-create-checkout` Netlify function to produce a checkout URL.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { Sparkles, Check, ArrowRight, ArrowUp } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Sparkles, Check, ArrowRight, ArrowUp, Tag, Loader2 } from 'lucide-react';
 import { auth } from '../services/auth.service';
 import { Modal } from './ui/Modal';
 import { GLOSSARY, GlossaryTerm } from './ui/Tooltip';
@@ -25,7 +25,7 @@ import { GLOSSARY, GlossaryTerm } from './ui/Tooltip';
  * Render a feature-highlight string, expanding `@term` tokens into
  * <GlossaryTerm /> so jargon in the upgrade modal is hoverable.
  *
- * Example: "75 users + @sso / @saml" → "75 users + <SSO> / <SAML>"
+ * Example: "150 users + @scim provisioning" → "150 users + <SCIM>"
  */
 function renderHighlight(text: string): React.ReactNode {
   const parts = text.split(/(@\w+)/g);
@@ -84,11 +84,14 @@ const LIMIT_LABELS: Record<LimitKey, string> = {
   retentionDays: 'Retention',
   auditLogDays: 'Audit log',
   apiRateLimit: 'API rate',
+  maxVendors: 'Vendors',
 };
 
 function formatLimit(limit: LimitKey, value: number): string {
   if (value === -1) return 'Unlimited';
-  if (limit === 'maxStorageGb') return `${value} GB`;
+  if (limit === 'maxStorageGb') {
+    return value < 1 ? `${Math.round(value * 1024)} MB` : `${value} GB`;
+  }
   if (limit === 'retentionDays' || limit === 'auditLogDays') return `${value} days`;
   if (limit === 'apiRateLimit') return `${value}/min`;
   return value.toLocaleString();
@@ -138,15 +141,52 @@ interface UpgradeModalProps {
   targetPlan?: TenantPlan;
 }
 
+interface ValidatedCoupon {
+  code: string;
+  promotionCodeId: string;
+  percentOff: number | null;
+  amountOff: number | null;
+  currency: string | null;
+  duration: string | null;
+  durationInMonths: number | null;
+  name: string | null;
+}
+
+interface ProrationPreview {
+  hasExistingSubscription: boolean;
+  immediateAmount: number;
+  creditApplied: number;
+  netDue: number;
+  nextInvoiceAmount: number;
+  currency: string;
+  periodEnd: string | null;
+}
+
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   open,
   onClose,
   result,
   targetPlan,
 }) => {
-  const [interval, setInterval] = useState<'annual' | 'monthly'>('annual');
+  // Read the tenant's current interval so we can treat a same-plan
+  // monthly↔annual flip as a valid action (not a no-op) — and default the
+  // toggle to the *other* interval than the one the user is on now.
+  const { tenant } = useEntitlement();
+  const currentInterval = tenant?.billingInterval ?? null;
+
+  const [interval, setInterval] = useState<'annual' | 'monthly'>(
+    currentInterval === 'annual' ? 'monthly' : 'annual'
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [couponInput, setCouponInput] = useState('');
+  const [couponValidating, setCouponValidating] = useState(false);
+  const [coupon, setCoupon] = useState<ValidatedCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
+  const [preview, setPreview] = useState<ProrationPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const plan: TenantPlan = targetPlan
     ?? result?.requiredPlan
@@ -164,6 +204,87 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const priceMonthly = config.price;
   const priceAnnualPerMonth = config.priceAnnual > 0 ? Math.round(config.priceAnnual / 12) : 0;
+
+  // Reset coupon + preview state when the modal closes or target changes so
+  // re-opens start clean (users shouldn't see a stale preview).
+  useEffect(() => {
+    if (!open) {
+      setCoupon(null);
+      setCouponInput('');
+      setCouponError(null);
+      setPreview(null);
+      setError(null);
+    }
+  }, [open, plan, interval]);
+
+  // Fetch proration preview when the modal opens on a paid user changing plans.
+  useEffect(() => {
+    if (!open) return;
+    if (plan === 'free' || plan === 'enterprise') return;
+    const priceIds = PLAN_PRICE_IDS[plan];
+    const priceId = interval === 'annual' ? priceIds.annual : priceIds.monthly;
+    if (!priceId) return;
+
+    let cancelled = false;
+    setPreviewLoading(true);
+    (async () => {
+      try {
+        const token = (await auth.getAccessToken()) ?? '';
+        const res = await fetch('/.netlify/functions/stripe-preview-upgrade', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ priceId }),
+        });
+        const json = await res.json();
+        if (!cancelled && res.ok) setPreview(json as ProrationPreview);
+      } catch {
+        // Preview is best-effort — failure doesn't block checkout.
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, plan, interval]);
+
+  const applyCoupon = useCallback(async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponValidating(true);
+    setCouponError(null);
+    try {
+      const token = (await auth.getAccessToken()) ?? '';
+      const res = await fetch('/.netlify/functions/stripe-validate-coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.valid) {
+        setCoupon(null);
+        setCouponError(json.message || 'This promo code is not valid.');
+        return;
+      }
+      setCoupon(json as ValidatedCoupon);
+    } catch {
+      setCouponError('Could not validate code. Try again.');
+    } finally {
+      setCouponValidating(false);
+    }
+  }, [couponInput]);
+
+  const clearCoupon = useCallback(() => {
+    setCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
+  }, []);
 
   const handleSubscribe = useCallback(async () => {
     if (plan === 'enterprise') {
@@ -196,7 +317,11 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ priceId, interval }),
+        body: JSON.stringify({
+          priceId,
+          interval,
+          ...(coupon ? { promotionCode: coupon.code } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Checkout failed');
@@ -205,7 +330,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       setError(err instanceof Error ? err.message : 'Checkout failed');
       setLoading(false);
     }
-  }, [plan, interval, onClose]);
+  }, [plan, interval, onClose, coupon]);
 
   const headline = useMemo(() => {
     if (!result) return `Upgrade to ${display.name}`;
@@ -339,27 +464,180 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
             </ul>
           )}
 
+          {plan !== 'enterprise' && plan !== 'free' && (
+            <CouponField
+              coupon={coupon}
+              input={couponInput}
+              setInput={setCouponInput}
+              apply={applyCoupon}
+              clear={clearCoupon}
+              validating={couponValidating}
+              error={couponError}
+            />
+          )}
+
+          {plan !== 'enterprise' && plan !== 'free' && preview?.hasExistingSubscription && (
+            <ProrationPreviewBlock preview={preview} loading={previewLoading} />
+          )}
+
           {error && (
             <div className="text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg">
               {error}
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={handleSubscribe}
-            disabled={loading || !isUpgrade(current, plan)}
-            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-steel-700 text-white font-medium transition flex items-center justify-center gap-2"
-          >
-            {loading ? 'Redirecting…' : display.cta === 'contact_sales' ? 'Contact sales' : `Upgrade to ${display.name}`}
-            {!loading && <ArrowRight className="w-4 h-4" />}
-          </button>
+          {(() => {
+            const isSamePlanCrossgrade =
+              plan === current && currentInterval && currentInterval !== interval;
+            const actionAllowed =
+              plan === 'enterprise' || isUpgrade(current, plan) || isSamePlanCrossgrade;
+            const label = loading
+              ? 'Redirecting…'
+              : display.cta === 'contact_sales'
+                ? 'Contact sales'
+                : isSamePlanCrossgrade
+                  ? `Switch to ${interval === 'annual' ? 'annual' : 'monthly'} billing`
+                  : `Upgrade to ${display.name}`;
+            return (
+              <button
+                type="button"
+                onClick={handleSubscribe}
+                disabled={loading || !actionAllowed}
+                className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-steel-700 text-white font-medium transition flex items-center justify-center gap-2"
+              >
+                {label}
+                {!loading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            );
+          })()}
 
           <p className="text-xs text-center text-slate-500 dark:text-steel-400">
-            {plan !== 'enterprise' && '14-day free trial. Cancel anytime.'}
+            {plan !== 'enterprise' && (plan === 'starter'
+              ? '14-day free trial. Cancel anytime. Prices exclude VAT where applicable.'
+              : 'Cancel anytime. Prices exclude VAT where applicable.')}
           </p>
         </div>
     </Modal>
+  );
+};
+
+// ============================================================================
+// COUPON FIELD + PRORATION PREVIEW (sub-components)
+// ============================================================================
+
+interface CouponFieldProps {
+  coupon: ValidatedCoupon | null;
+  input: string;
+  setInput: (s: string) => void;
+  apply: () => void;
+  clear: () => void;
+  validating: boolean;
+  error: string | null;
+}
+
+const CouponField: React.FC<CouponFieldProps> = ({
+  coupon, input, setInput, apply, clear, validating, error,
+}) => {
+  if (coupon) {
+    const savings = coupon.percentOff
+      ? `${coupon.percentOff}% off`
+      : coupon.amountOff && coupon.currency
+        ? `${(coupon.amountOff / 100).toLocaleString('en-US', {
+            style: 'currency',
+            currency: coupon.currency.toUpperCase(),
+          })} off`
+        : 'Applied';
+    const duration =
+      coupon.duration === 'repeating' && coupon.durationInMonths
+        ? ` for ${coupon.durationInMonths} months`
+        : coupon.duration === 'forever'
+          ? ' for the life of the subscription'
+          : '';
+    return (
+      <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">
+        <div className="flex items-start gap-2 min-w-0">
+          <Tag className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <div className="text-sm text-emerald-900 dark:text-emerald-100">
+            <span className="font-semibold">{coupon.code}</span> — {savings}{duration}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={clear}
+          className="text-xs text-emerald-700 dark:text-emerald-300 hover:underline"
+        >
+          Remove
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-steel-400 mb-1.5">
+        Promo code (optional)
+      </label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value.toUpperCase())}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              apply();
+            }
+          }}
+          placeholder="e.g. LAUNCH20"
+          className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 bg-white dark:bg-midnight-800 text-slate-900 dark:text-steel-100 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={apply}
+          disabled={!input.trim() || validating}
+          className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-steel-700 text-slate-700 dark:text-steel-200 hover:bg-slate-50 dark:hover:bg-steel-800 disabled:opacity-50 inline-flex items-center gap-1.5"
+        >
+          {validating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          Apply
+        </button>
+      </div>
+      {error && (
+        <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{error}</p>
+      )}
+    </div>
+  );
+};
+
+const ProrationPreviewBlock: React.FC<{ preview: ProrationPreview; loading: boolean }> = ({
+  preview, loading,
+}) => {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 dark:bg-steel-900 text-xs text-slate-500 dark:text-steel-400">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Calculating proration…
+      </div>
+    );
+  }
+  const fmt = (amt: number) =>
+    (amt / 100).toLocaleString('en-US', {
+      style: 'currency',
+      currency: preview.currency.toUpperCase(),
+    });
+  return (
+    <div className="p-3 rounded-lg bg-slate-50 dark:bg-steel-900 border border-slate-200 dark:border-steel-700 text-sm">
+      <p className="font-semibold text-slate-900 dark:text-steel-100 mb-1">Mid-cycle upgrade preview</p>
+      <dl className="space-y-0.5 text-xs text-slate-600 dark:text-steel-300">
+        {preview.immediateAmount > 0 && (
+          <div className="flex justify-between"><dt>New plan (prorated)</dt><dd>{fmt(preview.immediateAmount)}</dd></div>
+        )}
+        {preview.creditApplied > 0 && (
+          <div className="flex justify-between"><dt>Credit from current plan</dt><dd>-{fmt(preview.creditApplied)}</dd></div>
+        )}
+        <div className="flex justify-between font-semibold text-slate-900 dark:text-steel-100 pt-1 border-t border-slate-200 dark:border-steel-700">
+          <dt>Charged now</dt>
+          <dd>{fmt(preview.netDue)}</dd>
+        </div>
+      </dl>
+    </div>
   );
 };
 
