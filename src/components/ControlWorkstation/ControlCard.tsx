@@ -78,7 +78,7 @@ const STATUS_VISUAL = {
   partial: { icon: Clock, color: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-200 ring-1 ring-amber-200/60 dark:ring-amber-500/30' },
   no: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-700 dark:text-steel-300 ring-1 ring-slate-200/60 dark:ring-steel-600' },
   na: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700 text-slate-600 dark:text-steel-400 ring-1 ring-slate-200/60 dark:ring-steel-600' },
-  unassessed: { icon: Circle, color: 'bg-slate-100 dark:bg-steel-700/70 text-slate-500 dark:text-steel-400 ring-1 ring-slate-200/60 dark:ring-steel-600' },
+  unassessed: { icon: Circle, color: 'bg-slate-100 dark:bg-slate-500/10 text-slate-500 dark:text-slate-300 ring-1 ring-slate-200/60 dark:ring-slate-400/25' },
 } as const;
 
 const ControlCard: React.FC<ControlCardProps> = ({
@@ -171,7 +171,7 @@ const ControlCard: React.FC<ControlCardProps> = ({
       aria-labelledby={`control-${control.id}-title`}
       aria-describedby={`control-${control.id}-status`}
       className={`
-        relative bg-white dark:bg-steel-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden transition-all duration-200
+        relative bg-white dark:bg-midnight-800 rounded-xl border border-slate-200 dark:border-steel-700 overflow-hidden transition-all duration-200
         ${isExpanded ? 'shadow-lg dark:shadow-black/30' : 'shadow-sm hover:shadow-md dark:shadow-black/20'}
       `}
     >

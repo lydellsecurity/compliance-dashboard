@@ -63,7 +63,7 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
               fill="none"
               stroke="currentColor"
               strokeWidth={strokeWidth}
-              className="text-slate-100 dark:text-steel-700"
+              className="text-slate-100 dark:text-steel-800"
             />
             {/* Progress circle */}
             <motion.circle
@@ -118,12 +118,12 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
                 </div>
                 <div className="text-xs text-amber-600 dark:text-amber-400">In Progress</div>
               </div>
-              <div className="bg-slate-50 dark:bg-steel-700/60 ring-1 ring-slate-200/60 dark:ring-steel-600/40 rounded-lg p-3 text-center">
+              <div className="bg-slate-50 dark:bg-slate-500/10 ring-1 ring-slate-200/60 dark:ring-slate-400/20 rounded-lg p-3 text-center">
                 <AlertTriangle className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                <div className="text-xl font-bold text-slate-600 dark:text-steel-200">
+                <div className="text-xl font-bold text-slate-700 dark:text-slate-200">
                   {notStartedControls}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-steel-400">Not Started</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">Not Started</div>
               </div>
             </div>
           </div>
@@ -152,7 +152,7 @@ const MasterProgressRing: React.FC<MasterProgressRingProps> = ({
                   <span className="text-xs font-medium text-slate-600 dark:text-steel-300 w-20 truncate">
                     {fw.name}
                   </span>
-                  <div className="flex-1 h-2 bg-slate-100 dark:bg-steel-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-slate-100 dark:bg-steel-800 rounded-full overflow-hidden ring-1 ring-inset ring-slate-200/60 dark:ring-steel-700/60">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${fw.percentage}%` }}

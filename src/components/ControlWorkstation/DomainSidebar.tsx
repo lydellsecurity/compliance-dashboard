@@ -147,7 +147,7 @@ const DomainSidebar: React.FC<DomainSidebarProps> = ({
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   {/* Mini progress bar */}
-                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-steel-600 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-slate-200 dark:bg-steel-800 rounded-full overflow-hidden ring-1 ring-inset ring-slate-300/40 dark:ring-steel-700/60">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${progress?.percentage || 0}%` }}
