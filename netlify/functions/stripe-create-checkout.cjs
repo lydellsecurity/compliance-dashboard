@@ -66,9 +66,11 @@ exports.handler = async (event) => {
 
     const { priceId, interval, successPath, cancelPath, couponId, promotionCode } = parsed.data;
     if (!priceId || typeof priceId !== 'string') {
+      console.error('[create-checkout] missing priceId in body:', parsed.data);
       return errorResponse(400, 'priceId is required', origin);
     }
     if (interval !== 'monthly' && interval !== 'annual') {
+      console.error('[create-checkout] invalid interval:', interval);
       return errorResponse(400, "interval must be 'monthly' or 'annual'", origin);
     }
 
@@ -76,9 +78,36 @@ exports.handler = async (event) => {
     // an arbitrary external price to a subscription.
     const planResolution = resolvePlanFromPriceId(priceId);
     if (!planResolution) {
-      return errorResponse(400, 'Unknown priceId', origin);
+      // Log the server-side env state so we can tell at a glance whether
+      // STRIPE_PRICE_* env vars are missing from this deploy context or
+      // point at a different Stripe instance than the client's VITE_
+      // counterparts. The received priceId is logged in full; the env
+      // values are masked to the first 12 chars to avoid spamming logs
+      // with full IDs (they're already in Stripe dashboard anyway).
+      const mask = (s) =>
+        typeof s === 'string' && s.length > 0 ? `${s.slice(0, 12)}… (len=${s.length})` : '(empty/unset)';
+      console.error('[create-checkout] Unknown priceId:', {
+        received: priceId,
+        receivedLen: priceId.length,
+        serverMap: {
+          STARTER_MONTHLY: mask(process.env.STRIPE_PRICE_STARTER_MONTHLY),
+          STARTER_ANNUAL:  mask(process.env.STRIPE_PRICE_STARTER_ANNUAL),
+          GROWTH_MONTHLY:  mask(process.env.STRIPE_PRICE_GROWTH_MONTHLY),
+          GROWTH_ANNUAL:   mask(process.env.STRIPE_PRICE_GROWTH_ANNUAL),
+          SCALE_MONTHLY:   mask(process.env.STRIPE_PRICE_SCALE_MONTHLY),
+          SCALE_ANNUAL:    mask(process.env.STRIPE_PRICE_SCALE_ANNUAL),
+        },
+      });
+      return errorResponse(
+        400,
+        `Unknown priceId "${priceId}". Server STRIPE_PRICE_* env vars may be missing or mismatched. Check function logs for details.`,
+        origin
+      );
     }
     if (planResolution.interval !== interval) {
+      console.error(
+        `[create-checkout] priceId/interval mismatch: priceId resolves to ${planResolution.plan}/${planResolution.interval}, client sent interval=${interval}`
+      );
       return errorResponse(400, 'priceId and interval do not match', origin);
     }
 
