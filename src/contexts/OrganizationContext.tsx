@@ -215,7 +215,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
 
       if (orgs.length === 0) {
-        // User has no organizations - needs onboarding
+        // User has no organizations - needs onboarding. Wipe the stored
+        // org id so a ghost pointer (from an earlier partial-create that got
+        // rolled back) doesn't keep getting re-read and confusing future
+        // loads.
+        try {
+          localStorage.removeItem(CURRENT_ORG_KEY);
+        } catch {
+          /* ignore */
+        }
         setUserOrganizations([]);
         setCurrentOrg(null);
         setNeedsOnboarding(true);

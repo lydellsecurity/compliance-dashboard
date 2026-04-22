@@ -2359,7 +2359,7 @@ const CommandSidebar: React.FC<{
 const AppContent: React.FC = () => {
   const compliance = useComplianceContext();
   const ir = useIncidentResponse();
-  const { currentOrg } = useOrganization();
+  const { currentOrg, needsOnboarding } = useOrganization();
   const { user } = useAuth();
   // Close the loop from the landing-page pricing CTA. If the user arrived
   // with `?plan=<tier>` and is now fully authed with an org, redirect them
@@ -2559,6 +2559,18 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-corporate-100 dark:bg-midnight-950 transition-colors duration-200">
+      {/* Onboarding — blocks the app until the signed-in user has at least
+          one organization. Previously this was only rendered under the Admin
+          tab, which meant new users who landed on the Dashboard tab (e.g. via
+          a pricing CTA) never saw it, and the Stripe checkout handoff stalled
+          because usePendingCheckout waits on `tenant` to be non-null. */}
+      {needsOnboarding && !currentOrg && (
+        <OrganizationSetup
+          isOpen={true}
+          onComplete={() => window.location.reload()}
+        />
+      )}
+
       {/* Command Palette (Cmd+K) */}
       <CommandPalette
         isOpen={commandPaletteOpen}
