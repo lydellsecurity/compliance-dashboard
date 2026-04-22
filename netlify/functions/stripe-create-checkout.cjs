@@ -183,13 +183,23 @@ exports.handler = async (event) => {
       discounts.push({ coupon: couponId.trim() });
     }
 
+    // Automatic tax requires a head-office address configured in Stripe →
+    // Settings → Tax. Until that's set, enabling it causes a 400 "You must
+    // have a valid head office address to enable automatic tax calculation".
+    // Default OFF so new/test-mode accounts can check out; flip on per
+    // environment by setting STRIPE_AUTO_TAX=true once Stripe Tax is ready.
+    const autoTaxEnabled = process.env.STRIPE_AUTO_TAX === 'true';
+
     const checkoutConfig = {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      automatic_tax: { enabled: true },
+      automatic_tax: { enabled: autoTaxEnabled },
       customer_update: { address: 'auto', name: 'auto' },
       billing_address_collection: 'required',
+      // Tax ID collection is independent of automatic tax calculation — we
+      // still collect a VAT/GST ID for invoicing / future-us even when
+      // Stripe Tax isn't enabled yet.
       tax_id_collection: { enabled: true },
       subscription_data: {
         trial_period_days: trialEligible ? TRIAL_DAYS : undefined,
