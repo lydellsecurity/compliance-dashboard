@@ -17,12 +17,26 @@ let clerkKeyWarned = false;
  * Verify a Clerk session JWT and return { userId, sessionId, claims } or throw.
  */
 async function verifyClerkToken(authHeader) {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // Accept both "Bearer <token>" and "Bearer<token>" (some proxies/Netlify
+  // trim trailing whitespace on header values). Case-insensitive match on
+  // the scheme just in case something lowercases it.
+  if (!authHeader || typeof authHeader !== 'string') {
     const err = new Error('Missing or invalid authorization header');
     err.statusCode = 401;
     throw err;
   }
-  const token = authHeader.slice('Bearer '.length).trim();
+  const match = authHeader.match(/^\s*Bearer\s+(.+)\s*$/i);
+  if (!match || !match[1]) {
+    const err = new Error('Missing or invalid authorization header');
+    err.statusCode = 401;
+    throw err;
+  }
+  const token = match[1].trim();
+  if (!token) {
+    const err = new Error('Empty bearer token');
+    err.statusCode = 401;
+    throw err;
+  }
 
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {

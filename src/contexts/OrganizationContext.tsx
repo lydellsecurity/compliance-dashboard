@@ -28,7 +28,23 @@ async function callServer<T>(
   body?: unknown
 ): Promise<{ ok: boolean; data?: T; error?: string; status?: number }> {
   try {
-    const token = (await auth.getAccessToken()) ?? '';
+    // Retry up to 3 times if the Clerk session isn't ready yet. The symptom
+    // is `auth.getAccessToken()` returning null immediately after signin
+    // while Clerk is still hydrating — the user record resolves fractionally
+    // before the session does, so the first fetch can race.
+    let token: string | null = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      token = await auth.getAccessToken();
+      if (token) break;
+      await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+    }
+    if (!token) {
+      console.warn(
+        `[org-ctx] ${path}: no Clerk token after 3 retries; skipping server call`
+      );
+      return { ok: false, error: 'Not authenticated (no session token)', status: 401 };
+    }
+
     const res = await fetch(path, {
       method: 'POST',
       headers: {
@@ -39,6 +55,10 @@ async function callServer<T>(
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
+      console.warn(
+        `[org-ctx] ${path} → HTTP ${res.status}:`,
+        json.error || '(no error body)'
+      );
       return {
         ok: false,
         error: json.error || `HTTP ${res.status}`,
