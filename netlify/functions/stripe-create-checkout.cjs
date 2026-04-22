@@ -36,7 +36,17 @@ const {
 } = require('./utils/stripe.cjs');
 
 const TRIAL_DAYS = 14;
-const PLANS_WITH_TRIAL = new Set(['starter']);
+// All paid plans support a 14-day trial for first-time paid subscribers on
+// a given org. The trial-abuse guard (user_billing_flags.trial_consumed)
+// prevents a user spinning up a second org from claiming another trial.
+//
+// For Growth/Scale we add a no-card-required reverse trial via the
+// onboarding flow (see start-reverse-trial.cjs). When a user lands here
+// from a landing CTA directly, they're opting into a *paid* subscription
+// and Stripe Checkout collects a card up front — the trial then becomes
+// a "14-day grace period before first charge" which reduces signup anxiety
+// without requiring the orchestration complexity of a no-card subscription.
+const PLANS_WITH_TRIAL = new Set(['starter', 'growth', 'scale']);
 
 exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;

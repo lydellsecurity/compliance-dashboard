@@ -227,6 +227,35 @@ exports.handler = async (event) => {
       return errorResponse(500, 'Failed to record ownership; rolled back', origin);
     }
 
+    // Reverse-trial: provision a 14-day Growth trial for first-time users.
+    // Gated on user_billing_flags.trial_consumed so spinning up a second
+    // org doesn't grant a second trial. Non-fatal on error — org creation
+    // succeeded either way, user can still upgrade manually.
+    let trialInfo = { trialStarted: false };
+    try {
+      const { data: flag } = await supabase
+        .from('user_billing_flags')
+        .select('trial_consumed')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!flag?.trial_consumed) {
+        const { startReverseTrial } = require('./start-reverse-trial.cjs');
+        trialInfo = await startReverseTrial({
+          organizationId: newOrg.id,
+          userId,
+          userEmail,
+          organizationName: name,
+        });
+      } else {
+        console.log(
+          `[create-organization] user ${userId} already consumed trial; skipping reverse-trial provisioning`
+        );
+      }
+    } catch (trialErr) {
+      console.error('[create-organization] reverse-trial provisioning failed (non-fatal):', trialErr);
+    }
+
     return successResponse(
       {
         organization: {
@@ -240,6 +269,7 @@ exports.handler = async (event) => {
         },
         role: 'owner',
         isDefault: true,
+        trial: trialInfo,
       },
       origin
     );
