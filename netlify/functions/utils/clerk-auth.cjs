@@ -18,7 +18,7 @@ let clerkKeyWarned = false;
  */
 async function verifyClerkToken(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    const err = new Error('Missing or invalid authorization token');
+    const err = new Error('Missing or invalid authorization header');
     err.statusCode = 401;
     throw err;
   }
@@ -27,21 +27,30 @@ async function verifyClerkToken(authHeader) {
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {
     if (!clerkKeyWarned) {
-      console.error('CLERK_SECRET_KEY is not configured');
+      console.error(
+        '[clerk-auth] CLERK_SECRET_KEY is not configured for this Netlify context (production vs deploy-preview vs branch-deploy each have their own env scope). Set it under Netlify → Environment for every context you deploy to.'
+      );
       clerkKeyWarned = true;
     }
-    const err = new Error('Server auth not configured');
+    const err = new Error('Server auth not configured: CLERK_SECRET_KEY missing');
     err.statusCode = 500;
     throw err;
   }
 
+  // Optional hardening — if CLERK_AUTHORIZED_PARTIES is set, verifyToken
+  // checks the JWT's `azp` claim against the list. Unset by default so
+  // deploy previews work without per-branch env changes.
+  const authorizedParties = process.env.CLERK_AUTHORIZED_PARTIES
+    ? process.env.CLERK_AUTHORIZED_PARTIES.split(',').map((s) => s.trim()).filter(Boolean)
+    : undefined;
+
   try {
     const payload = await verifyToken(token, {
       secretKey,
-      // Optional: audience/issuer can be tightened via env when needed.
+      ...(authorizedParties ? { authorizedParties } : {}),
     });
     if (!payload?.sub) {
-      const err = new Error('Invalid token payload');
+      const err = new Error('Invalid token payload (no subject)');
       err.statusCode = 401;
       throw err;
     }
@@ -52,7 +61,20 @@ async function verifyClerkToken(authHeader) {
     };
   } catch (err) {
     if (err.statusCode) throw err;
-    const e = new Error('Invalid or expired token');
+    // Surface the specific verifyToken failure in function logs so operators
+    // can tell "secret from a different Clerk instance" from "token expired"
+    // from "azp mismatch" without having to diff the JWT by hand.
+    const reason =
+      err?.reason ||
+      err?.code ||
+      err?.message ||
+      'unknown verification error';
+    console.error(`[clerk-auth] verifyToken failed: ${reason}`, {
+      name: err?.name,
+      clerkTraceId: err?.clerkTraceId,
+      tokenPrefix: token.slice(0, 16),
+    });
+    const e = new Error(`Invalid or expired token (${reason})`);
     e.statusCode = 401;
     throw e;
   }
