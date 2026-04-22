@@ -85,6 +85,7 @@ const LIMIT_LABELS: Record<LimitKey, string> = {
   auditLogDays: 'Audit log',
   apiRateLimit: 'API rate',
   maxVendors: 'Vendors',
+  maxAiCredits: 'AI credits',
 };
 
 function formatLimit(limit: LimitKey, value: number): string {
@@ -94,6 +95,7 @@ function formatLimit(limit: LimitKey, value: number): string {
   }
   if (limit === 'retentionDays' || limit === 'auditLogDays') return `${value} days`;
   if (limit === 'apiRateLimit') return `${value}/min`;
+  if (limit === 'maxAiCredits') return `${value.toLocaleString()} /mo`;
   return value.toLocaleString();
 }
 

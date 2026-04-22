@@ -31,6 +31,9 @@ const SOFT_CAPS = {
   vendors: null, // gated by VRM feature, not a meter cap
   seats: null,   // surfaced via maxUsers in limits
   report: null,
+  // AI credits cap is plan-specific; CreditMeter reads it from tenant.limits
+  // and computes the remaining figure from the usage meter.
+  ai_credits: null,
 };
 
 exports.handler = async (event) => {

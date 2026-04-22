@@ -29,6 +29,29 @@ const {
 
 const PLAN_ORDER = ['free', 'starter', 'growth', 'scale', 'enterprise'];
 
+// Server-side mirror of src/constants/credits.ts. Every AI endpoint sends
+// `creditAction: <name>` to this function and we look up the cost here so
+// the client can't tamper with the price of an action.
+const CREDIT_COSTS = {
+  policy_generation: 100,
+  policy_section: 30,
+  remediation_message: 5,
+  questionnaire_answer: 10,
+  vendor_risk_scan: 25,
+  evidence_summary: 15,
+  control_mapping: 8,
+};
+
+function findNextTierWithMoreCredits(currentPlan) {
+  const currentCap = PLAN_CONFIGS[currentPlan]?.limits?.maxAiCredits ?? 0;
+  const idx = PLAN_ORDER.indexOf(currentPlan);
+  for (let i = idx + 1; i < PLAN_ORDER.length; i += 1) {
+    const cap = PLAN_CONFIGS[PLAN_ORDER[i]]?.limits?.maxAiCredits ?? 0;
+    if (cap === -1 || cap > currentCap) return PLAN_ORDER[i];
+  }
+  return 'enterprise';
+}
+
 exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;
 
@@ -45,7 +68,7 @@ exports.handler = async (event) => {
     const parsed = parseJsonBody(event.body);
     if (!parsed.valid) return errorResponse(400, parsed.error, origin);
 
-    const { feature, limit, incrementMeter, meterQuantity } = parsed.data;
+    const { feature, limit, incrementMeter, meterQuantity, creditAction } = parsed.data;
     const org = await getOrganization(organizationId);
     const plan = org.plan;
 
@@ -87,6 +110,78 @@ exports.handler = async (event) => {
       if (limitValue !== -1 && used >= limitValue) {
         return paymentRequired(limit, plan, 'limit', origin, { used, cap: limitValue });
       }
+    }
+
+    // --- AI credit debit (atomic check-and-spend) ------------------------
+    // Every AI endpoint routes through this branch before starting the
+    // upstream Anthropic call. The `debit_ai_credits` RPC checks the plan
+    // cap, aggregates current-period usage, and increments atomically in
+    // a single transaction so two simultaneous AI requests from the same
+    // tenant can't both slip past a tight cap.
+    //
+    // Caller passes `creditAction` (one of CREDIT_COSTS keys from
+    // src/constants/credits.ts); server looks up cost from the same table.
+    if (creditAction) {
+      const cost = CREDIT_COSTS[creditAction];
+      if (!cost) {
+        return errorResponse(400, `Unknown creditAction: ${creditAction}`, origin);
+      }
+      const supabase = getSupabase();
+      const periodStart = org.billing?.currentPeriodEnd
+        ? startOfPeriod(org.billing.currentPeriodEnd)
+        : startOfCurrentMonth();
+      const periodEnd = org.billing?.currentPeriodEnd
+        ? new Date(org.billing.currentPeriodEnd)
+        : endOfCurrentMonth();
+
+      const { data: result, error } = await supabase.rpc('debit_ai_credits', {
+        p_organization_id: organizationId,
+        p_cost: cost,
+        p_period_start: periodStart.toISOString(),
+        p_period_end: periodEnd.toISOString(),
+      });
+
+      if (error) {
+        console.error('debit_ai_credits failed:', error);
+        return errorResponse(500, 'Failed to debit AI credits', origin);
+      }
+
+      if (!result?.allowed) {
+        return {
+          statusCode: 402,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': origin || '*',
+          },
+          body: JSON.stringify({
+            allowed: false,
+            reason: 'ai_credits_exhausted',
+            gate: 'maxAiCredits',
+            currentPlan: plan,
+            requiredPlan: findNextTierWithMoreCredits(plan),
+            used: result?.used ?? 0,
+            cap: result?.cap ?? 0,
+            cost,
+            action: creditAction,
+            message: `You need ${cost} credits for this action but only have ${(result?.cap ?? 0) - (result?.used ?? 0)} remaining this period.`,
+          }),
+        };
+      }
+
+      return successResponse(
+        {
+          allowed: true,
+          plan,
+          credits: {
+            action: creditAction,
+            cost,
+            used: result.used,
+            cap: result.cap,
+            remaining: result.remaining,
+          },
+        },
+        origin
+      );
     }
 
     // --- optional meter increment (atomic) -------------------------------

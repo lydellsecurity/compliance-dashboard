@@ -58,6 +58,7 @@ const LIMIT_LABEL: Record<LimitKey, string> = {
   auditLogDays: 'audit log',
   apiRateLimit: 'API requests/min',
   maxVendors: 'vendors',
+  maxAiCredits: 'AI credits',
 };
 
 // ============================================================================
@@ -438,6 +439,7 @@ function formatCap(cap: number, limit: LimitKey): string {
   }
   if (limit === 'retentionDays' || limit === 'auditLogDays') return `${cap} days`;
   if (limit === 'apiRateLimit') return `${cap}/min`;
+  if (limit === 'maxAiCredits') return `${cap.toLocaleString()} /mo`;
   return cap.toLocaleString();
 }
 

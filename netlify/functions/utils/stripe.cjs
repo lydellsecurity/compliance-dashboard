@@ -135,7 +135,7 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: 1, maxControls: 15, maxEvidence: 25, maxIntegrations: 0,
       maxStorageGb: 0.25, retentionDays: 14, auditLogDays: 7, apiRateLimit: 0,
-      maxVendors: 0,
+      maxVendors: 0, maxAiCredits: 50,
     },
     features: {
       cloudIntegrations: false, customControls: false, apiAccess: false,
@@ -152,7 +152,7 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: 10, maxControls: 236, maxEvidence: 750, maxIntegrations: 5,
       maxStorageGb: 10, retentionDays: 365, auditLogDays: 365, apiRateLimit: 60,
-      maxVendors: 0,
+      maxVendors: 0, maxAiCredits: 1500,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: false,
@@ -169,7 +169,7 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: 25, maxControls: 500, maxEvidence: 3000, maxIntegrations: 15,
       maxStorageGb: 50, retentionDays: 365, auditLogDays: 90, apiRateLimit: 300,
-      maxVendors: 50,
+      maxVendors: 50, maxAiCredits: 10000,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: true,
@@ -186,7 +186,7 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: 150, maxControls: 1500, maxEvidence: 10000, maxIntegrations: 40,
       maxStorageGb: 200, retentionDays: 730, auditLogDays: 365, apiRateLimit: 1200,
-      maxVendors: 150,
+      maxVendors: 150, maxAiCredits: 50000,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: true,
@@ -203,7 +203,7 @@ const PLAN_CONFIGS = {
     limits: {
       maxUsers: -1, maxControls: -1, maxEvidence: -1, maxIntegrations: -1,
       maxStorageGb: -1, retentionDays: -1, auditLogDays: -1, apiRateLimit: -1,
-      maxVendors: -1,
+      maxVendors: -1, maxAiCredits: -1,
     },
     features: {
       cloudIntegrations: true, customControls: true, apiAccess: true,

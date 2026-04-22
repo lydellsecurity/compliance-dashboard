@@ -33,6 +33,13 @@ export interface TenantLimits {
   auditLogDays: number;
   apiRateLimit: number;
   maxVendors: number;
+  /**
+   * Credits per billing period for AI actions. -1 = unlimited (Enterprise).
+   * Every AI endpoint debits from this pool via `debit_ai_credits` RPC
+   * before starting the expensive Anthropic call. Costs per action live in
+   * src/constants/credits.ts.
+   */
+  maxAiCredits: number;
 }
 
 export interface TenantFeatures {
@@ -145,6 +152,13 @@ export interface TenantUsage {
   storageUsedMb: number;
   apiCallsThisMonth: number;
   lastActivityAt: string | null;
+  /**
+   * AI credits consumed in the current billing period. Not stored on the
+   * org row — computed on demand by summing `usage_meters` where
+   * meter='ai_credits' and period overlaps now. Surfaced through the
+   * billing-usage-summary endpoint.
+   */
+  aiCreditsUsed?: number;
 }
 
 export interface TenantMember {
@@ -212,6 +226,7 @@ export const PLAN_CONFIGS: Record<
       auditLogDays: 7,
       apiRateLimit: 0,
       maxVendors: 0,
+      maxAiCredits: 50,
     },
     features: {
       cloudIntegrations: false,
@@ -244,6 +259,7 @@ export const PLAN_CONFIGS: Record<
       auditLogDays: 365,
       apiRateLimit: 60,
       maxVendors: 0,
+      maxAiCredits: 1500,
     },
     features: {
       cloudIntegrations: true,
@@ -276,6 +292,7 @@ export const PLAN_CONFIGS: Record<
       auditLogDays: 90,
       apiRateLimit: 300,
       maxVendors: 50,
+      maxAiCredits: 10000,
     },
     features: {
       cloudIntegrations: true,
@@ -308,6 +325,7 @@ export const PLAN_CONFIGS: Record<
       auditLogDays: 365,
       apiRateLimit: 1200,
       maxVendors: 150,
+      maxAiCredits: 50000,
     },
     features: {
       cloudIntegrations: true,
@@ -340,6 +358,7 @@ export const PLAN_CONFIGS: Record<
       auditLogDays: -1,
       apiRateLimit: -1,
       maxVendors: -1,
+      maxAiCredits: -1,
     },
     features: {
       cloudIntegrations: true,

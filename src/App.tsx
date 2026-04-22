@@ -26,6 +26,7 @@ import { PolicyGeneratorButton } from './components/PolicyGenerator';
 import { AIPolicyGeneratorButton } from './components/AIPolicyGenerator';
 import { GatedButton, FeatureGate } from './components/UpgradeGate';
 import { BillingStatusBar } from './components/BillingStatusBar';
+import { CreditMeter } from './components/CreditMeter';
 
 // Always-mounted overlay modals (isOpen-gated internally). Lazy here would
 // force the chunk to load on every app boot since React still has to render
@@ -2614,11 +2615,20 @@ const AppContent: React.FC = () => {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="text-sm font-semibold text-slate-900 dark:text-steel-100 truncate">
+          <span className="text-sm font-semibold text-slate-900 dark:text-steel-100 truncate flex-1 min-w-0">
             {currentOrg?.name || 'AttestAI'}
           </span>
+          <CreditMeter compact />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          {/* Persistent AI credit meter — sits above every tab so users
+              build ambient awareness of their consumption. Hidden on
+              Enterprise and when unresolved. Clicking the "Top up" /
+              "Upgrade" CTA opens the contextual UpgradeModal keyed to
+              maxAiCredits. */}
+          <div className="flex justify-end mb-3">
+            <CreditMeter />
+          </div>
           <BillingStatusBar />
           {/* Single Suspense boundary covers every lazy tab body + any lazy
               components nested inside DashboardTab / AssessmentTab. */}

@@ -31,7 +31,13 @@ export type FeatureKey = keyof TenantFeatures;
 
 export interface EntitlementResult {
   allowed: boolean;
-  reason?: 'not_authenticated' | 'feature_not_enabled' | 'limit_reached' | 'unknown';
+  reason?: 'not_authenticated' | 'feature_not_enabled' | 'limit_reached' | 'ai_credits_exhausted' | 'unknown';
+  /**
+   * Concrete gate key the check failed on — either a FeatureKey (e.g.
+   * 'vendorRisk'), a LimitKey (e.g. 'maxUsers'), or a virtual key like
+   * 'maxAiCredits'. Used by UpgradeModal to render context-aware copy.
+   */
+  gate?: string;
   /** Minimum plan that enables the gate. */
   requiredPlan?: TenantPlan;
   /** Current plan at call time. */
@@ -132,6 +138,7 @@ export function useEntitlement(): UseEntitlementReturn {
         return {
           allowed: false,
           reason: 'feature_not_enabled',
+          gate: feature,
           currentPlan: plan,
           requiredPlan: isUpgrade(plan, required) ? required : plan,
         };
@@ -145,6 +152,7 @@ export function useEntitlement(): UseEntitlementReturn {
           return {
             allowed: false,
             reason: 'limit_reached',
+            gate: limit,
             currentPlan: plan,
             requiredPlan: required,
             used,
