@@ -40,6 +40,45 @@ const LOG = (...args: unknown[]) => console.log('[pending-checkout]', ...args);
 const WARN = (...args: unknown[]) => console.warn('[pending-checkout]', ...args);
 const ERR = (...args: unknown[]) => console.error('[pending-checkout]', ...args);
 
+// sessionStorage key for the last-failed priceId: used to prevent an infinite
+// retry loop when the server keeps returning 4xx for the same priceId (e.g.
+// env-var mismatch). The intent is preserved in localStorage either way so
+// a user can manually retry from Settings → Billing.
+const LAST_FAIL_KEY = 'pending_checkout_last_fail_v1';
+const LAST_FAIL_TTL_MS = 5 * 60 * 1000;
+
+function markFailure(priceId: string): void {
+  try {
+    sessionStorage.setItem(
+      LAST_FAIL_KEY,
+      JSON.stringify({ priceId, at: Date.now() })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function recentlyFailed(priceId: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(LAST_FAIL_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { priceId?: string; at?: number };
+    if (!parsed.priceId || typeof parsed.at !== 'number') return false;
+    if (parsed.priceId !== priceId) return false;
+    return Date.now() - parsed.at < LAST_FAIL_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+function clearRecentFailure(): void {
+  try {
+    sessionStorage.removeItem(LAST_FAIL_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 const VALID_PLANS = ['starter', 'growth', 'scale'] as const;
 const VALID_INTERVALS = ['monthly', 'annual'] as const;
 
@@ -154,6 +193,14 @@ export function usePendingCheckout(): void {
       return;
     }
 
+    if (recentlyFailed(priceId)) {
+      WARN(
+        `skipping auto-retry — same priceId failed within last 5 min. User can retry manually from Settings → Billing.`
+      );
+      firedRef.current = true;
+      return;
+    }
+
     firedRef.current = true;
 
     (async () => {
@@ -186,20 +233,29 @@ export function usePendingCheckout(): void {
         LOG('redirecting to Stripe Checkout:', json.url);
         clearPendingCheckout();
         cleanUrlOfCheckoutParams();
+        clearRecentFailure();
         window.location.href = json.url;
       } catch (err) {
-        clearPendingCheckout();
-        cleanUrlOfCheckoutParams();
+        // Leave pending intent in both URL and localStorage: a 4xx from the
+        // checkout endpoint is usually a transient config mismatch (the most
+        // common cause is env-var drift between VITE_STRIPE_PRICE_* and
+        // STRIPE_PRICE_*). If we clear the intent now we also cause a nasty
+        // race with any concurrent window.location.reload() from the org
+        // onboarding flow — the reload would pick up the cleaned URL and
+        // lose all recovery paths. Keeping intent means a retry just works
+        // once the env var is fixed.
+        //
+        // Mark this priceId as recently failed so we don't loop on hard
+        // refresh. The user can still manually retry from Settings → Billing
+        // (which uses a fresh UpgradeGate call, not this hook).
+        markFailure(priceId);
         firedRef.current = false;
         const detail = err instanceof Error ? err.message : String(err);
-        ERR('terminal failure:', detail);
+        ERR('terminal failure (intent preserved for retry):', detail);
         toast.error(
           "We couldn't open checkout",
-          `${detail}. Redirecting you to billing settings — you can retry from there.`
+          `${detail}. Your plan selection is saved — this usually means a Stripe Price ID env var is mismatched between client and server.`
         );
-        setTimeout(() => {
-          window.location.href = '/app?tab=settings&section=billing&checkout=error';
-        }, 1500);
       }
     })();
   }, [user, tenant, loading, toast]);
