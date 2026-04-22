@@ -44,9 +44,9 @@ Pricing reflects the April 2026 recut (migration [20260421000002_plan_recut_apri
 | Plan | Monthly | Annual (billed yearly) | Effective /mo annual | Target buyer |
 |---|---|---|---|---|
 | **Free** | $0 | $0 | $0 | Founders evaluating compliance tooling |
-| **Starter** | $599 | $5,988 | $499 | <50 employees, first SOC 2 (Type I or Type II) |
-| **Growth** ⭐ | $1,399 | $13,988 | $1,166 | 50–200 employees, multi-framework, SSO required |
-| **Scale** | $2,399 | $23,988 | $1,999 | 200–500 employees, SCIM + procurement heat |
+| **Starter** | $497 | $4,764 | $397 | <50 employees, first SOC 2 (Type I or Type II) |
+| **Growth** ⭐ | $1,297 | $11,964 | $997 | 50–200 employees, multi-framework, SSO required |
+| **Scale** | $2,497 | $23,964 | $1,997 | 200–500 employees, SCIM + procurement heat |
 | **Enterprise** | Custom | Custom ($36K–$72K typical) | — | 500+ employees, FedRAMP/PCI/on-prem/SLAs |
 
 **Annual discount:** ~17% (two months free). Monthly pricing set ~20% above the effective annual rate to make annual the obvious default in Stripe Checkout.
@@ -117,7 +117,7 @@ Recommended precedence when a user hits a gate:
 
 Each tier is designed so predictable compliance milestones push buyers to the next step. These are the telemetry events that should fire in-product upgrade prompts.
 
-### 5.1 Free → Starter ($599/mo)
+### 5.1 Free → Starter ($497/mo)
 
 | Trigger | Message | CTA |
 |---|---|---|
@@ -127,7 +127,7 @@ Each tier is designed so predictable compliance milestones push buyers to the ne
 | First AI policy requested | "AI policy generation starts on Starter." | Upgrade |
 | Trust Center watermark removal requested | "Custom branding unlocks on Starter." | Upgrade |
 
-### 5.2 Starter → Growth ($1,399/mo)
+### 5.2 Starter → Growth ($1,297/mo)
 
 | Trigger | Message | CTA |
 |---|---|---|
@@ -138,7 +138,7 @@ Each tier is designed so predictable compliance milestones push buyers to the ne
 | API key requested | "Read-only API unlocks on Growth." | Upgrade |
 | 30-day retention insufficient (audit observation period) | "365-day retention ships with Growth." | Upgrade |
 
-### 5.3 Growth → Scale ($2,399/mo)
+### 5.3 Growth → Scale ($2,497/mo)
 
 | Trigger | Message | CTA |
 |---|---|---|
@@ -413,11 +413,11 @@ Report weekly to a `#revenue` Slack channel via a scheduled task.
 | Feature unlocked at | AttestAI tier | Cheapest competitor tier unlocking it |
 |---|---|---|
 | First framework | Free ($0) | Comp AI Starter (~$5K/yr) |
-| Multi-cloud (AWS+Azure+GCP) | Starter ($599/mo) | Vanta Growth ($25K+/yr) |
-| SSO/SAML | Growth ($1,399/mo) | Secureframe Complete ($15K+/yr), Vanta Growth ($25K+) |
-| SCIM provisioning | Scale ($2,399/mo) | Drata/Vanta Enterprise tier only ($50K+/yr) |
-| Vendor Risk Management | Growth ($1,399/mo) | Drata VRM add-on ($10K+/yr on top of $25K base) |
-| AI Questionnaire autofill | Growth ($1,399/mo) | Vanta add-on ($5K+/yr on top of Growth) |
-| White-label Trust Center | Scale ($2,399/mo) | Vanta Enterprise ($50K+/yr) |
+| Multi-cloud (AWS+Azure+GCP) | Starter ($497/mo) | Vanta Growth ($25K+/yr) |
+| SSO/SAML | Growth ($1,297/mo) | Secureframe Complete ($15K+/yr), Vanta Growth ($25K+) |
+| SCIM provisioning | Scale ($2,497/mo) | Drata/Vanta Enterprise tier only ($50K+/yr) |
+| Vendor Risk Management | Growth ($1,297/mo) | Drata VRM add-on ($10K+/yr on top of $25K base) |
+| AI Questionnaire autofill | Growth ($1,297/mo) | Vanta add-on ($5K+/yr on top of Growth) |
+| White-label Trust Center | Scale ($2,497/mo) | Vanta Enterprise ($50K+/yr) |
 
 The positioning statement holds: **enterprise features at mid-market prices, no per-feature surprise invoicing.**

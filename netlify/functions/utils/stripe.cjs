@@ -162,8 +162,8 @@ const PLAN_CONFIGS = {
       realTimeRegulatoryScan: false, auditBundleExport: false,
       customDomain: false, scimProvisioning: false,
     },
-    price: 599,
-    priceAnnual: 5988,
+    price: 497,
+    priceAnnual: 4764,
   },
   growth: {
     limits: {
@@ -179,8 +179,8 @@ const PLAN_CONFIGS = {
       realTimeRegulatoryScan: false, auditBundleExport: true,
       customDomain: false, scimProvisioning: false,
     },
-    price: 1399,
-    priceAnnual: 13988,
+    price: 1297,
+    priceAnnual: 11964,
   },
   scale: {
     limits: {
@@ -196,8 +196,8 @@ const PLAN_CONFIGS = {
       realTimeRegulatoryScan: true, auditBundleExport: true,
       customDomain: true, scimProvisioning: true,
     },
-    price: 2399,
-    priceAnnual: 23988,
+    price: 2497,
+    priceAnnual: 23964,
   },
   enterprise: {
     limits: {

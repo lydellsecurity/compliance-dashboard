@@ -194,7 +194,7 @@ Healthcare (HIPAA), Finance (PCI DSS), Government (FedRAMP) need specialized sol
 - 250 MB storage, 14-day retention
 - Community support
 
-#### 2. Starter — $599/month ($5,988/year)
+#### 2. Starter — $497/month ($4,764/year)
 **Target:** <50 employees, first SOC 2 (Type I or Type II)
 - 1 framework (full 236 controls)
 - 10 users
@@ -204,7 +204,7 @@ Healthcare (HIPAA), Finance (PCI DSS), Government (FedRAMP) need specialized sol
 - Incident Response engine
 - Email support (48h)
 
-#### 3. Growth — $1,399/month ($13,988/year)
+#### 3. Growth — $1,297/month ($11,964/year)
 **Target:** 50–200 employees, multi-framework, SSO required
 - 3 frameworks with crosswalk
 - 25 users
@@ -214,7 +214,7 @@ Healthcare (HIPAA), Finance (PCI DSS), Government (FedRAMP) need specialized sol
 - Read-only API, audit-ready export
 - Email support (24h)
 
-#### 4. Scale — $2,399/month ($23,988/year)
+#### 4. Scale — $2,497/month ($23,964/year)
 **Target:** 200–500 employees, procurement heat
 - All 6 frameworks
 - 150 users
@@ -237,9 +237,9 @@ Healthcare (HIPAA), Finance (PCI DSS), Government (FedRAMP) need specialized sol
 
 | Tier | Monthly | Annual | vs Competitors |
 |------|---------|--------|----------------|
-| Starter | $599 | $5,988 | 20–40% below Secureframe Fundamentals |
-| Growth | $1,399 | $13,988 | 40–50% below Vanta (with SSO included — Vanta only ships SSO at $25K+) |
-| Scale | $2,399 | $23,988 | 30–40% below Drata (with SCIM included — competitors lock SCIM behind $50K Enterprise tier) |
+| Starter | $497 | $4,764 | 25–45% below Secureframe Fundamentals |
+| Growth | $1,297 | $11,964 | 45–55% below Vanta (with SSO included — Vanta only ships SSO at $25K+) |
+| Scale | $2,497 | $23,964 | 30–40% below Drata (with SCIM included — competitors lock SCIM behind $50K Enterprise tier) |
 | Enterprise | Custom | $36K–$72K | Competitive |
 
 **Value Proposition:** "Enterprise compliance automation at mid-market pricing — SSO included at Growth, SCIM included at Scale."
@@ -248,7 +248,7 @@ Healthcare (HIPAA), Finance (PCI DSS), Government (FedRAMP) need specialized sol
 
 ## Competitive Positioning Statement
 
-> **AttestAI is the AI-native compliance automation platform that delivers enterprise-grade security and compliance capabilities at a price point accessible to growing companies. Unlike legacy GRC tools that lock identity features behind Enterprise tiers, AttestAI ships SSO at Growth ($1,399/mo) and SCIM at Scale ($2,399/mo) — capabilities that cost $25K–$50K/year elsewhere.**
+> **AttestAI is the AI-native compliance automation platform that delivers enterprise-grade security and compliance capabilities at a price point accessible to growing companies. Unlike legacy GRC tools that lock identity features behind Enterprise tiers, AttestAI ships SSO at Growth ($1,297/mo) and SCIM at Scale ($2,497/mo) — capabilities that cost $25K–$50K/year elsewhere.**
 
 ---
 

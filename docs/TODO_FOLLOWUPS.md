@@ -1,7 +1,27 @@
 # Follow-ups — Monetization + UI/UX pass
 
-**Last updated:** 2026-04-21
+**Last updated:** 2026-04-22
 **Scope:** Open items from the Stripe/monetization rollout and the UI/UX review pass. The previous version of this doc had 21 items; most have shipped. What remains is below.
+
+---
+
+## Recut to charm pricing — April 22, 2026
+
+The code now prices Starter/Growth/Scale at **$497 / $1,297 / $2,497** (monthly) and **$4,764 / $11,964 / $23,964** (annual). The Stripe Price IDs in Netlify env still point at the pre-recut products ($599 / $1,399 / $2,399). Until new Stripe Products are provisioned and env vars updated, **checkout will charge the old prices** but the UI will display the new ones.
+
+**Action needed (operator, ~30 min):**
+
+1. Stripe Dashboard → Products → create 6 new Prices:
+   - Starter monthly $497, annual $4,764
+   - Growth monthly $1,297, annual $11,964
+   - Scale monthly $2,497, annual $23,964
+2. Copy the six new `price_*` IDs into Netlify env vars **for every context** (Production, Deploy preview, Branch deploys):
+   - `VITE_STRIPE_PRICE_STARTER_MONTHLY` / `_ANNUAL`
+   - `VITE_STRIPE_PRICE_GROWTH_MONTHLY` / `_ANNUAL`
+   - `VITE_STRIPE_PRICE_SCALE_MONTHLY` / `_ANNUAL`
+   - And the unprefixed `STRIPE_PRICE_*` twins server-side (must be identical).
+3. Trigger a fresh Netlify deploy (env changes only take effect on build).
+4. Existing subscriptions stay on the old prices (grandfathered by Stripe). New signups get the new prices.
 
 ---
 
