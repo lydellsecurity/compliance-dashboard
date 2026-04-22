@@ -457,7 +457,10 @@ class MultiTenantService {
       return this.tenantCache.get(tenantId)!;
     }
 
-    if (!supabase) return null;
+    if (!supabase) {
+      console.warn('[multi-tenant] getTenant: supabase client not configured');
+      return null;
+    }
 
     try {
       const { data, error } = await supabase
@@ -466,12 +469,24 @@ class MultiTenantService {
         .eq('id', tenantId)
         .single();
 
-      if (error || !data) return null;
+      if (error) {
+        console.warn(
+          `[multi-tenant] getTenant(${tenantId}) returned no row:`,
+          error.code,
+          error.message
+        );
+        return null;
+      }
+      if (!data) {
+        console.warn(`[multi-tenant] getTenant(${tenantId}) returned null data (no RLS match?)`);
+        return null;
+      }
 
       const tenant = this.mapToTenant(data);
       this.tenantCache.set(tenantId, tenant);
       return tenant;
-    } catch {
+    } catch (err) {
+      console.error(`[multi-tenant] getTenant(${tenantId}) threw:`, err);
       return null;
     }
   }

@@ -71,12 +71,21 @@ export function useEntitlement(): UseEntitlementReturn {
   const load = useCallback(async () => {
     const orgId = currentOrg?.id;
     if (!orgId) {
+      console.log('[useEntitlement] no currentOrg yet; tenant stays null');
       setTenant(null);
       setLoading(false);
       return;
     }
+    console.log(`[useEntitlement] loading tenant for org ${orgId}`);
     setLoading(true);
     const t = await multiTenant.getTenant(orgId);
+    if (!t) {
+      console.warn(
+        `[useEntitlement] getTenant(${orgId}) returned null — Stripe checkout handoff will not fire until this resolves`
+      );
+    } else {
+      console.log(`[useEntitlement] tenant loaded:`, { id: t.id, plan: t.plan });
+    }
     setTenant(t);
     setLoading(false);
   }, [currentOrg?.id]);
